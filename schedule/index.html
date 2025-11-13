@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出賽單</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .form-container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #1c7d32;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #166427;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <h1>出賽單</h1>
+  </header>
+
+  <main>
+    <div class="form-container">
+
+      <div class="form-group">
+        <label>場次編號</label>
+        <input type="text" placeholder="例如：Match 1" />
+      </div>
+
+      <div class="form-group">
+        <label>隊伍 A</label>
+        <input type="text" placeholder="輸入隊伍名稱" />
+      </div>
+
+      <div class="form-group">
+        <label>隊伍 B</label>
+        <input type="text" placeholder="輸入隊伍名稱" />
+      </div>
+
+      <div class="form-group">
+        <label>比賽時間</label>
+        <input type="text" placeholder="" />
+      </div>
+
+      <button>提交（預留）</button>
+
+    </div>
+  </main>
+
+</body>
+</html>
