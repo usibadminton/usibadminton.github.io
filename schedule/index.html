@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>裁判記錄單</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>裁判記錄單</title>
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- TailwindPlus Elements -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+  <!-- TailwindPlus Elements -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 
-    <style>
-        /* 讓 dropdown 在 mobile、desktop 都更順 */
-        .dropdown-button {
-            @apply inline-flex w-full justify-between rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 transition;
-        }
-        .dropdown-item {
-            @apply block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed;
-        }
-    </style>
+  <!-- PapaParse : CSV Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    .dropdown-button {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      background: #1f2937;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 0.875rem;
+      align-items: center;
+    }
+    .dropdown-item {
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: #d1d5db;
+    }
+    .dropdown-item:hover {
+      background: #374151;
+    }
+    .dropdown-item:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
@@ -28,296 +49,242 @@
       主填寫畫面
 ======================= -->
 <div id="mainPage" class="max-w-2xl mx-auto p-5">
-    <h1 class="text-3xl font-bold text-center mb-6">裁判記錄單</h1>
+  <h1 class="text-3xl font-bold text-center mb-6">裁判記錄單</h1>
 
-    <div id="teamName" class="text-xl font-semibold mb-4 text-center text-blue-700"></div>
+  <div id="teamName" class="text-xl font-semibold mb-4 text-center text-blue-700"></div>
 
-    <!-- 局點區塊將會由 JS 填入 -->
-    <div id="form"></div>
+  <div id="form"></div>
 
-    <button 
-        onclick="goNext()"
-        id="nextBtn"
-        class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-blue-700 transition"
-    >
-        下一步
-    </button>
+  <button
+    onclick="goNext()"
+    class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-blue-700"
+  >
+    下一步
+  </button>
 </div>
-
 
 <!-- =======================
         確認頁面
 ======================= -->
 <div id="confirmPage" class="max-w-2xl mx-auto p-5 hidden">
-    <h2 class="text-2xl font-bold mb-4 text-center">確認出賽選手</h2>
+  <h2 class="text-2xl font-bold mb-4 text-center">確認出賽選手</h2>
+  <div id="confirmList" class="space-y-4"></div>
 
-    <div id="confirmList" class="space-y-4"></div>
+  <div class="flex gap-4 mt-6">
+    <button
+      onclick="backToEdit()"
+      class="flex-1 bg-gray-400 text-white py-3 rounded-lg text-xl font-bold hover:bg-gray-500"
+    >返回修改</button>
 
-    <div class="flex gap-4 mt-6">
-        <button 
-            onclick="backToEdit()"
-            class="flex-1 bg-gray-400 text-white py-3 rounded-lg text-xl font-bold hover:bg-gray-500"
-        >返回修改</button>
-
-        <button 
-            onclick="submitForm()"
-            class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700"
-        >確定送出</button>
-    </div>
+    <button
+      onclick="submitForm()"
+      class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700"
+    >確定送出</button>
+  </div>
 </div>
+
 <script>
 /* ======================
    取得隊伍代號 from URL
 ====================== */
 const urlParams = new URLSearchParams(window.location.search);
-const team = urlParams.get("team")?.toUpperCase() || "A";
+const team = (urlParams.get("team") || "A").toUpperCase();
 document.getElementById("teamName").innerText = `目前填寫隊伍：${team} 隊`;
 
 /* ======================
-   Google Sheet 資料來源
+   Google Sheet CSV
 ====================== */
-const SHEET_ID = "1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w";
-const GID = "1442520714";
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const CSV_URL =
+  "https://docs.google.com/spreadsheets/d/1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w/export?format=csv&gid=1442520714";
 
 /* ======================
-   局點設定（固定 5 點）
+   局點設定
 ====================== */
 const rounds = [
-    { id: 1, name: "第 1 點：男雙" },
-    { id: 2, name: "第 2 點：女雙" },
-    { id: 3, name: "第 3 點：勇壯" },
-    { id: 4, name: "第 4 點：混雙" },
-    { id: 5, name: "第 5 點：男雙" },
+  { id: 1, name: "第 1 點：男雙" },
+  { id: 2, name: "第 2 點：女雙" },
+  { id: 3, name: "第 3 點：勇壯" },
+  { id: 4, name: "第 4 點：混雙" },
+  { id: 5, name: "第 5 點：男雙" },
 ];
 
-let players = [];          // 當隊實際選手名單
-let chosen = {};           // ex: chosen["1-1"] = "林羿聞"
+let players = [];
+let chosen = {};
 
-/* ============================================
-   載入 Google Sheet → 取得該隊選手名單
-============================================ */
-fetch(CSV_URL)
-    .then(res => res.text())
-    .then(csv => {
-        const rows = csv.split("\n").map(r => r.split(","));
-        const teamIndex = { A:11, B:12, C:13, D:14, E:15 }[team];
+/* ======================
+   載入表單名單
+====================== */
+Papa.parse(CSV_URL, {
+  download: true,
+  complete: function(results) {
+    const rows = results.data;
+    const teamIndex = { A: 11, B: 12, C: 13, D: 14, E: 15 }[team];
 
-        // 取 L3:L14 (index 11)
-        for (let i=2; i<rows.length; i++) {
-            const p = rows[i]?.[teamIndex];
-            if (p && p.trim()) players.push(p.trim());
-        }
+    for (let i = 2; i < rows.length; i++) {
+      const p = rows[i]?.[teamIndex];
+      if (p && p.trim()) players.push(p.trim());
+    }
 
-        // 全域備份
-        window.playersGlobal = players;
+    window.playersGlobal = players;
+    renderForm();
+  }
+});
 
-        renderForm();
-    });
-
-/* ============================================
-   將局點 UI 渲染到畫面（含 TailwindPlus dropdown）
-============================================ */
+/* ======================
+   產生每一局(html)
+====================== */
 function renderForm() {
-    const formDiv = document.getElementById("form");
-    formDiv.innerHTML = "";
+  const form = document.getElementById("form");
+  form.innerHTML = "";
 
-    rounds.forEach(r => {
-        const card = document.createElement("div");
-        card.className = "bg-white rounded-xl shadow p-5 mb-6 border border-gray-200";
+  rounds.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-5 rounded-xl shadow mb-6";
 
-        card.innerHTML = `
-            <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
+    div.innerHTML = `
+      <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
 
-            <!-- 選手 1 Dropdown -->
-            <label class="block font-medium mb-1">選手 1</label>
-            ${createDropdownHTML(r.id, 1)}
+      <label class="font-medium mb-1 block">選手 1</label>
+      ${dropdownHTML(r.id, 1)}
 
-            <!-- 選手 2 Dropdown -->
-            <label class="block font-medium mt-4 mb-1">選手 2</label>
-            ${createDropdownHTML(r.id, 2)}
+      <label class="font-medium mt-4 mb-1 block">選手 2</label>
+      ${dropdownHTML(r.id, 2)}
 
-            <!-- 清除按鈕 -->
-            <button onclick="clearRound(${r.id})"
-                class="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-black py-2 px-4 rounded-lg transition">
-                清除本局
-            </button>
-        `;
+      <button onclick="clearRound(${r.id})"
+        class="mt-4 w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-lg">
+        重新選擇
+      </button>
+    `;
 
-        formDiv.appendChild(card);
-    });
+    form.appendChild(div);
+  });
 }
 
-/* ============================================
-   建立單一 dropdown HTML 樣板
-============================================ */
-function createDropdownHTML(roundId, slot) {
-    const field = `${slot}-${roundId}`;
+function dropdownHTML(roundId, slot) {
+  const field = `${slot}-${roundId}`;
 
-    return `
-    <el-dropdown class="w-full" id="dp-${field}">
-      <button id="btn-${field}"
-        class="dropdown-button">
+  return `
+    <el-dropdown class="w-full">
+      <button class="dropdown-button">
         <span id="label-${field}">請選擇</span>
         <svg viewBox="0 0 20 20" fill="currentColor" class="size-5 text-gray-300">
           <path d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"/>
         </svg>
       </button>
 
-      <el-menu anchor="bottom start" popover 
-        class="w-full origin-top-left rounded-lg bg-gray-900 shadow-lg divide-y divide-gray-700">
-
-        ${players
-            .map(p => `
-                <button
-                    id="opt-${field}-${p.replace(/\s+/g, '-')}"
-                    class="dropdown-item"
-                    onclick="selectPlayer('${p}','${field}')"
-                >${p}</button>
-            `).join("")}
-
+      <el-menu anchor="bottom start" popover class="rounded-lg bg-gray-900 w-full">
+        ${players.map(p => `
+          <button class="dropdown-item"
+            id="opt-${field}-${p.replace(/\s+/g, '-')}"
+            onclick="selectPlayer('${p}', '${field}')">
+            ${p}
+          </button>
+        `).join("")}
       </el-menu>
     </el-dropdown>
-    `;
+  `;
 }
-/* ============================================================
-   selectPlayer（點選 dropdown 選項 → 設定值）
-============================================================ */
+
+/* ======================
+   select
+====================== */
 function selectPlayer(name, field) {
-    const label = document.getElementById(`label-${field}`);
-    label.innerText = name;
-
-    chosen[field] = name;
-
-    recalcDisable();
+  document.getElementById(`label-${field}`).innerText = name;
+  chosen[field] = name;
+  recalcDisable();
 }
 
-/* ============================================================
-   清除單一局（slot 1 + slot 2）
-============================================================ */
+/* ======================
+   清除單局
+====================== */
 function clearRound(roundId) {
-    const f1 = `1-${roundId}`;
-    const f2 = `2-${roundId}`;
-
-    // 清除標籤
-    document.getElementById(`label-${f1}`).innerText = "請選擇";
-    document.getElementById(`label-${f2}`).innerText = "請選擇";
-
-    // 移除已選
-    delete chosen[f1];
-    delete chosen[f2];
-
-    recalcDisable();
+  const f1 = `1-${roundId}`;
+  const f2 = `2-${roundId}`;
+  delete chosen[f1];
+  delete chosen[f2];
+  document.getElementById(`label-${f1}`).innerText = "請選擇";
+  document.getElementById(`label-${f2}`).innerText = "請選擇";
+  recalcDisable();
 }
 
-/* ============================================================
-   全局重新計算禁用邏輯
-   — 每次選取 / 清除時重新執行
-============================================================ */
+/* ======================
+   禁用規則（跨局）
+====================== */
 function recalcDisable() {
-    const used = new Set(Object.values(chosen)); // 所有已經出賽過的選手（跨局）
+  const used = new Set(Object.values(chosen));
 
-    rounds.forEach(r => {
-        // slot1 & slot2
-        ["1", "2"].forEach(slot => {
+  rounds.forEach(r => {
+    ["1","2"].forEach(slot => {
+      window.playersGlobal.forEach(p => {
+        const key = `${slot}-${r.id}`;
+        const id = `opt-${key}-${p.replace(/\s+/g, "-")}`;
+        const opt = document.getElementById(id);
+        if (!opt) return;
 
-            window.playersGlobal.forEach(p => {
-                const key = `${slot}-${r.id}`;
-                const id = `opt-${key}-${p.replace(/\s+/g, "-")}`;
-                const opt = document.getElementById(id);
-                if (!opt) return;
+        opt.disabled = false;
 
-                // 若該選項已被選在別局 → 禁用
-                if (used.has(p) && chosen[key] !== p) {
-                    opt.disabled = true;
-                } else {
-                    opt.disabled = false;
-                }
+        if (used.has(p) && chosen[key] !== p) opt.disabled = true;
 
-                // 同局：選手1 ≠ 選手2
-                const f1 = `1-${r.id}`;
-                const f2 = `2-${r.id}`;
+        const f1 = `1-${r.id}`;
+        const f2 = `2-${r.id}`;
 
-                if (slot === "1" && chosen[f2] === p) opt.disabled = true;
-                if (slot === "2" && chosen[f1] === p) opt.disabled = true;
-            });
-        });
+        if (slot === "1" && chosen[f2] === p) opt.disabled = true;
+        if (slot === "2" && chosen[f1] === p) opt.disabled = true;
+      });
     });
+  });
 }
 
-/* ============================================================
-   下一步：顯示確認頁
-============================================================ */
+/* ======================
+   下一步
+====================== */
 function goNext() {
-    // 確認每局點都有兩位不同選手
-    for (const r of rounds) {
-        const f1 = chosen[`1-${r.id}`];
-        const f2 = chosen[`2-${r.id}`];
+  for (const r of rounds) {
+    const f1 = chosen[`1-${r.id}`];
+    const f2 = chosen[`2-${r.id}`];
 
-        if (!f1 || !f2) {
-            alert(`${r.name} 尚未選擇兩位選手`);
-            return;
-        }
+    if (!f1 || !f2) return alert(`${r.name} 尚未填完`);
+    if (f1 === f2) return alert(`${r.name} 不可重複`);
+  }
 
-        if (f1 === f2) {
-            alert(`${r.name} 的兩位選手不可相同`);
-            return;
-        }
-    }
+  document.getElementById("mainPage").classList.add("hidden");
+  document.getElementById("confirmPage").classList.remove("hidden");
 
-    // 切換畫面
-    document.getElementById("mainPage").classList.add("hidden");
-    document.getElementById("confirmPage").classList.remove("hidden");
+  const confirm = document.getElementById("confirmList");
+  confirm.innerHTML = "";
 
-    const confirmDiv = document.getElementById("confirmList");
-    confirmDiv.innerHTML = "";
-
-    rounds.forEach(r => {
-        const f1 = chosen[`1-${r.id}`];
-        const f2 = chosen[`2-${r.id}`];
-
-        confirmDiv.innerHTML += `
-            <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
-                <div class="font-semibold mb-2">${r.name}</div>
-                <div>選手 1：${f1}</div>
-                <div>選手 2：${f2}</div>
-            </div>
-        `;
-    });
+  rounds.forEach(r => {
+    confirm.innerHTML += `
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="font-semibold mb-2">${r.name}</div>
+        <div>選手 1：${chosen[`1-${r.id}`]}</div>
+        <div>選手 2：${chosen[`2-${r.id}`]}</div>
+      </div>
+    `;
+  });
 }
 
-/* ============================================================
-   返回修改
-============================================================ */
+/* ======================
+   返回
+====================== */
 function backToEdit() {
-    document.getElementById("confirmPage").classList.add("hidden");
-    document.getElementById("mainPage").classList.remove("hidden");
+  document.getElementById("confirmPage").classList.add("hidden");
+  document.getElementById("mainPage").classList.remove("hidden");
 }
 
-/* ============================================================
-   送出 → Google Sheet Web App
-============================================================ */
+/* ======================
+   送出
+====================== */
 function submitForm() {
-    const results = rounds.map(r => ({
-        point: r.id,
-        p1: chosen[`1-${r.id}`],
-        p2: chosen[`2-${r.id}`]
-    }));
-
-    fetch("https://script.google.com/macros/s/AKfycbwoVmkK6942tGFuOruNjRy7epAD7RtXpiLlU0LXVHtDwO_troVK4maHBR03_9d9VB-Iow/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            team: team,
-            results: results
-        })
-    })
-    .then(r => r.json())
-    .then(() => {
-        alert("送出成功！");
-        location.href = "./index.html?team=" + team;
-    })
-    .catch(err => alert("送出失敗：" + err));
+  fetch("https://script.google.com/macros/s/AKfycbwoVmkK6942tGFuOruNjRy7epAD7RtXpiLlU0LXVHtDwO_troVK4maHBR03_9d9VB-Iow/exec", {
+    method: "POST",
+    body: JSON.stringify({ team, chosen })
+  })
+  .then(r => r.json())
+  .then(() => {
+    alert("送出成功！");
+    location.href = "./index.html?team=" + team;
+  });
 }
 </script>
 
