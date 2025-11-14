@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裁判計分系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<nav class="w-full bg-blue-600 shadow p-4">
+    <h1 class="text-2xl font-bold text-white text-center">裁判計分系統</h1>
+</nav>
+
+<div class="max-w-4xl mx-auto p-5">
+    
+    <!-- 載入中提示 -->
+    <div id="loading" class="text-center py-8 bg-white rounded-lg shadow">
+        <div class="text-gray-600">載入場次資料中...</div>
+    </div>
+
+    <!-- 計分表單 -->
+    <div id="scoreForm" class="hidden">
+        
+        <!-- 選擇區域 - 始終可見 -->
+        <div id="selectionArea">
+            <!-- 選擇場次 -->
+            <div class="bg-white shadow rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">選擇場次</h2>
+                <div>
+                    <select id="matchSelect" onchange="loadMatchInfo()" 
+                        class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        <option value="">請選擇場次...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 場次資訊顯示 -->
+            <div id="matchInfo" class="bg-white shadow rounded-lg p-6 mb-6 hidden">
+                <h2 class="text-xl font-bold mb-4">場次資訊</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div class="text-sm text-gray-600 mb-1">隊伍1</div>
+                        <div id="team1Display" class="text-lg font-bold text-blue-700"></div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div class="text-sm text-gray-600 mb-1">隊伍2</div>
+                        <div id="team2Display" class="text-lg font-bold text-green-700"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 選擇局點 -->
+            <div id="pointSelection" class="bg-white shadow rounded-lg p-6 mb-6 hidden">
+                <h2 class="text-xl font-bold mb-4">選擇局點</h2>
+                <div>
+                    <select id="pointSelect" onchange="showScoreInput()" 
+                        class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none">
+                        <option value="">請選擇局點...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 輸入分數 -->
+        <div id="scoreInput" class="bg-white shadow rounded-lg p-6 mb-6 hidden">
+            <h2 class="text-xl font-bold mb-6">輸入分數</h2>
+            
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="text-center text-lg font-semibold text-gray-700" id="currentPoint"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                    <div class="text-center mb-4">
+                        <div class="font-bold text-blue-700 text-xl mb-2" id="team1Label">隊伍1</div>
+                        <div class="text-blue-600 text-base" id="team1Players"></div>
+                    </div>
+                    <input type="number" id="team1Score" min="0" max="21" 
+                        class="w-full px-4 py-4 text-center text-3xl font-bold border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none bg-white" 
+                        placeholder="0">
+                </div>
+                <div class="bg-green-50 p-6 rounded-lg border-2 border-green-200">
+                    <div class="text-center mb-4">
+                        <div class="font-bold text-green-700 text-xl mb-2" id="team2Label">隊伍2</div>
+                        <div class="text-green-600 text-base" id="team2Players"></div>
+                    </div>
+                    <input type="number" id="team2Score" min="0" max="21" 
+                        class="w-full px-4 py-4 text-center text-3xl font-bold border-2 border-green-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none bg-white" 
+                        placeholder="0">
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="showSummary()" 
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-lg transition shadow-md hover:shadow-lg">
+                    下一步
+                </button>
+                <button onclick="clearScores()" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg transition shadow-md hover:shadow-lg">
+                    清除
+                </button>
+            </div>
+        </div>
+
+        <!-- 確認摘要 -->
+        <div id="scoreSummary" class="bg-white shadow rounded-lg p-6 mb-6 hidden">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">確認分數</h2>
+            
+            <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200 mb-6">
+                <div class="text-center mb-4">
+                    <div class="text-3xl font-bold text-gray-800" id="summaryMatch"></div>
+                </div>
+                <div class="text-center mb-6">
+                    <div class="text-2xl font-semibold text-gray-800" id="summaryPoint"></div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 items-center">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-700 mb-3" id="summaryTeam1Name"></div>
+                        <div class="text-base text-gray-600 mb-4 leading-relaxed" id="summaryTeam1Players"></div>
+                        <div class="text-6xl font-bold text-blue-600" id="summaryTeam1Score"></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl font-bold text-gray-400">:</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-700 mb-3" id="summaryTeam2Name"></div>
+                        <div class="text-base text-gray-600 mb-4 leading-relaxed" id="summaryTeam2Players"></div>
+                        <div class="text-6xl font-bold text-green-600" id="summaryTeam2Score"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-6 pt-4 border-t border-gray-300">
+                    <div class="text-base text-gray-600">獲勝方</div>
+                    <div class="text-2xl font-bold text-orange-600 mt-1" id="summaryWinner"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="backToEdit()" 
+                    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition shadow-md hover:shadow-lg">
+                    返回修改
+                </button>
+                <button onclick="submitScore()" 
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg text-lg transition shadow-md hover:shadow-lg">
+                    確認提交
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const SHEET_ID = "1oaHsNay4DBBJGL6llI2Bu74yEzO8gTo7R-7qcajKyRM";
+const TEAM_GID = "1442520714";
+const LINEUP_GID = "1883068488"; // 出賽紀錄的工作表
+const SCORES_GID = "1011299643"; // 比賽成績的工作表
+
+const pointNames = ['男雙', '女雙', '勇壯', '混雙', '男雙'];
+let teamNames = {};
+let matches = {}; // 儲存完整的場次資料，包含選手名單
+let scoredPoints = {}; // 儲存已計分的場次和局點 { matchNo: [pointNo1, pointNo2...] }
+
+// 先載入隊伍名稱
+const TEAM_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${TEAM_GID}`;
+
+fetch(TEAM_CSV_URL)
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
+        const rows = parsed.data;
+        
+        // 隊伍名稱 B3:C7
+        for (let i = 2; i <= 6; i++) {
+            const code = rows[i] && rows[i][1];
+            const name = rows[i] && rows[i][2];
+            if (code && name) teamNames[code.trim()] = name.trim();
+        }
+        
+        console.log('隊伍名稱:', teamNames);
+        
+        // 載入出賽紀錄
+        return fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${LINEUP_GID}`);
+    })
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), {
+            header: true,
+            skipEmptyLines: true
+        });
+        
+        const lineupData = parsed.data;
+        console.log('出賽紀錄:', lineupData);
+        
+        // 整理資料：按場次和隊伍分組
+        const matchTeamData = {};
+        
+        lineupData.forEach(record => {
+            const matchNo = record['場次'];
+            const team = record['隊伍'];
+            const point = record['局點'];
+            
+            if (!matchNo || !team || !point) return;
+            
+            if (!matchTeamData[matchNo]) {
+                matchTeamData[matchNo] = {};
+            }
+            
+            if (!matchTeamData[matchNo][team]) {
+                matchTeamData[matchNo][team] = [];
+            }
+            
+            matchTeamData[matchNo][team].push({
+                point: point,
+                player1: record['選手1'],
+                player2: record['選手2']
+            });
+        });
+        
+        console.log('場次資料:', matchTeamData);
+        
+        // 只保留兩隊都已提交（每隊有5筆紀錄）的場次
+        Object.keys(matchTeamData).forEach(matchNo => {
+            const teams = Object.keys(matchTeamData[matchNo]);
+            
+            console.log(`場次 ${matchNo}: 隊伍數量 = ${teams.length}, 隊伍 = [${teams.join(', ')}]`);
+            
+            // 檢查是否有兩隊，且每隊都有5筆紀錄
+            if (teams.length === 2) {
+                const team1 = teams[0];
+                const team2 = teams[1];
+                const team1Count = matchTeamData[matchNo][team1].length;
+                const team2Count = matchTeamData[matchNo][team2].length;
+                const team1Complete = team1Count >= 5;
+                const team2Complete = team2Count >= 5;
+                
+                console.log(`  ${team1}: ${team1Count} 筆, ${team2}: ${team2Count} 筆`);
+                
+                if (team1Complete && team2Complete) {
+                    matches[matchNo] = {
+                        team1: team1,
+                        team2: team2,
+                        lineup: matchTeamData[matchNo]
+                    };
+                    console.log(`  ✓ 場次 ${matchNo} 符合條件`);
+                } else {
+                    console.log(`  ✗ 場次 ${matchNo} 不符合條件`);
+                }
+            } else {
+                console.log(`  ✗ 場次 ${matchNo} 只有 ${teams.length} 隊`);
+            }
+        });
+        
+        console.log('可計分的場次:', matches);
+        
+        // 載入已計分紀錄
+        return fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SCORES_GID}`);
+    })
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), {
+            header: true,
+            skipEmptyLines: true
+        });
+        
+        const scoresData = parsed.data;
+        console.log('已計分紀錄:', scoresData);
+        
+        // 整理已計分的場次和局點
+        scoresData.forEach(record => {
+            const matchNo = record['場次'];
+            const pointNo = record['局點'];
+            
+            if (!matchNo || !pointNo) return;
+            
+            if (!scoredPoints[matchNo]) {
+                scoredPoints[matchNo] = [];
+            }
+            
+            if (!scoredPoints[matchNo].includes(pointNo)) {
+                scoredPoints[matchNo].push(pointNo);
+            }
+        });
+        
+        console.log('已計分的場次和局點:', scoredPoints);
+        
+        // 填充場次選單
+        const matchSelect = document.getElementById('matchSelect');
+        const matchNumbers = Object.keys(matches).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        if (matchNumbers.length === 0) {
+            document.getElementById('loading').innerHTML = 
+                '<div class="text-yellow-600 p-4">目前沒有可計分的場次<br>（需要兩隊都完成選手提交）</div>';
+            document.getElementById('scoreForm').classList.remove('hidden');
+            return;
+        }
+        
+        matchNumbers.forEach(matchNo => {
+            const match = matches[matchNo];
+            const team1Name = teamNames[match.team1] || match.team1;
+            const team2Name = teamNames[match.team2] || match.team2;
+            
+            const option = document.createElement('option');
+            option.value = matchNo;
+            
+            // 檢查該場次是否所有5個局點都已計分
+            const scored = scoredPoints[matchNo] || [];
+            const allPointsScored = scored.length >= 5;
+            
+            if (allPointsScored) {
+                option.textContent = `場次 ${matchNo} - ${match.team1}（${team1Name}）vs ${match.team2}（${team2Name}） ✓ (已完成)`;
+                option.disabled = true;
+                option.classList.add('text-gray-400');
+            } else {
+                option.textContent = `場次 ${matchNo} - ${match.team1}（${team1Name}）vs ${match.team2}（${team2Name}）`;
+            }
+            
+            matchSelect.appendChild(option);
+        });
+        
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('scoreForm').classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('載入失敗:', error);
+        document.getElementById('loading').innerHTML = 
+            '<div class="text-red-600 p-4">載入失敗：' + error.message + '</div>';
+    });
+
+// 載入場次資訊
+function loadMatchInfo() {
+    const matchNo = document.getElementById('matchSelect').value;
+    
+    if (!matchNo) {
+        document.getElementById('matchInfo').classList.add('hidden');
+        document.getElementById('pointSelection').classList.add('hidden');
+        document.getElementById('scoreInput').classList.add('hidden');
+        return;
+    }
+    
+    const match = matches[matchNo];
+    const team1Name = teamNames[match.team1] || match.team1;
+    const team2Name = teamNames[match.team2] || match.team2;
+    
+    document.getElementById('team1Display').textContent = `${match.team1}（${team1Name}）`;
+    document.getElementById('team2Display').textContent = `${match.team2}（${team2Name}）`;
+    
+    document.getElementById('matchInfo').classList.remove('hidden');
+    document.getElementById('pointSelection').classList.remove('hidden');
+    document.getElementById('scoreInput').classList.add('hidden');
+    
+    // 重置並填充局點選單
+    const pointSelect = document.getElementById('pointSelect');
+    pointSelect.innerHTML = '<option value="" class="text-gray-500">請選擇局點...</option>';
+    
+    // 取得該場次已計分的局點
+    const scored = scoredPoints[matchNo] || [];
+    
+    for (let i = 1; i <= 5; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        
+        // 檢查該局點是否已計分
+        const isScored = scored.includes(String(i));
+        
+        if (isScored) {
+            option.textContent = `第${i}點 - ${pointNames[i-1]} ✓ (已計分)`;
+            option.disabled = true;
+            option.classList.add('text-gray-400');
+        } else {
+            option.textContent = `第${i}點 - ${pointNames[i-1]}`;
+        }
+        
+        pointSelect.appendChild(option);
+    }
+}
+
+// 顯示分數輸入區
+function showScoreInput() {
+    const matchNo = document.getElementById('matchSelect').value;
+    const pointNo = document.getElementById('pointSelect').value;
+    
+    if (!pointNo) {
+        document.getElementById('scoreInput').classList.add('hidden');
+        return;
+    }
+    
+    const match = matches[matchNo];
+    const team1Name = teamNames[match.team1] || match.team1;
+    const team2Name = teamNames[match.team2] || match.team2;
+    
+    // 取得選手名單
+    const team1Lineup = match.lineup[match.team1].find(p => parseInt(p.point) === parseInt(pointNo));
+    const team2Lineup = match.lineup[match.team2].find(p => parseInt(p.point) === parseInt(pointNo));
+    
+    document.getElementById('currentPoint').textContent = `第 ${pointNo} 點 - ${pointNames[pointNo - 1]}`;
+    document.getElementById('team1Label').textContent = `${match.team1}（${team1Name}）`;
+    document.getElementById('team2Label').textContent = `${match.team2}（${team2Name}）`;
+    
+    // 顯示選手名字
+    document.getElementById('team1Players').textContent = team1Lineup ? `${team1Lineup.player1} / ${team1Lineup.player2}` : '';
+    document.getElementById('team2Players').textContent = team2Lineup ? `${team2Lineup.player1} / ${team2Lineup.player2}` : '';
+    
+    // 清空之前的分數
+    document.getElementById('team1Score').value = '';
+    document.getElementById('team2Score').value = '';
+    
+    document.getElementById('scoreInput').classList.remove('hidden');
+    document.getElementById('scoreSummary').classList.add('hidden');
+}
+
+// 顯示摘要確認
+function showSummary() {
+    const matchNo = document.getElementById('matchSelect').value;
+    const pointNo = document.getElementById('pointSelect').value;
+    const team1Score = document.getElementById('team1Score').value;
+    const team2Score = document.getElementById('team2Score').value;
+    
+    if (!matchNo || !pointNo) {
+        showToast('請選擇場次和局點！', 'error');
+        return;
+    }
+    
+    if (team1Score === '' || team2Score === '') {
+        showToast('請輸入分數！', 'error');
+        return;
+    }
+    
+    // 驗證分數範圍
+    const score1 = parseInt(team1Score);
+    const score2 = parseInt(team2Score);
+    
+    if (score1 < 0 || score1 > 21 || score2 < 0 || score2 > 21) {
+        showToast('請檢查分數', 'error');
+        return;
+    }
+    
+    // 驗證必須有一隊得到 21 分且只有一隊
+    if ((score1 === 21 && score2 === 21) || (score1 !== 21 && score2 !== 21)) {
+        showToast('請檢查分數', 'error');
+        return;
+    }
+    
+    const match = matches[matchNo];
+    const team1Name = teamNames[match.team1] || match.team1;
+    const team2Name = teamNames[match.team2] || match.team2;
+    
+    const team1Lineup = match.lineup[match.team1].find(p => parseInt(p.point) === parseInt(pointNo));
+    const team2Lineup = match.lineup[match.team2].find(p => parseInt(p.point) === parseInt(pointNo));
+    
+    // 填充摘要資訊
+    document.getElementById('summaryMatch').textContent = `場次 ${matchNo}`;
+    document.getElementById('summaryPoint').textContent = `第 ${pointNo} 點 - ${pointNames[pointNo - 1]}`;
+    
+    document.getElementById('summaryTeam1Name').textContent = `${match.team1}（${team1Name}）`;
+    document.getElementById('summaryTeam1Players').innerHTML = team1Lineup ? `${team1Lineup.player1}<br>${team1Lineup.player2}` : '';
+    document.getElementById('summaryTeam1Score').textContent = team1Score;
+    
+    document.getElementById('summaryTeam2Name').textContent = `${match.team2}（${team2Name}）`;
+    document.getElementById('summaryTeam2Players').innerHTML = team2Lineup ? `${team2Lineup.player1}<br>${team2Lineup.player2}` : '';
+    document.getElementById('summaryTeam2Score').textContent = team2Score;
+    
+    // 決定獲勝方
+    const winner = parseInt(team1Score) > parseInt(team2Score) ? `${match.team1}（${team1Name}）` : 
+                   parseInt(team2Score) > parseInt(team1Score) ? `${match.team2}（${team2Name}）` : '平手';
+    document.getElementById('summaryWinner').textContent = winner;
+    
+    // 隱藏選擇區域和輸入，只顯示摘要
+    document.getElementById('selectionArea').classList.add('hidden');
+    document.getElementById('scoreInput').classList.add('hidden');
+    document.getElementById('scoreSummary').classList.remove('hidden');
+}
+
+// 返回修改
+function backToEdit() {
+    document.getElementById('scoreSummary').classList.add('hidden');
+    document.getElementById('selectionArea').classList.remove('hidden');
+    document.getElementById('scoreInput').classList.remove('hidden');
+}
+
+// 提交分數
+function submitScore() {
+    const matchNo = document.getElementById('matchSelect').value;
+    const pointNo = document.getElementById('pointSelect').value;
+    const team1Score = document.getElementById('team1Score').value;
+    const team2Score = document.getElementById('team2Score').value;
+    
+    const match = matches[matchNo];
+    const data = {
+        matchNo: matchNo,
+        pointNo: pointNo,
+        pointName: pointNames[pointNo - 1],
+        team1: match.team1,
+        team2: match.team2,
+        team1Score: parseInt(team1Score),
+        team2Score: parseInt(team2Score),
+        winner: parseInt(team1Score) > parseInt(team2Score) ? match.team1 : 
+                parseInt(team2Score) > parseInt(team1Score) ? match.team2 : '平手',
+        timestamp: new Date().toISOString()
+    };
+    
+    console.log('提交的分數資料：', data);
+    
+    showToast('正在送出資料...', 'loading');
+    
+    // 發送到 Google Apps Script
+    fetch('https://script.google.com/macros/s/AKfycbzH4ks5AmSGJsPPDAiSLh4TJH3RH4KHKfAR9NFMdKN7-Jznq5GLD6IcchXWVarmN0MK4w/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(() => {
+        hideToast();
+        const team1Name = teamNames[match.team1] || match.team1;
+        const team2Name = teamNames[match.team2] || match.team2;
+        
+        showToast('✓ 送出成功！', 'success');
+        
+        // 更新已計分紀錄
+        if (!scoredPoints[matchNo]) {
+            scoredPoints[matchNo] = [];
+        }
+        if (!scoredPoints[matchNo].includes(String(pointNo))) {
+            scoredPoints[matchNo].push(String(pointNo));
+        }
+        
+        // 重置表單
+        document.getElementById('scoreSummary').classList.add('hidden');
+        document.getElementById('selectionArea').classList.remove('hidden');
+        document.getElementById('scoreInput').classList.add('hidden');
+        document.getElementById('pointSelection').classList.add('hidden');
+        document.getElementById('pointSelect').value = '';
+        clearScores();
+        
+        // 重新載入場次資訊以更新局點選單
+        loadMatchInfo();
+    })
+    .catch(error => {
+        console.error('提交錯誤：', error);
+        hideToast();
+        showToast('✗ 送出失敗，請檢查網路連線', 'error');
+    });
+}
+
+// 清除分數
+function clearScores() {
+    document.getElementById('team1Score').value = '';
+    document.getElementById('team2Score').value = '';
+}
+
+/* ======================================================
+    Toast 通知函數
+====================================================== */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    
+    // 設定顏色
+    toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-lg transition-all duration-300 z-50';
+    
+    if (type === 'success') {
+        toast.classList.add('bg-green-600');
+    } else if (type === 'error') {
+        toast.classList.add('bg-red-600');
+    } else if (type === 'loading') {
+        toast.classList.add('bg-blue-600');
+    } else {
+        toast.classList.add('bg-gray-600');
+    }
+    
+    // 顯示
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.pointerEvents = 'auto';
+    }, 10);
+    
+    // 如果不是 loading，3秒後自動隱藏
+    if (type !== 'loading') {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.pointerEvents = 'none';
+        }, 3000);
+    }
+}
+
+function hideToast() {
+    const toast = document.getElementById('toast');
+    toast.style.opacity = '0';
+    toast.style.pointerEvents = 'none';
+}
+</script>
+
+<!-- Toast 通知 -->
+<div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-lg transition-all duration-300 opacity-0 pointer-events-none z-50">
+</div>
+
+</body>
+</html>
