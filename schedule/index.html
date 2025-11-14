@@ -37,12 +37,12 @@ document.getElementById("teamName").innerText = `目前填寫隊伍：${team} �
 /* ======================
    2. Google Sheet 位置
 ====================== */
-const SHEET_ID = "1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w";  // 你的試算表 ID
-const GID = "1442520714";  // 資料表 gid
+const SHEET_ID = "1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w";  
+const GID = "1442520714";  
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
 /* ======================
-   3. 局點（你可改成從 Sheet 讀）
+   3. 局點設定
 ====================== */
 const rounds = [
     { name: "第 1 點：男雙", id: 1 },
@@ -52,41 +52,86 @@ const rounds = [
     { name: "第 5 點：男雙", id: 5 },
 ];
 
-/* ======================
-   4. 從 Google Sheet 載入 Players
-====================== */
 let players = [];
 
+/* ======================
+   4. 從 Google Sheet 載入玩家名單
+====================== */
 fetch(CSV_URL)
     .then(res => res.text())
     .then(csv => {
         const rows = csv.split("\n").map(r => r.split(","));
 
-        // L=M=N=O=P → A/B/C/D/E 隊
-        const teamIndexMap = { A: 11, B: 12, C: 13, D: 14, E: 15 };
+        const teamIndex = { A: 11, B: 12, C: 13, D: 14, E: 15 }[team];
 
-        const colIndex = teamIndexMap[team];  
-        if (!colIndex) {
-            alert("錯誤：找不到隊伍欄位");
-            return;
-        }
-
-        // 從 L3:L14 開始 ≈ index 2～13
         for (let i = 2; i <= 13; i++) {
-            const value = rows[i]?.[colIndex];
-            if (value && value.trim() !== "") {
-                players.push(value.trim());
-            }
+            const val = rows[i]?.[teamIndex];
+            if (val && val.trim() !== "") players.push(val.trim());
         }
 
         renderForm();
     });
 
 /* ======================
-   5. 動態畫面產生
+   5. 動態表單產生
 ====================== */
 function renderForm() {
     const formDiv = document.getElementById("form");
     formDiv.innerHTML = "";
 
     rounds.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-xl shadow p-5 mb-5";
+
+        card.innerHTML = `
+            <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
+
+            <label class="block font-medium mb-1">選手 1</label>
+            <select id="p1-${r.id}" class="w-full p-2 border rounded-lg">
+                <option value="">--請選擇--</option>
+                ${players.map(p => `<option>${p}</option>`)}
+            </select>
+
+            <label class="block font-medium mt-3 mb-1">選手 2</label>
+            <select id="p2-${r.id}" class="w-full p-2 border rounded-lg">
+                <option value="">--請選擇--</option>
+                ${players.map(p => `<option>${p}</option>`)}
+            </select>
+        `;
+
+        formDiv.appendChild(card);
+    });
+}
+
+/* ======================
+   6. 送到 Google Sheet
+====================== */
+function submitForm() {
+    const results = rounds.map(r => ({
+        point: r.id,
+        player1: document.getElementById(`p1-${r.id}`).value,
+        player2: document.getElementById(`p2-${r.id}`).value,
+    }));
+
+    const body = {
+        team: team,
+        results: results
+    };
+
+    fetch("WEB_APP_URL", {   // ← 換成你的 Apps Script URL
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(res => {
+        alert("送出成功！");
+    })
+    .catch(err => {
+        alert("送出失敗：" + err);
+    });
+}
+</script>
+
+</body>
+</html>
