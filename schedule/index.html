@@ -5,101 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>裁判記錄單</title>
 
-  <!-- TailwindCSS -->
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- TailwindPlus Elements -->
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-
-  <!-- PapaParse : CSV Parser -->
+  <!-- PapaParse CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    .dropdown-button {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      background: #1f2937;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      color: white;
-      font-size: 0.875rem;
-      align-items: center;
+    /* 下拉樣式（亮色 + 寬度正常 + 可滾動） */
+    .dropdown-btn {
+      @apply w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 text-sm;
     }
+
+    .dropdown-menu {
+      @apply absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto;
+    }
+
     .dropdown-item {
-      width: 100%;
-      text-align: left;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      color: #d1d5db;
-    }
-    .dropdown-item:hover {
-      background: #374151;
-    }
-    .dropdown-item:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+      @apply w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100;
     }
   </style>
+
 </head>
 
 <body class="bg-gray-100 min-h-screen">
 
-<!-- =======================
-      主填寫畫面
-======================= -->
 <div id="mainPage" class="max-w-2xl mx-auto p-5">
   <h1 class="text-3xl font-bold text-center mb-6">裁判記錄單</h1>
 
-  <div id="teamName" class="text-xl font-semibold mb-4 text-center text-blue-700"></div>
+  <div id="matchHeader" class="text-xl font-semibold text-center text-blue-700 mb-4"></div>
+  <div id="teamName" class="text-lg text-center mb-4 text-gray-700"></div>
 
   <div id="form"></div>
 
-  <button
-    onclick="goNext()"
-    class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-blue-700"
-  >
+  <button onclick="goNext()"
+    class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-blue-700">
     下一步
   </button>
 </div>
 
-<!-- =======================
-        確認頁面
-======================= -->
+<!-- 確認頁 -->
 <div id="confirmPage" class="max-w-2xl mx-auto p-5 hidden">
-  <h2 class="text-2xl font-bold mb-4 text-center">確認出賽選手</h2>
+  <h2 class="text-2xl font-bold mb-4 text-center">確認出賽名單</h2>
+
   <div id="confirmList" class="space-y-4"></div>
 
   <div class="flex gap-4 mt-6">
-    <button
-      onclick="backToEdit()"
-      class="flex-1 bg-gray-400 text-white py-3 rounded-lg text-xl font-bold hover:bg-gray-500"
-    >返回修改</button>
+    <button onclick="backToEdit()" class="flex-1 bg-gray-400 text-white py-3 rounded-lg text-xl font-bold hover:bg-gray-500">
+      返回修改
+    </button>
 
-    <button
-      onclick="submitForm()"
-      class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700"
-    >確定送出</button>
+    <button onclick="submitForm()" class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700">
+      確定送出
+    </button>
   </div>
 </div>
 
 <script>
-/* ======================
-   取得隊伍代號 from URL
-====================== */
-const urlParams = new URLSearchParams(window.location.search);
-const team = (urlParams.get("team") || "A").toUpperCase();
-document.getElementById("teamName").innerText = `目前填寫隊伍：${team} 隊`;
+/* ==============================
+   取得 URL 參數
+============================== */
+const url = new URLSearchParams(window.location.search);
+const team = (url.get("team") || "A").toUpperCase();
+const matchId = parseInt(url.get("match") || 0);
 
-/* ======================
-   Google Sheet CSV
-====================== */
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w/export?format=csv&gid=1442520714";
+/* ==============================
+   Google Sheet 來源
+============================== */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w/export?format=csv&gid=1442520714";
 
-/* ======================
-   局點設定
-====================== */
+/* ==============================
+   全域變數
+============================== */
+let players = [];       // 該隊選手名單
+let matchInfo = null;   // 本場 match 對戰隊伍
+let teamNameMap = {};   // A,B,C,D,E → 中文隊名
+let chosen = {};        // 已選擇的出場選手
+
+/* ==============================
+   局點列表
+============================== */
 const rounds = [
   { id: 1, name: "第 1 點：男雙" },
   { id: 2, name: "第 2 點：女雙" },
@@ -108,183 +93,222 @@ const rounds = [
   { id: 5, name: "第 5 點：男雙" },
 ];
 
-let players = [];
-let chosen = {};
-
-/* ======================
-   載入表單名單
-====================== */
+/* ==============================
+   載入 Google Sheet
+============================== */
 Papa.parse(CSV_URL, {
   download: true,
-  complete: function(results) {
-    const rows = results.data;
-    const teamIndex = { A: 11, B: 12, C: 13, D: 14, E: 15 }[team];
+  complete: function(res) {
+    const rows = res.data;
 
-    for (let i = 2; i < rows.length; i++) {
-      const p = rows[i]?.[teamIndex];
+    // 隊伍中文名稱：資料!B3:C7
+    for (let i = 2; i <= 6; i++) {
+      const code = rows[i]?.[1];
+      const name = rows[i]?.[2];
+      if (code && name) teamNameMap[code.trim()] = name.trim();
+    }
+
+    // 該隊選手名單：資料!L3:P14
+    const col = { A: 11, B: 12, C: 13, D: 14, E: 15 }[team];
+    for (let i = 2; i <= 13; i++) {
+      const p = rows[i]?.[col];
       if (p && p.trim()) players.push(p.trim());
     }
 
-    window.playersGlobal = players;
+    // 場次資料：資料!H3:J12
+    let matchList = [];
+    for (let i = 2; i <= 11; i++) {
+      const id = rows[i]?.[7];
+      const t1 = rows[i]?.[8];
+      const t2 = rows[i]?.[9];
+      if (id && t1 && t2) matchList.push({ id: parseInt(id), t1, t2 });
+    }
+
+    // 找本場 match
+    matchInfo = matchList.find(m => m.id === matchId);
+
+    renderMatchHeader();
     renderForm();
   }
 });
 
-/* ======================
-   產生每一局(html)
-====================== */
+/* ==============================
+   顯示本場資訊
+============================== */
+function renderMatchHeader() {
+  if (!matchInfo) return;
+
+  const name1 = teamNameMap[matchInfo.t1] || "";
+  const name2 = teamNameMap[matchInfo.t2] || "";
+
+  document.getElementById("matchHeader").innerHTML = `
+    第 ${matchId} 場比賽<br>
+    ${matchInfo.t1}（${name1}） vs ${matchInfo.t2}（${name2}）
+  `;
+
+  document.getElementById("teamName").innerText =
+    `目前填寫隊伍：${team} 隊（${teamNameMap[team]}）`;
+}
+
+/* ==============================
+   Render 表單
+============================== */
 function renderForm() {
-  const form = document.getElementById("form");
-  form.innerHTML = "";
+  const container = document.getElementById("form");
+  container.innerHTML = "";
 
   rounds.forEach(r => {
-    const div = document.createElement("div");
-    div.className = "bg-white p-5 rounded-xl shadow mb-6";
+    const card = document.createElement("div");
+    card.className = "bg-white p-5 rounded-xl shadow mb-6";
 
-    div.innerHTML = `
-      <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
+    card.innerHTML = `
+      <h2 class="text-xl font-bold mb-3">${r.name}</h2>
 
-      <label class="font-medium mb-1 block">選手 1</label>
+      <label class="font-medium">選手 1</label>
       ${dropdownHTML(r.id, 1)}
 
-      <label class="font-medium mt-4 mb-1 block">選手 2</label>
+      <label class="font-medium mt-3">選手 2</label>
       ${dropdownHTML(r.id, 2)}
 
       <button onclick="clearRound(${r.id})"
-        class="mt-4 w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-lg">
-        重新選擇
+        class="mt-4 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">
+        清除本局
       </button>
     `;
-
-    form.appendChild(div);
+    container.appendChild(card);
   });
 }
 
+/* ==============================
+   dropdown template（亮色）
+============================== */
 function dropdownHTML(roundId, slot) {
   const field = `${slot}-${roundId}`;
-
   return `
-    <el-dropdown class="w-full">
-      <button class="dropdown-button">
+    <div class="relative mt-1">
+      <button type="button" class="dropdown-btn" onclick="toggleMenu('${field}')">
         <span id="label-${field}">請選擇</span>
-        <svg viewBox="0 0 20 20" fill="currentColor" class="size-5 text-gray-300">
-          <path d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"/>
-        </svg>
+        <span>▼</span>
       </button>
 
-      <el-menu anchor="bottom start" popover class="rounded-lg bg-gray-900 w-full">
+      <div id="menu-${field}" class="dropdown-menu hidden">
         ${players.map(p => `
           <button class="dropdown-item"
-            id="opt-${field}-${p.replace(/\s+/g, '-')}"
             onclick="selectPlayer('${p}', '${field}')">
             ${p}
           </button>
         `).join("")}
-      </el-menu>
-    </el-dropdown>
+      </div>
+    </div>
   `;
 }
 
-/* ======================
-   select
-====================== */
+/* ==============================
+   Dropdown 控制
+============================== */
+function toggleMenu(field) {
+  document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.add("hidden"));
+  document.getElementById(`menu-${field}`).classList.toggle("hidden");
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".relative")) {
+    document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.add("hidden"));
+  }
+});
+
+/* ==============================
+   選擇球員
+============================== */
 function selectPlayer(name, field) {
   document.getElementById(`label-${field}`).innerText = name;
   chosen[field] = name;
   recalcDisable();
 }
 
-/* ======================
-   清除單局
-====================== */
-function clearRound(roundId) {
-  const f1 = `1-${roundId}`;
-  const f2 = `2-${roundId}`;
-  delete chosen[f1];
-  delete chosen[f2];
-  document.getElementById(`label-${f1}`).innerText = "請選擇";
-  document.getElementById(`label-${f2}`).innerText = "請選擇";
-  recalcDisable();
-}
-
-/* ======================
-   禁用規則（跨局）
-====================== */
+/* ==============================
+   禁用邏輯（跨局）
+============================== */
 function recalcDisable() {
   const used = new Set(Object.values(chosen));
 
   rounds.forEach(r => {
     ["1","2"].forEach(slot => {
-      window.playersGlobal.forEach(p => {
-        const key = `${slot}-${r.id}`;
-        const id = `opt-${key}-${p.replace(/\s+/g, "-")}`;
-        const opt = document.getElementById(id);
-        if (!opt) return;
+      players.forEach(p => {
+        const field = `${slot}-${r.id}`;
+        const item = document.querySelector(`#menu-${field} button:nth-child(${players.indexOf(p)+1})`);
+        if (!item) return;
 
-        opt.disabled = false;
-
-        if (used.has(p) && chosen[key] !== p) opt.disabled = true;
-
-        const f1 = `1-${r.id}`;
-        const f2 = `2-${r.id}`;
-
-        if (slot === "1" && chosen[f2] === p) opt.disabled = true;
-        if (slot === "2" && chosen[f1] === p) opt.disabled = true;
+        item.disabled =
+          (used.has(p) && chosen[field] !== p) ||
+          (slot === "1" && chosen[`2-${r.id}`] === p) ||
+          (slot === "2" && chosen[`1-${r.id}`] === p);
       });
     });
   });
 }
 
-/* ======================
+/* ==============================
+   清除局點
+============================== */
+function clearRound(id) {
+  delete chosen[`1-${id}`];
+  delete chosen[`2-${id}`];
+
+  document.getElementById(`label-1-${id}`).innerText = "請選擇";
+  document.getElementById(`label-2-${id}`).innerText = "請選擇";
+
+  recalcDisable();
+}
+
+/* ==============================
    下一步
-====================== */
+============================== */
 function goNext() {
   for (const r of rounds) {
-    const f1 = chosen[`1-${r.id}`];
-    const f2 = chosen[`2-${r.id}`];
-
-    if (!f1 || !f2) return alert(`${r.name} 尚未填完`);
-    if (f1 === f2) return alert(`${r.name} 不可重複`);
+    if (!chosen[`1-${r.id}`] || !chosen[`2-${r.id}`]) {
+      alert(`${r.name} 尚未填寫完成`);
+      return;
+    }
   }
 
   document.getElementById("mainPage").classList.add("hidden");
   document.getElementById("confirmPage").classList.remove("hidden");
 
-  const confirm = document.getElementById("confirmList");
-  confirm.innerHTML = "";
+  const c = document.getElementById("confirmList");
+  c.innerHTML = "";
 
   rounds.forEach(r => {
-    confirm.innerHTML += `
+    c.innerHTML += `
       <div class="bg-white p-4 rounded-lg shadow">
-        <div class="font-semibold mb-2">${r.name}</div>
-        <div>選手 1：${chosen[`1-${r.id}`]}</div>
-        <div>選手 2：${chosen[`2-${r.id}`]}</div>
+        <div class="font-bold mb-1">${r.name}</div>
+        <div>選手1：${chosen[`1-${r.id}`]}</div>
+        <div>選手2：${chosen[`2-${r.id}`]}</div>
       </div>
     `;
   });
 }
 
-/* ======================
-   返回
-====================== */
+/* ==============================
+   返回修改
+============================== */
 function backToEdit() {
   document.getElementById("confirmPage").classList.add("hidden");
   document.getElementById("mainPage").classList.remove("hidden");
 }
 
-/* ======================
+/* ==============================
    送出
-====================== */
+============================== */
 function submitForm() {
   fetch("https://script.google.com/macros/s/AKfycbwoVmkK6942tGFuOruNjRy7epAD7RtXpiLlU0LXVHtDwO_troVK4maHBR03_9d9VB-Iow/exec", {
     method: "POST",
-    body: JSON.stringify({ team, chosen })
-  })
-  .then(r => r.json())
-  .then(() => {
-    alert("送出成功！");
-    location.href = "./index.html?team=" + team;
-  });
+    body: JSON.stringify({ team, matchId, chosen }),
+  }).then(r => r.json())
+    .then(() => {
+      alert("送出成功！");
+      location.href = `./select.html?team=${team}`;
+    });
 }
 </script>
 
