@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出賽單查詢</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PapaParse：解 CSV 用 -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <style>
+        /* 移除橫向滾動，改用適應式佈局 */
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .select-wrapper select {
+                font-size: 1.125rem;
+            }
+            
+            /* 調整欄位寬度比例 */
+            .col-point {
+                width: 20%;
+            }
+            
+            .col-team {
+                width: 40%;
+            }
+            
+            /* 允許文字換行 */
+            th, td {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+<nav class="w-full bg-white shadow p-4 flex items-center justify-center">
+    <h1 class="text-2xl font-bold text-gray-800">出賽單查詢</h1>
+</nav>
+
+<div class="max-w-4xl mx-auto p-5">
+    
+    <!-- 場次選擇 -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <label class="block text-lg font-semibold mb-3">選擇場次：</label>
+        <div class="select-wrapper">
+            <select id="matchSelect" 
+                onchange="displayMatch()" 
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg">
+                <option value="">請選擇場次...</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 載入中提示 -->
+    <div id="loading" class="text-center py-8">
+        <div class="text-gray-600">載入中...</div>
+    </div>
+
+    <!-- 顯示區域 -->
+    <div id="displayArea" class="hidden">
+        
+        <!-- 單一表格，兩隊並排 -->
+        <div class="bg-white shadow-lg rounded-xl p-3 md:p-6 border-2 border-gray-200">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr>
+                        <th class="col-point px-2 md:px-6 py-3 md:py-4 text-center bg-gray-700 text-white text-sm md:text-lg font-bold border-2 border-gray-600" rowspan="2">局點</th>
+                        <th id="team1Header" class="col-team px-2 md:px-6 py-3 md:py-4 text-center bg-blue-600 text-white text-base md:text-xl font-bold border-2 border-gray-600"></th>
+                        <th id="team2Header" class="col-team px-2 md:px-6 py-3 md:py-4 text-center bg-green-600 text-white text-base md:text-xl font-bold border-2 border-gray-600"></th>
+                    </tr>
+                    <tr>
+                        <th class="px-2 md:px-6 py-2 md:py-3 text-center bg-blue-500 text-white text-xs md:text-base font-semibold border-2 border-gray-600">出賽選手</th>
+                        <th class="px-2 md:px-6 py-2 md:py-3 text-center bg-green-500 text-white text-xs md:text-base font-semibold border-2 border-gray-600">出賽選手</th>
+                    </tr>
+                </thead>
+                <tbody id="matchTable">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- 無資料提示 -->
+    <div id="noData" class="hidden text-center py-8 text-gray-600">
+        <p class="text-lg">此場次尚無出賽紀錄</p>
+    </div>
+
+</div>
+
+<script>
+const SHEET_ID = "1oaHsNay4DBBJGL6llI2Bu74yEzO8gTo7R-7qcajKyRM";
+const GID = "1883068488";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+let allRecords = [];
+let matchData = {};
+let teamNames = {};
+
+// 讀取隊伍名稱的 CSV (從原本的 gid)
+const TEAM_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1442520714`;
+
+// 先載入隊伍名稱
+fetch(TEAM_CSV_URL)
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
+        const rows = parsed.data;
+        
+        // 隊伍名稱 B3:C7
+        for (let i = 2; i <= 6; i++) {
+            const code = rows[i][1];
+            const name = rows[i][2];
+            if (code && name) teamNames[code.trim()] = name.trim();
+        }
+        
+        // 然後載入出賽紀錄
+        return fetch(CSV_URL);
+    })
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), {
+            header: true,
+            skipEmptyLines: true
+        });
+
+        allRecords = parsed.data;
+
+        // 整理資料：按場次分組
+        allRecords.forEach(record => {
+            const matchNo = record['場次'];
+            const team = record['隊伍'];
+            const point = record['局點'];
+            const player1 = record['選手1'];
+            const player2 = record['選手2'];
+
+            if (!matchNo || !team) return;
+
+            if (!matchData[matchNo]) {
+                matchData[matchNo] = {};
+            }
+
+            if (!matchData[matchNo][team]) {
+                matchData[matchNo][team] = [];
+            }
+
+            matchData[matchNo][team].push({
+                point: point,
+                player1: player1,
+                player2: player2
+            });
+        });
+
+        // 填充場次選單
+        const matchSelect = document.getElementById('matchSelect');
+        const matches = Object.keys(matchData).sort((a, b) => parseInt(a) - parseInt(b));
+
+        matches.forEach(matchNo => {
+            const teams = Object.keys(matchData[matchNo]);
+            const team1 = teams[0] || '';
+            const team2 = teams[1] || '?';
+            
+            const option = document.createElement('option');
+            option.value = matchNo;
+            option.textContent = `場次 ${matchNo} - ${team1} vs ${team2}`;
+            matchSelect.appendChild(option);
+        });
+
+        document.getElementById('loading').classList.add('hidden');
+    })
+    .catch(error => {
+        console.error('載入失敗:', error);
+        document.getElementById('loading').innerHTML = 
+            '<div class="text-red-600">載入失敗，請檢查網路連線</div>';
+    });
+
+function displayMatch() {
+    const matchNo = document.getElementById('matchSelect').value;
+    
+    if (!matchNo) {
+        document.getElementById('displayArea').classList.add('hidden');
+        document.getElementById('noData').classList.add('hidden');
+        return;
+    }
+
+    const teams = matchData[matchNo];
+    
+    if (!teams || Object.keys(teams).length === 0) {
+        document.getElementById('displayArea').classList.add('hidden');
+        document.getElementById('noData').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('noData').classList.add('hidden');
+    document.getElementById('displayArea').classList.remove('hidden');
+
+    // 取得兩個隊伍
+    const teamCodes = Object.keys(teams);
+    const team1Code = teamCodes[0];
+    const team2Code = teamCodes[1] || null;
+
+    // 設定表頭
+    const team1Name = teamNames[team1Code] || team1Code;
+    const team2Name = team2Code ? (teamNames[team2Code] || team2Code) : '等待對手';
+    
+    document.getElementById('team1Header').textContent = `${team1Code}（${team1Name}）`;
+    document.getElementById('team2Header').textContent = team2Code ? `${team2Code}（${team2Name}）` : '等待對手';
+
+    // 建立表格內容
+    const table = document.getElementById('matchTable');
+    table.innerHTML = '';
+
+    // 建立 5 個局點的對照
+    for (let point = 1; point <= 5; point++) {
+        const team1Record = teams[team1Code].find(r => parseInt(r.point) === point);
+        const team2Record = team2Code ? teams[team2Code].find(r => parseInt(r.point) === point) : null;
+
+        const team1Players = team1Record ? `${team1Record.player1} / ${team1Record.player2}` : '-';
+        const team2Players = team2Record ? `${team2Record.player1} / ${team2Record.player2}` : '-';
+
+        const pointName = ['男雙', '女雙', '勇壯', '混雙', '男雙'][point - 1];
+        const bgColor = point % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+
+        const row = `
+            <tr class="hover:bg-yellow-50 transition-colors">
+                <td class="px-2 md:px-6 py-3 md:py-4 text-center font-bold text-sm md:text-lg ${bgColor} border-2 border-gray-300">
+                    <div class="text-gray-800">第 ${point} 點</div>
+                    <div class="text-xs md:text-sm text-gray-600 font-normal mt-1">${pointName}</div>
+                </td>
+                <td class="px-2 md:px-6 py-3 md:py-4 text-center text-sm md:text-base font-medium bg-blue-50 border-2 border-gray-300">${team1Players}</td>
+                <td class="px-2 md:px-6 py-3 md:py-4 text-center text-sm md:text-base font-medium bg-green-50 border-2 border-gray-300">${team2Players}</td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    }
+}
+
+function displayTeam(teamCode, records, nameId, tableId) {
+    // 設定隊伍名稱
+    const teamName = teamNames[teamCode] || teamCode;
+    document.getElementById(nameId).textContent = `${teamCode}（${teamName}）`;
+
+    // 按局點排序
+    records.sort((a, b) => parseInt(a.point) - parseInt(b.point));
+
+    // 填充表格
+    const table = document.getElementById(tableId);
+    table.innerHTML = '';
+
+    records.forEach(record => {
+        const row = `
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-semibold">第 ${record.point} 點</td>
+                <td class="px-4 py-3">${record.player1}</td>
+                <td class="px-4 py-3">${record.player2}</td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    });
+}
+</script>
+
+</body>
+</html>
