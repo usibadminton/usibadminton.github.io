@@ -3,31 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>選擇場次</title>
+  <title>出賽單</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
 
+<!-- Navbar -->
+<nav class="w-full bg-white shadow p-4 flex items-center justify-center mb-6">
+  <h1 class="text-2xl font-bold text-gray-800">出賽單</h1>
+</nav>
+
 <div class="max-w-2xl mx-auto p-6">
-  <h1 class="text-3xl font-bold text-center mb-6">選擇場次</h1>
-  <div id="teamTitle" class="text-xl font-semibold text-center mb-4 text-blue-700"></div>
+  <div id="teamTitle" class="text-xl font-semibold text-center mb-6 text-blue-700"></div>
 
   <div id="matchList" class="space-y-4"></div>
+
+  <!-- 確認按鈕 -->
+  <button 
+    id="confirmBtn"
+    onclick="goToIndex()"
+    class="w-full mt-6 bg-green-600 text-white py-4 rounded-lg text-xl font-bold hover:bg-green-700 transition hidden"
+  >
+    填寫
+  </button>
 </div>
 
 <script>
 // -------- 取得隊伍代號 --------
 const urlParams = new URLSearchParams(window.location.search);
 const team = (urlParams.get("team") || "A").toUpperCase();
-document.getElementById("teamTitle").innerText = `${team} 隊請選擇要填寫的場次`;
 
 // -------- Google Sheet 來源 --------
-const CSV_URL = "https://docs.google.com/spreadsheets/d/1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w/export?format=csv&gid=1442520714";
+const SHEET_ID = "1oaHsNay4DBBJGL6llI2Bu74yEzO8gTo7R-7qcajKyRM";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1442520714`;
+const RECORDS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1883068488`;
 
 let matchData = [];
 let teamNameMap = {};
+let selectedMatchId = null;
+let filledMatches = new Set(); // 儲存已填寫的 (team, match) 組合
 
 // -------- 載入 Google Sheet（一次抓全部資料）--------
 Papa.parse(CSV_URL, {
@@ -42,6 +58,13 @@ Papa.parse(CSV_URL, {
       if (code && name) teamNameMap[code.trim()] = name.trim();
     }
 
+    // 更新標題顯示隊伍名稱
+    const teamName = teamNameMap[team] || team;
+    document.getElementById("teamTitle").innerHTML = `
+      <div class="text-2xl font-bold text-gray-800">${team}: ${teamName}</div>
+      <div class="text-base text-gray-600 mt-2">請選擇場次</div>
+    `;
+
     // 場次資料：資料!H3:J12
     for (let i = 2; i <= 11; i++) {
       const id = rows[i]?.[7];
@@ -55,9 +78,41 @@ Papa.parse(CSV_URL, {
       });
     }
 
-    renderMatches();
+    // 載入已填寫的紀錄
+    loadFilledRecords();
   }
 });
+
+// -------- 載入已填寫的紀錄 --------
+function loadFilledRecords() {
+  Papa.parse(RECORDS_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      // 檢查每個紀錄，如果某隊某場次有5筆紀錄（5個局點），表示已填寫完成
+      const recordCount = {};
+      
+      results.data.forEach(record => {
+        const t = record['隊伍']?.trim();
+        const m = record['場次']?.trim();
+        if (t && m) {
+          const key = `${t}-${m}`;
+          recordCount[key] = (recordCount[key] || 0) + 1;
+        }
+      });
+
+      // 如果有5筆紀錄（5個局點都填了），標記為已完成
+      Object.keys(recordCount).forEach(key => {
+        if (recordCount[key] >= 5) {
+          filledMatches.add(key);
+        }
+      });
+
+      renderMatches();
+    }
+  });
+}
 
 // -------- 渲染本隊要填的場次 --------
 function renderMatches() {
@@ -69,13 +124,27 @@ function renderMatches() {
   filtered.forEach(m => {
     const name1 = teamNameMap[m.t1] || "";
     const name2 = teamNameMap[m.t2] || "";
+    
+    // 檢查是否已填寫
+    const isFilled = filledMatches.has(`${team}-${m.id}`);
 
     const card = document.createElement("div");
-    card.className = "p-4 bg-white rounded-lg shadow border cursor-pointer hover:bg-gray-50 transition";
-    card.onclick = () => goToMatch(m.id);
+    card.id = `match-${m.id}`;
+    
+    if (isFilled) {
+      // 已填寫：灰色背景，禁用游標
+      card.className = "p-4 bg-gray-200 rounded-lg shadow border border-gray-400 opacity-60 cursor-not-allowed";
+    } else {
+      // 未填寫：正常樣式
+      card.className = "p-4 bg-white rounded-lg shadow border cursor-pointer hover:bg-gray-50 transition";
+      card.onclick = () => selectMatch(m.id);
+    }
 
     card.innerHTML = `
-      <div class="text-lg font-bold mb-1">#${m.id}　${m.t1} vs ${m.t2}</div>
+      <div class="text-lg font-bold mb-1">
+        #${m.id}　${m.t1} vs ${m.t2}
+        ${isFilled ? '<span class="text-green-600 ml-2">✓ 已完成</span>' : ''}
+      </div>
       <div class="text-gray-800">
         【${name1}】vs【${name2}】
       </div>
@@ -84,8 +153,29 @@ function renderMatches() {
   });
 }
 
-function goToMatch(matchId) {
-  location.href = `./index.html?team=${team}&match=${matchId}`;
+// -------- 選擇場次 --------
+function selectMatch(matchId) {
+  // 移除所有高亮
+  document.querySelectorAll("#matchList > div").forEach(card => {
+    card.classList.remove("bg-blue-100", "border-blue-500", "border-2");
+    card.classList.add("bg-white", "border-gray-300");
+  });
+
+  // 高亮選中的卡片
+  const selectedCard = document.getElementById(`match-${matchId}`);
+  selectedCard.classList.remove("bg-white", "border-gray-300");
+  selectedCard.classList.add("bg-blue-100", "border-blue-500", "border-2");
+
+  // 設定選中的場次並顯示按鈕
+  selectedMatchId = matchId;
+  document.getElementById("confirmBtn").classList.remove("hidden");
+}
+
+// -------- 前往填寫頁面 --------
+function goToIndex() {
+  if (selectedMatchId) {
+    location.href = `./index.html?team=${team}&match=${selectedMatchId}`;
+  }
 }
 </script>
 </body>
