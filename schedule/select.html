@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>選擇場次</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+<div class="max-w-2xl mx-auto p-6">
+  <h1 class="text-3xl font-bold text-center mb-6">選擇場次</h1>
+  <div id="teamTitle" class="text-xl font-semibold text-center mb-4 text-blue-700"></div>
+
+  <div id="matchList" class="space-y-4"></div>
+</div>
+
+<script>
+// -------- 取得隊伍代號 --------
+const urlParams = new URLSearchParams(window.location.search);
+const team = (urlParams.get("team") || "A").toUpperCase();
+document.getElementById("teamTitle").innerText = `${team} 隊請選擇要填寫的場次`;
+
+// -------- Google Sheet 來源 --------
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w/export?format=csv&gid=1442520714";
+
+let matchData = [];
+let teamNameMap = {};
+
+// -------- 載入 Google Sheet（一次抓全部資料）--------
+Papa.parse(CSV_URL, {
+  download: true,
+  complete: function(results) {
+    const rows = results.data;
+
+    // 隊伍名稱：資料!B3:C7
+    for (let i = 2; i <= 6; i++) {
+      const code = rows[i]?.[1];
+      const name = rows[i]?.[2];
+      if (code && name) teamNameMap[code.trim()] = name.trim();
+    }
+
+    // 場次資料：資料!H3:J12
+    for (let i = 2; i <= 11; i++) {
+      const id = rows[i]?.[7];
+      const t1 = rows[i]?.[8];
+      const t2 = rows[i]?.[9];
+      if (!id || !t1 || !t2) continue;
+      matchData.push({
+        id: parseInt(id),
+        t1: t1.trim(),
+        t2: t2.trim()
+      });
+    }
+
+    renderMatches();
+  }
+});
+
+// -------- 渲染本隊要填的場次 --------
+function renderMatches() {
+  const listDiv = document.getElementById("matchList");
+  listDiv.innerHTML = "";
+
+  const filtered = matchData.filter(m => m.t1 === team || m.t2 === team);
+
+  filtered.forEach(m => {
+    const name1 = teamNameMap[m.t1] || "";
+    const name2 = teamNameMap[m.t2] || "";
+
+    const card = document.createElement("div");
+    card.className = "p-4 bg-white rounded-lg shadow border cursor-pointer hover:bg-gray-50 transition";
+    card.onclick = () => goToMatch(m.id);
+
+    card.innerHTML = `
+      <div class="text-lg font-bold mb-1">#${m.id}　${m.t1} vs ${m.t2}</div>
+      <div class="text-gray-800">
+        【${name1}】vs【${name2}】
+      </div>
+    `;
+    listDiv.appendChild(card);
+  });
+}
+
+function goToMatch(matchId) {
+  location.href = `./index.html?team=${team}&match=${matchId}`;
+}
+</script>
+</body>
+</html>
