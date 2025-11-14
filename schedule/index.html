@@ -12,19 +12,37 @@
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
     <style>
-        .dropdown-menu { display: none; }
-        .dropdown-open .dropdown-menu { display: block; }
-    </style>
-
-    <script>
-    // 點擊外側時關閉所有 dropdown
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest(".dropdown-container")) {
-            document.querySelectorAll(".dropdown-container")
-                .forEach(dd => dd.classList.remove("dropdown-open"));
+        .player-card {
+            transition: all 0.2s ease;
         }
-    });
-    </script>
+        .player-card:active {
+            transform: scale(0.95);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            margin: 2rem;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
@@ -59,23 +77,42 @@
         >返回修改</button>
 
         <button 
+            id="submitBtn"
             onclick="submitForm()"
-            class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700"
+            class="flex-1 bg-green-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-green-700 transition"
         >確定送出</button>
     </div>
 </div>
+
+<!-- 選手選擇 Modal -->
+<div id="playerModal" class="modal" onclick="closeModalOnOutside(event)">
+    <div class="modal-content w-full p-6" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="modalTitle" class="text-2xl font-bold"></h3>
+            <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-3xl">&times;</button>
+        </div>
+        <div id="modalPlayerList" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+    </div>
+</div>
+
+<!-- Toast 通知 -->
+<div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-lg transition-all duration-300 opacity-0 pointer-events-none z-50">
+</div>
+
 <script>
 const params = new URLSearchParams(window.location.search);
 const team = params.get("team")?.toUpperCase() || "A";
 const matchNo = params.get("match") || "1";
 
-const SHEET_ID = "1J5Zr0Sq45Qa7zqWBx3-Pm0ae43CKos5UTtaskYH4J-w";
+const SHEET_ID = "1oaHsNay4DBBJGL6llI2Bu74yEzO8gTo7R-7qcajKyRM";
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1442520714`;
+const RECORDS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1883068488`;
 
 let players = [];
 let chosen = {};
 let teamNames = {};
 let matches = [];
+let isMatchFilled = false;
 
 const rounds = [
     { id: 1, name: "第 1 點：男雙" },
@@ -103,14 +140,20 @@ fetch(CSV_URL)
             if (code && name) teamNames[code.trim()] = name.trim();
         }
 
-        // 出賽名單
+        // 出賽名單 L2:P14
+        // Row 2 (index 1) = 隊伍名稱
+        // Row 3-14 (index 2-13) = 選手名單
+        // L欄=索引11, M欄=索引12, N欄=索引13, O欄=索引14, P欄=索引15
         const teamIdx = { A:11, B:12, C:13, D:14, E:15 }[team];
 
-        for (let i=2; i<rows.length; i++) {
+        // 從 index 2 開始讀取選手（對應 spreadsheet 的 row 3）
+        for (let i=2; i<=13; i++) {  // row 3-14 in spreadsheet
             const p = rows[i][teamIdx];
-            if (p && p.trim()) players.push(p.trim());
+            if (p && p.trim()) {
+                players.push(p.trim());
+            }
         }
-
+  
         // 場次 H3:J12
         for (let i=2; i<=11; i++) {
             matches.push({
@@ -120,9 +163,69 @@ fetch(CSV_URL)
             });
         }
 
-        renderMatchInfo();
-        renderForm();
+        // 檢查是否已填寫
+        checkIfMatchFilled();
+    })
+    .catch(error => {
+        console.error('載入失敗:', error);
+        alert('載入資料失敗，請重新整理頁面');
     });
+
+// 檢查場次是否已填寫
+function checkIfMatchFilled() {
+    fetch(RECORDS_URL)
+        .then(res => res.text())
+        .then(csvText => {
+            const parsed = Papa.parse(csvText.trim(), {
+                header: true,
+                skipEmptyLines: true
+            });
+
+            // 計算此隊伍此場次的紀錄數
+            let recordCount = 0;
+            parsed.data.forEach(record => {
+                const t = record['隊伍']?.trim();
+                const m = record['場次']?.trim();
+                if (t === team && m === matchNo) {
+                    recordCount++;
+                }
+            });
+
+            // 如果有5筆紀錄，表示已完成
+            if (recordCount >= 5) {
+                isMatchFilled = true;
+                showFilledWarning();
+            } else {
+                renderMatchInfo();
+                renderForm();
+            }
+        })
+        .catch(error => {
+            console.error('檢查紀錄失敗:', error);
+            // 即使檢查失敗也繼續顯示表單
+            renderMatchInfo();
+            renderForm();
+        });
+}
+
+// 顯示已填寫警告
+function showFilledWarning() {
+    document.getElementById('mainPage').innerHTML = `
+        <div class="bg-yellow-100 border-2 border-yellow-500 rounded-lg p-6 text-center">
+            <div class="text-6xl mb-4">⚠️</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">此場次已完成填寫</h2>
+            <p class="text-lg text-gray-700 mb-6">
+                ${team} 隊 - 場次 ${matchNo} 的出賽單已經提交完成
+            </p>
+            <button 
+                onclick="location.href='./select.html?team=${team}'"
+                class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-bold hover:bg-blue-700 transition"
+            >
+                返回選擇場次
+            </button>
+        </div>
+    `;
+}
 
 function renderMatchInfo() {
     const m = matches.find(m => m.no == matchNo);
@@ -139,25 +242,92 @@ function renderMatchInfo() {
     `;
 }
 
-// 建 dropdown
-function dropdownHTML(rid, slot) {
+// 建立選手選擇按鈕（簡潔版）
+function playerSelectHTML(rid, slot, label) {
     const f = `${slot}-${rid}`;
     return `
-    <div class="dropdown-container relative mt-1">
-        <button onclick="toggleMenu('${f}')" 
-            class="w-full flex justify-between items-center bg-white border border-gray-300 rounded-lg px-4 py-2">
-            <span id="label-${f}">請選擇</span>
-            <svg class="h-4 w-4 opacity-60" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7"/></svg>
+    <div class="mt-2">
+        <button 
+            onclick="openPlayerModal('${f}', '${label}')"
+            class="w-full p-4 border-2 border-gray-300 rounded-lg text-left font-medium transition-all hover:border-blue-400 hover:bg-blue-50 flex justify-between items-center"
+        >
+            <span id="selected-${f}" class="text-gray-400">點擊選擇選手</span>
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
         </button>
+    </div>
+    `;
+}
 
-        <div id="menu-${f}" 
-            class="dropdown-menu absolute left-0 z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
-            ${players.map(p => `
-                <button onclick="selectPlayer('${p}','${f}')" 
-                    class="px-4 py-2 w-full text-left text-sm hover:bg-gray-100">${p}</button>
-            `).join("")}
-        </div>
-    </div>`;
+let currentField = null;
+
+// 打開選手選擇 Modal
+function openPlayerModal(field, label) {
+    currentField = field;
+    document.getElementById('modalTitle').textContent = label;
+    
+    const modalList = document.getElementById('modalPlayerList');
+    modalList.innerHTML = '';
+    
+    // 取得已使用的選手
+    const used = new Set(Object.values(chosen));
+    
+    // 取得當前局的另一個位置
+    const [slot, rid] = field.split('-');
+    const otherSlot = slot === '1' ? '2' : '1';
+    const otherField = `${otherSlot}-${rid}`;
+    const otherPlayer = chosen[otherField];
+    
+    players.forEach(p => {
+        const isDisabled = (used.has(p) && chosen[field] !== p) || p === otherPlayer;
+        const isSelected = chosen[field] === p;
+        
+        const card = document.createElement('button');
+        card.className = `p-4 border-2 rounded-lg text-center font-medium transition-all ${
+            isDisabled ? 'opacity-50 cursor-not-allowed border-gray-300 bg-gray-100' :
+            isSelected ? 'border-blue-500 bg-blue-100' :
+            'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+        }`;
+        card.textContent = p;
+        card.disabled = isDisabled;
+        
+        if (!isDisabled) {
+            card.onclick = () => selectPlayerFromModal(p);
+        }
+        
+        modalList.appendChild(card);
+    });
+    
+    document.getElementById('playerModal').classList.add('active');
+}
+
+// 關閉 Modal
+function closeModal() {
+    document.getElementById('playerModal').classList.remove('active');
+    currentField = null;
+}
+
+function closeModalOnOutside(event) {
+    if (event.target.id === 'playerModal') {
+        closeModal();
+    }
+}
+
+// 從 Modal 選擇選手
+function selectPlayerFromModal(name) {
+    if (currentField) {
+        chosen[currentField] = name;
+        
+        // 更新按鈕顯示
+        const selectedSpan = document.getElementById(`selected-${currentField}`);
+        selectedSpan.textContent = `✓ ${name}`;
+        selectedSpan.classList.remove('text-gray-400');
+        selectedSpan.classList.add('text-blue-700', 'font-bold');
+        
+        closeModal();
+        recalcDisable();
+    }
 }
 
 function renderForm() {
@@ -166,76 +336,52 @@ function renderForm() {
 
     rounds.forEach(r => {
         form.innerHTML += `
-            <div class="bg-white rounded-xl shadow p-5 border mb-6">
-                <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
+            <div class="bg-white rounded-xl shadow p-5 border mb-4">
+                <h2 class="text-xl font-semibold mb-3">${r.name}</h2>
 
-                <label class="font-medium">選手 1</label>
-                ${dropdownHTML(r.id,1)}
+                <div class="mb-3">
+                    <label class="font-medium block mb-1">選手 1</label>
+                    ${playerSelectHTML(r.id, 1, `${r.name} - 選手 1`)}
+                </div>
 
-                <label class="font-medium mt-4">選手 2</label>
-                ${dropdownHTML(r.id,2)}
+                <div class="mb-3">
+                    <label class="font-medium block mb-1">選手 2</label>
+                    ${playerSelectHTML(r.id, 2, `${r.name} - 選手 2`)}
+                </div>
 
                 <button onclick="clearRound(${r.id})"
-                    class="w-full mt-4 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg">
-                    重新選擇
+                    class="w-full mt-2 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg text-sm font-medium">
+                    重選
                 </button>
             </div>`;
     });
 }
 
-function toggleMenu(field) {
-    document.querySelectorAll(".dropdown-container").forEach(dd => dd.classList.remove("dropdown-open"));
-    document.getElementById(`menu-${field}`).parentElement.classList.toggle("dropdown-open");
-}
 
-function selectPlayer(name, field) {
-    document.getElementById(`label-${field}`).innerText = name;
-    chosen[field] = name;
 
-    document.getElementById(`menu-${field}`).parentElement.classList.remove("dropdown-open");
-
-    recalcDisable();
-}
-
-// 禁止兼點
+// 禁止兼點（簡化版，modal中處理）
 function recalcDisable() {
-    const used = new Set(Object.values(chosen));
-
-    rounds.forEach(r => {
-        const f1 = `1-${r.id}`;
-        const f2 = `2-${r.id}`;
-
-        players.forEach(p => {
-            const btn1 = document.querySelector(`#menu-1-${r.id} button[onclick="selectPlayer('${p}','1-${r.id}')"]`);
-            const btn2 = document.querySelector(`#menu-2-${r.id} button[onclick="selectPlayer('${p}','2-${r.id}')"]`);
-
-            if (btn1) {
-                btn1.disabled = false;
-                btn1.classList.remove("opacity-40");
-
-                if (used.has(p) && chosen[f1] !== p) btn1.disabled = true;
-                if (chosen[f2] === p) btn1.disabled = true;
-                if (btn1.disabled) btn1.classList.add("opacity-40");
-            }
-
-            if (btn2) {
-                btn2.disabled = false;
-                btn2.classList.remove("opacity-40");
-
-                if (used.has(p) && chosen[f2] !== p) btn2.disabled = true;
-                if (chosen[f1] === p) btn2.disabled = true;
-                if (btn2.disabled) btn2.classList.add("opacity-40");
-            }
-        });
-    });
+    // Modal會自動處理禁用邏輯，這裡只需要確保狀態正確
 }
 
 function clearRound(id) {
     delete chosen[`1-${id}`];
     delete chosen[`2-${id}`];
 
-    document.getElementById(`label-1-${id}`).innerText = "請選擇";
-    document.getElementById(`label-2-${id}`).innerText = "請選擇";
+    // 重置顯示
+    const selected1 = document.getElementById(`selected-1-${id}`);
+    const selected2 = document.getElementById(`selected-2-${id}`);
+    
+    if (selected1) {
+        selected1.textContent = '點擊選擇選手';
+        selected1.classList.remove('text-blue-700', 'font-bold');
+        selected1.classList.add('text-gray-400');
+    }
+    if (selected2) {
+        selected2.textContent = '點擊選擇選手';
+        selected2.classList.remove('text-blue-700', 'font-bold');
+        selected2.classList.add('text-gray-400');
+    }
 
     recalcDisable();
 }
@@ -256,10 +402,17 @@ function goNext() {
 
     rounds.forEach(r => {
         list.innerHTML += `
-            <div class="bg-white p-4 border rounded-lg shadow">
-                <div class="font-semibold mb-2">${r.name}</div>
-                <div>選手 1：${chosen[`1-${r.id}`]}</div>
-                <div>選手 2：${chosen[`2-${r.id}`]}</div>
+            <div class="bg-white p-4 border-2 border-gray-300 rounded-lg shadow-sm">
+                <div class="font-bold text-lg mb-3 text-gray-800">${r.name}</div>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 bg-blue-50 border-2 border-blue-300 rounded-lg p-3 text-center">
+                        <div class="font-semibold text-blue-800">${chosen[`1-${r.id}`]}</div>
+                    </div>
+                    <div class="text-gray-400 font-bold">/</div>
+                    <div class="flex-1 bg-blue-50 border-2 border-blue-300 rounded-lg p-3 text-center">
+                        <div class="font-semibold text-blue-800">${chosen[`2-${r.id}`]}</div>
+                    </div>
+                </div>
             </div>
         `;
     });
@@ -270,23 +423,112 @@ function backToEdit() {
     document.getElementById("mainPage").classList.remove("hidden");
 }
 
+/* ======================================================
+    Toast 通知函數
+====================================================== */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    
+    // 設定顏色
+    toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-lg transition-all duration-300 z-50';
+    
+    if (type === 'success') {
+        toast.classList.add('bg-green-600');
+    } else if (type === 'error') {
+        toast.classList.add('bg-red-600');
+    } else if (type === 'loading') {
+        toast.classList.add('bg-blue-600');
+    } else {
+        toast.classList.add('bg-gray-600');
+    }
+    
+    // 顯示
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.pointerEvents = 'auto';
+    }, 10);
+    
+    // 如果不是 loading，3秒後自動隱藏
+    if (type !== 'loading') {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.pointerEvents = 'none';
+        }, 3000);
+    }
+}
+
+function hideToast() {
+    const toast = document.getElementById('toast');
+    toast.style.opacity = '0';
+    toast.style.pointerEvents = 'none';
+}
+
+/* ======================================================
+    ✨ 使用 POST 送出到 Google Apps Script
+====================================================== */
+let isSubmitting = false;
+
 function submitForm() {
+    // 防止重複送出
+    if (isSubmitting) {
+        showToast('正在處理中，請稍候...', 'loading');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // 設定為送出中
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    submitBtn.textContent = '送出中...';
+    
+    showToast('正在送出資料...', 'loading');
+    
     const results = rounds.map(r => ({
-        point: r.id,
         p1: chosen[`1-${r.id}`],
         p2: chosen[`2-${r.id}`]
     }));
 
-    fetch("https://script.google.com/macros/s/AKfycbwoVmkK6942tGFuOruNjRy7epAD7RtXpiLlU0LXVHtDwO_troVK4maHBR03_9d9VB-Iow/exec", {
+    const payload = {
+        team: team,
+        match: matchNo,
+        data: results
+    };
+
+    const url = "https://script.google.com/macros/s/AKfycbxp8vgtoL0nw7XxVZg933M9bMRlTRLYZwzH6da3rEfPa3vP9KxPJUPkJUfLNzD8XeLnvA/exec";
+
+    // 使用 POST 方法
+    fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team, match: matchNo, results })
+        body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(() => {
-        alert("送出成功！");
-        location.href = `./index.html?team=${team}&match=${matchNo}`;
-    });
+        .then(response => response.json())
+        .then(data => {
+            hideToast();
+            if (data.status === "success") {
+                showToast('✓ 送出成功！', 'success');
+                setTimeout(() => {
+                    location.href = `./select.html?team=${team}`;
+                }, 1500);
+            } else {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitBtn.textContent = '確定送出';
+                showToast('✗ 送出失敗：' + (data.message || '未知錯誤'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            hideToast();
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitBtn.textContent = '確定送出';
+            showToast('✗ 送出失敗，請檢查網路連線', 'error');
+        });
 }
 </script>
 
