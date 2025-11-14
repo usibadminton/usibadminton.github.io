@@ -1,82 +1,103 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>出賽單</title>
-  <link rel="stylesheet" href="../assets/css/style.css" />
-  <style>
-    .form-container {
-      max-width: 700px;
-      margin: 40px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 20px;
-      background: #1c7d32;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #166427;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裁判記錄單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-  <header class="header">
-    <h1>出賽單</h1>
-  </header>
+<body class="bg-gray-100">
 
-  <main>
-    <div class="form-container">
+    <div class="max-w-3xl mx-auto p-4">
+        
+        <h1 class="text-3xl font-bold mb-6 text-center">裁判記錄單</h1>
 
-      <div class="form-group">
-        <label>場次編號</label>
-        <input type="text" placeholder="例如：Match 1" />
-      </div>
+        <div id="form"></div>
 
-      <div class="form-group">
-        <label>隊伍 A</label>
-        <input type="text" placeholder="輸入隊伍名稱" />
-      </div>
-
-      <div class="form-group">
-        <label>隊伍 B</label>
-        <input type="text" placeholder="輸入隊伍名稱" />
-      </div>
-
-      <div class="form-group">
-        <label>比賽時間</label>
-        <input type="text" placeholder="" />
-      </div>
-
-      <button>提交（預留）</button>
+        <button 
+            onclick="submitForm()"
+            class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-xl font-bold hover:bg-blue-700"
+        >
+            送出表單
+        </button>
 
     </div>
-  </main>
+
+<script>
+/* 可後續用 Google Sheet 自動載入 */
+const players = [
+    "黃雨潔","林羿聞","陳建穎","彭政軒",
+    "池任遠","詹明哲","胡雅宜","翁翔郁",
+    "鐘志濠","張學瑋"
+];
+
+const rounds = [
+    { name: "第 1 點：男雙", id: 1 },
+    { name: "第 2 點：女雙", id: 2 },
+    { name: "第 3 點：勇壯", id: 3 },
+    { name: "第 4 點：混雙", id: 4 },
+    { name: "第 5 點：男雙", id: 5 },
+];
+
+const formDiv = document.getElementById("form");
+
+/* 動態產生卡片 */
+rounds.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-xl shadow p-5 mb-5";
+
+    card.innerHTML = `
+        <h2 class="text-xl font-semibold mb-4">${r.name}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div>
+                <label class="block font-medium mb-1">隊伍 X 選手 1</label>
+                <select id="x1-${r.id}" class="w-full p-2 border rounded-lg">
+                    <option value="">--請選擇--</option>
+                    ${players.map(p => `<option>${p}</option>`)}
+                </select>
+
+                <label class="block font-medium mt-3 mb-1">隊伍 X 選手 2</label>
+                <select id="x2-${r.id}" class="w-full p-2 border rounded-lg">
+                    <option value="">--請選擇--</option>
+                    ${players.map(p => `<option>${p}</option>`)}
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-1">隊伍 Y 選手 1</label>
+                <select id="y1-${r.id}" class="w-full p-2 border rounded-lg">
+                    <option value="">--請選擇--</option>
+                    ${players.map(p => `<option>${p}</option>`)}
+                </select>
+
+                <label class="block font-medium mt-3 mb-1">隊伍 Y 選手 2</label>
+                <select id="y2-${r.id}" class="w-full p-2 border rounded-lg">
+                    <option value="">--請選擇--</option>
+                    ${players.map(p => `<option>${p}</option>`)}
+                </select>
+            </div>
+
+        </div>
+    `;
+
+    formDiv.appendChild(card);
+});
+
+function submitForm() {
+    const result = rounds.map(r => ({
+        point: r.id,
+        x1: document.getElementById(`x1-${r.id}`).value,
+        x2: document.getElementById(`x2-${r.id}`).value,
+        y1: document.getElementById(`y1-${r.id}`).value,
+        y2: document.getElementById(`y2-${r.id}`).value,
+    }));
+
+    alert(JSON.stringify(result, null, 2));
+}
+</script>
 
 </body>
 </html>
