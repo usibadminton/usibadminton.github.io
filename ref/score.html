@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比賽成績查詢</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<nav class="w-full bg-purple-600 shadow p-4">
+    <h1 class="text-2xl font-bold text-white text-center">比賽成績查詢</h1>
+</nav>
+
+<div class="max-w-6xl mx-auto p-5">
+    
+    <!-- 載入中提示 -->
+    <div id="loading" class="text-center py-8 bg-white rounded-lg shadow">
+        <div class="text-gray-600">載入成績資料中...</div>
+    </div>
+
+    <!-- 成績顯示 -->
+    <div id="scoresContainer" class="hidden">
+        
+        <!-- 標籤頁切換 -->
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="flex border-b">
+                <button id="tabDetails" onclick="switchTab('details')" 
+                    class="flex-1 px-6 py-4 text-lg font-semibold text-purple-600 border-b-2 border-purple-600 focus:outline-none">
+                    各局詳細分數
+                </button>
+                <button id="tabSummary" onclick="switchTab('summary')" 
+                    class="flex-1 px-6 py-4 text-lg font-semibold text-gray-500 hover:text-purple-600 focus:outline-none">
+                    場次總計
+                </button>
+                <button id="tabResults" onclick="switchTab('results')" 
+                    class="hidden flex-1 px-6 py-4 text-lg font-semibold text-gray-500 hover:text-purple-600 focus:outline-none">
+                    總成績
+                </button>
+            </div>
+            
+            <!-- 篩選器 -->
+            <div id="filterSection" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="detailsFilters">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">選擇場次</label>
+                        <select id="matchFilter" onchange="onMatchFilterChange()" 
+                            class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:outline-none">
+                            <option value="">全部場次</option>
+                        </select>
+                    </div>
+                    <div id="detailsTeamFilter">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">選擇隊伍</label>
+                        <select id="teamFilter" onchange="onTeamFilterChange()" 
+                            class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:outline-none">
+                            <option value="">全部隊伍</option>
+                        </select>
+                    </div>
+                    <div id="summaryTeamFilter" class="hidden md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">選擇隊伍</label>
+                        <select id="summaryTeamSelect" onchange="onSummaryTeamFilterChange()" 
+                            class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:outline-none">
+                            <option value="">全部隊伍</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成績列表 -->
+        <div id="scoresList" class="space-y-4">
+            <!-- 成績卡片將動態插入這裡 -->
+        </div>
+
+        <!-- 無資料提示 -->
+        <div id="noData" class="hidden bg-white shadow rounded-lg p-8 text-center text-gray-500">
+            沒有符合條件的成績記錄
+        </div>
+    </div>
+
+</div>
+
+<script>
+const SHEET_ID = "1oaHsNay4DBBJGL6llI2Bu74yEzO8gTo7R-7qcajKyRM";
+const TEAM_GID = "1442520714";
+const SCORES_GID = "1011299643";
+
+const pointNames = ['男雙', '女雙', '勇壯', '混雙', '男雙'];
+let teamNames = {};
+let allScores = [];
+let filteredScores = [];
+let currentTab = 'details';
+
+// 載入隊伍名稱
+const TEAM_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${TEAM_GID}`;
+
+fetch(TEAM_CSV_URL)
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
+        const rows = parsed.data;
+        
+        // 隊伍名稱 B3:C7
+        for (let i = 2; i <= 6; i++) {
+            const code = rows[i] && rows[i][1];
+            const name = rows[i] && rows[i][2];
+            if (code && name) teamNames[code.trim()] = name.trim();
+        }
+        
+        console.log('隊伍名稱:', teamNames);
+        
+        // 載入成績資料
+        return fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SCORES_GID}`);
+    })
+    .then(res => res.text())
+    .then(csvText => {
+        const parsed = Papa.parse(csvText.trim(), {
+            header: true,
+            skipEmptyLines: true
+        });
+        
+        allScores = parsed.data.filter(record => record['場次'] && record['局點']);
+        console.log('成績資料:', allScores);
+        
+        // 填充篩選選項
+        populateFilters();
+        
+        // 檢查是否所有比賽都完成
+        checkAllGamesFinished();
+        
+        // 顯示所有成績
+        filteredScores = [...allScores];
+        displayScores();
+        
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('scoresContainer').classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('載入失敗:', error);
+        document.getElementById('loading').innerHTML = 
+            '<div class="text-red-600 p-4">載入失敗：' + error.message + '</div>';
+    });
+
+// 檢查是否所有比賽都完成
+function checkAllGamesFinished() {
+    // 統計每場比賽的局點數
+    const matchPointCounts = {};
+    
+    allScores.forEach(score => {
+        const matchNo = score['場次'];
+        if (!matchPointCounts[matchNo]) {
+            matchPointCounts[matchNo] = 0;
+        }
+        matchPointCounts[matchNo]++;
+    });
+    
+    // 統計完成的場次數（有5個局點的場次）
+    const completedMatches = Object.values(matchPointCounts).filter(count => count === 5).length;
+    
+    // 檢查是否有 URL 參數 ?result=true
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceShowResults = urlParams.get('result') === 'true';
+    
+    // 如果有10場比賽都完成（每場5個局點）或有 backdoor 參數，顯示總成績標籤
+    if (completedMatches === 10 || forceShowResults) {
+        const tabResults = document.getElementById('tabResults');
+        tabResults.classList.remove('hidden');
+    }
+}
+
+// 填充篩選選項
+function populateFilters() {
+    // 取得所有場次
+    const matches = [...new Set(allScores.map(s => s['場次']))].sort((a, b) => parseInt(a) - parseInt(b));
+    const matchFilter = document.getElementById('matchFilter');
+    matches.forEach(matchNo => {
+        const option = document.createElement('option');
+        option.value = matchNo;
+        option.textContent = `場次 ${matchNo}`;
+        matchFilter.appendChild(option);
+    });
+    
+    // 取得所有隊伍
+    const teams = new Set();
+    allScores.forEach(s => {
+        teams.add(s['隊伍1']);
+        teams.add(s['隊伍2']);
+    });
+    const sortedTeams = [...teams].sort();
+    
+    // 填充詳細頁面的隊伍篩選
+    const teamFilter = document.getElementById('teamFilter');
+    sortedTeams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        const teamName = teamNames[team] || team;
+        option.textContent = `${team}（${teamName}）`;
+        teamFilter.appendChild(option);
+    });
+    
+    // 填充總結頁面的隊伍篩選
+    const summaryTeamSelect = document.getElementById('summaryTeamSelect');
+    sortedTeams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        const teamName = teamNames[team] || team;
+        option.textContent = `${team}（${teamName}）`;
+        summaryTeamSelect.appendChild(option);
+    });
+}
+
+// 切換標籤頁
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // 更新標籤按鈕樣式
+    const tabDetails = document.getElementById('tabDetails');
+    const tabSummary = document.getElementById('tabSummary');
+    const tabResults = document.getElementById('tabResults');
+    const detailsFilters = document.getElementById('detailsFilters');
+    const detailsTeamFilter = document.getElementById('detailsTeamFilter');
+    const summaryTeamFilter = document.getElementById('summaryTeamFilter');
+    
+    // 重置所有標籤樣式
+    tabDetails.className = 'flex-1 px-6 py-4 text-lg font-semibold text-gray-500 hover:text-purple-600 focus:outline-none';
+    tabSummary.className = 'flex-1 px-6 py-4 text-lg font-semibold text-gray-500 hover:text-purple-600 focus:outline-none';
+    
+    // 保留 tabResults 的 hidden 狀態
+    const isResultsHidden = tabResults.classList.contains('hidden');
+    tabResults.className = 'flex-1 px-6 py-4 text-lg font-semibold text-gray-500 hover:text-purple-600 focus:outline-none';
+    if (isResultsHidden) {
+        tabResults.classList.add('hidden');
+    }
+    
+    if (tab === 'details') {
+        tabDetails.className = 'flex-1 px-6 py-4 text-lg font-semibold text-purple-600 border-b-2 border-purple-600 focus:outline-none';
+        
+        // 顯示詳細頁面的篩選器
+        detailsFilters.classList.remove('hidden');
+        detailsTeamFilter.classList.remove('hidden');
+        summaryTeamFilter.classList.add('hidden');
+    } else if (tab === 'summary') {
+        tabSummary.className = 'flex-1 px-6 py-4 text-lg font-semibold text-purple-600 border-b-2 border-purple-600 focus:outline-none';
+        
+        // 顯示總結頁面的篩選器
+        detailsFilters.classList.add('hidden');
+        detailsTeamFilter.classList.add('hidden');
+        summaryTeamFilter.classList.remove('hidden');
+    } else if (tab === 'results') {
+        if (isResultsHidden) {
+            tabResults.classList.add('hidden');
+        }
+        tabResults.className = 'flex-1 px-6 py-4 text-lg font-semibold text-purple-600 border-b-2 border-purple-600 focus:outline-none';
+        if (isResultsHidden) {
+            tabResults.classList.add('hidden');
+        }
+        
+        // 隱藏所有篩選器
+        detailsFilters.classList.add('hidden');
+        detailsTeamFilter.classList.add('hidden');
+        summaryTeamFilter.classList.add('hidden');
+    }
+    
+    filterScores();
+}
+
+// 當選擇場次時，清除隊伍篩選
+function onMatchFilterChange() {
+    const matchFilter = document.getElementById('matchFilter');
+    const teamFilter = document.getElementById('teamFilter');
+    
+    if (matchFilter.value) {
+        teamFilter.value = '';
+    }
+    
+    filterScores();
+}
+
+// 當選擇隊伍時，清除場次篩選
+function onTeamFilterChange() {
+    const matchFilter = document.getElementById('matchFilter');
+    const teamFilter = document.getElementById('teamFilter');
+    
+    if (teamFilter.value) {
+        matchFilter.value = '';
+    }
+    
+    filterScores();
+}
+
+// 當在總結頁面選擇隊伍時
+function onSummaryTeamFilterChange() {
+    filterScores();
+}
+
+// 篩選成績
+function filterScores() {
+    const matchNo = document.getElementById('matchFilter').value;
+    const team = document.getElementById('teamFilter').value;
+    
+    filteredScores = allScores.filter(score => {
+        let matchMatch = !matchNo || score['場次'] === matchNo;
+        let teamMatch = !team || score['隊伍1'] === team || score['隊伍2'] === team;
+        return matchMatch && teamMatch;
+    });
+    
+    if (currentTab === 'summary') {
+        displaySummary();
+    } else if (currentTab === 'results') {
+        displayResults();
+    } else {
+        displayScores();
+    }
+}
+
+// 顯示成績
+function displayScores() {
+    const scoresList = document.getElementById('scoresList');
+    const noData = document.getElementById('noData');
+    
+    if (filteredScores.length === 0) {
+        scoresList.innerHTML = '';
+        noData.classList.remove('hidden');
+        return;
+    }
+    
+    noData.classList.add('hidden');
+    
+    // 按場次分組
+    const matchGroups = {};
+    filteredScores.forEach(score => {
+        const matchNo = score['場次'];
+        if (!matchGroups[matchNo]) {
+            matchGroups[matchNo] = [];
+        }
+        matchGroups[matchNo].push(score);
+    });
+    
+    // 排序場次
+    const sortedMatchNos = Object.keys(matchGroups).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    scoresList.innerHTML = sortedMatchNos.map(matchNo => {
+        // 排序該場次的局點
+        const matchScores = matchGroups[matchNo].sort((a, b) => parseInt(a['局點']) - parseInt(b['局點']));
+        
+        // 取得隊伍資訊
+        const firstScore = matchScores[0];
+        const team1 = firstScore['隊伍1'];
+        const team2 = firstScore['隊伍2'];
+        const team1Name = teamNames[team1] || team1;
+        const team2Name = teamNames[team2] || team2;
+        
+        // 場次顏色
+        const matchColors = [
+            'border-red-500', 'border-orange-500', 'border-amber-500', 'border-yellow-500',
+            'border-lime-500', 'border-green-500', 'border-emerald-500', 'border-teal-500',
+            'border-cyan-500', 'border-sky-500', 'border-blue-500', 'border-indigo-500',
+            'border-violet-500', 'border-purple-500', 'border-fuchsia-500'
+        ];
+        const matchIndex = parseInt(matchNo) - 1;
+        const matchBorderClass = matchColors[matchIndex] || 'border-gray-500';
+        
+        // 生成該場次的所有局點
+        const pointsHTML = matchScores.map(score => {
+            const pointNo = score['局點'];
+            const pointName = score['局點名稱'] || pointNames[parseInt(pointNo) - 1];
+            const score1 = score['隊伍1分數'];
+            const score2 = score['隊伍2分數'];
+            const winner = score['獲勝方'];
+            const timestamp = score['時間戳記'];
+            
+            // 判斷獲勝方顏色
+            const team1Win = winner === team1;
+            const team2Win = winner === team2;
+            
+            // 依據局點類型選擇顏色
+            const pointColors = [
+                'bg-blue-100 text-blue-700',      // 第1點 - 男雙
+                'bg-pink-100 text-pink-700',      // 第2點 - 女雙
+                'bg-orange-100 text-orange-700',  // 第3點 - 勇壯
+                'bg-purple-100 text-purple-700',  // 第4點 - 混雙
+                'bg-blue-100 text-blue-700'       // 第5點 - 男雙
+            ];
+            const pointColorClass = pointColors[parseInt(pointNo) - 1] || 'bg-gray-100 text-gray-700';
+            
+            return `
+                <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <h4 class="text-lg font-bold text-gray-800">第 ${pointNo} 點</h4>
+                            <span class="px-3 py-1 ${pointColorClass} font-bold text-base rounded-full">${pointName}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2 md:mt-0">
+                            ${new Date(timestamp).toLocaleString('zh-TW', { 
+                                month: '2-digit', 
+                                day: '2-digit', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3 items-center">
+                        <div class="text-center ${team1Win ? 'bg-blue-50 border-2 border-blue-500' : 'bg-white'} rounded-lg p-3">
+                            <div class="text-3xl font-bold ${team1Win ? 'text-blue-600' : 'text-gray-700'}">${score1}</div>
+                        </div>
+                        
+                        <div class="text-center text-2xl font-bold text-gray-400">:</div>
+                        
+                        <div class="text-center ${team2Win ? 'bg-green-50 border-2 border-green-500' : 'bg-white'} rounded-lg p-3">
+                            <div class="text-3xl font-bold ${team2Win ? 'text-green-600' : 'text-gray-700'}">${score2}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        return `
+            <div class="bg-white shadow rounded-lg p-6 border-l-4 ${matchBorderClass} mb-6">
+                <div class="mb-4 pb-4 border-b-2">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3 text-center">場次 ${matchNo}</h3>
+                    <div class="grid grid-cols-3 gap-4 items-center">
+                        <div class="text-center">
+                            <div class="font-bold text-xl text-gray-800">${team1}</div>
+                            <div class="text-sm text-gray-600">${team1Name}</div>
+                        </div>
+                        <span class="text-xl text-gray-400 text-center">vs</span>
+                        <div class="text-center">
+                            <div class="font-bold text-xl text-gray-800">${team2}</div>
+                            <div class="text-sm text-gray-600">${team2Name}</div>
+                        </div>
+                    </div>
+                </div>
+                ${pointsHTML}
+            </div>
+        `;
+    }).join('');
+}
+
+// 顯示總計 - 場次總得分和獲勝局點
+function displaySummary() {
+    const scoresList = document.getElementById('scoresList');
+    const noData = document.getElementById('noData');
+    const selectedTeam = document.getElementById('summaryTeamSelect').value;
+    
+    if (allScores.length === 0) {
+        scoresList.innerHTML = '';
+        noData.classList.remove('hidden');
+        return;
+    }
+    
+    // 按場次分組統計
+    const matchSummaries = {};
+    
+    allScores.forEach(score => {
+        const matchNo = score['場次'];
+        const team1 = score['隊伍1'];
+        const team2 = score['隊伍2'];
+        const score1 = parseInt(score['隊伍1分數']) || 0;
+        const score2 = parseInt(score['隊伍2分數']) || 0;
+        const winner = score['獲勝方'];
+        
+        // 如果選擇了隊伍，只顯示包含該隊伍的場次
+        if (selectedTeam && team1 !== selectedTeam && team2 !== selectedTeam) {
+            return;
+        }
+        
+        if (!matchSummaries[matchNo]) {
+            matchSummaries[matchNo] = {
+                team1: team1,
+                team2: team2,
+                team1TotalScore: 0,
+                team2TotalScore: 0,
+                team1Wins: 0,
+                team2Wins: 0
+            };
+        }
+        
+        matchSummaries[matchNo].team1TotalScore += score1;
+        matchSummaries[matchNo].team2TotalScore += score2;
+        
+        if (winner === team1) {
+            matchSummaries[matchNo].team1Wins++;
+        } else if (winner === team2) {
+            matchSummaries[matchNo].team2Wins++;
+        }
+    });
+    
+    // 排序場次
+    const sortedMatches = Object.keys(matchSummaries).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    if (sortedMatches.length === 0) {
+        scoresList.innerHTML = '';
+        noData.classList.remove('hidden');
+        return;
+    }
+    
+    noData.classList.add('hidden');
+    
+    scoresList.innerHTML = `
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">場次總結</h2>
+        </div>
+        
+        <div class="space-y-4">
+            ${sortedMatches.map(matchNo => {
+                const summary = matchSummaries[matchNo];
+                
+                // 如果選擇了隊伍，將該隊伍放在左側
+                let leftTeam, rightTeam, leftTeamName, rightTeamName;
+                let leftTotalScore, rightTotalScore, leftWins, rightWins;
+                let leftIsSelected = false;
+                
+                if (selectedTeam) {
+                    if (summary.team1 === selectedTeam) {
+                        leftTeam = summary.team1;
+                        rightTeam = summary.team2;
+                        leftTeamName = teamNames[summary.team1] || summary.team1;
+                        rightTeamName = teamNames[summary.team2] || summary.team2;
+                        leftTotalScore = summary.team1TotalScore;
+                        rightTotalScore = summary.team2TotalScore;
+                        leftWins = summary.team1Wins;
+                        rightWins = summary.team2Wins;
+                        leftIsSelected = true;
+                    } else {
+                        leftTeam = summary.team2;
+                        rightTeam = summary.team1;
+                        leftTeamName = teamNames[summary.team2] || summary.team2;
+                        rightTeamName = teamNames[summary.team1] || summary.team1;
+                        leftTotalScore = summary.team2TotalScore;
+                        rightTotalScore = summary.team1TotalScore;
+                        leftWins = summary.team2Wins;
+                        rightWins = summary.team1Wins;
+                        leftIsSelected = true;
+                    }
+                } else {
+                    leftTeam = summary.team1;
+                    rightTeam = summary.team2;
+                    leftTeamName = teamNames[summary.team1] || summary.team1;
+                    rightTeamName = teamNames[summary.team2] || summary.team2;
+                    leftTotalScore = summary.team1TotalScore;
+                    rightTotalScore = summary.team2TotalScore;
+                    leftWins = summary.team1Wins;
+                    rightWins = summary.team2Wins;
+                }
+                
+                // 獲勝判定：先比總得分，再比局點
+                let leftMatchWin = false;
+                let rightMatchWin = false;
+                
+                // 只有當5個局點都完成時才判定獲勝
+                const totalPoints = leftWins + rightWins;
+                if (totalPoints === 5) {
+                    if (leftTotalScore > rightTotalScore) {
+                        leftMatchWin = true;
+                    } else if (rightTotalScore > leftTotalScore) {
+                        rightMatchWin = true;
+                    } else {
+                        // 總得分相同時，比較局點
+                        if (leftWins > rightWins) {
+                            leftMatchWin = true;
+                        } else if (rightWins > leftWins) {
+                            rightMatchWin = true;
+                        }
+                    }
+                }
+                
+                // 場次顏色
+                const matchColors = [
+                    'border-red-500', 'border-orange-500', 'border-amber-500', 'border-yellow-500',
+                    'border-lime-500', 'border-green-500', 'border-emerald-500', 'border-teal-500',
+                    'border-cyan-500', 'border-sky-500', 'border-blue-500', 'border-indigo-500',
+                    'border-violet-500', 'border-purple-500', 'border-fuchsia-500'
+                ];
+                const matchIndex = parseInt(matchNo) - 1;
+                const borderColor = matchColors[matchIndex % matchColors.length];
+                
+                return `
+                    <div class="bg-white shadow-lg rounded-lg p-6 border-l-4 ${borderColor}">
+                        <h3 class="text-2xl font-bold text-center text-gray-800 mb-4">場次 ${matchNo}</h3>
+                        
+                        <div class="grid grid-cols-3 gap-6 items-center mb-6">
+                            <!-- 左側隊伍 (選中的隊伍) -->
+                            <div class="text-center ${leftIsSelected ? 'bg-blue-50 ring-2 ring-blue-400' : 'bg-gray-50'} rounded-lg p-4 relative">
+                                ${leftMatchWin ? '<div class="absolute top-1 left-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">勝</div>' : ''}
+                                <div class="font-bold text-xl text-gray-800">${leftTeam}</div>
+                                <div class="text-sm text-gray-600">${leftTeamName}</div>
+                            </div>
+                            
+                            <div class="text-center text-2xl font-bold text-gray-400">vs</div>
+                            
+                            <!-- 右側隊伍 -->
+                            <div class="text-center bg-gray-50 rounded-lg p-4 relative">
+                                ${rightMatchWin ? '<div class="absolute top-1 left-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">勝</div>' : ''}
+                                <div class="font-bold text-xl text-gray-800">${rightTeam}</div>
+                                <div class="text-sm text-gray-600">${rightTeamName}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 統計數據 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-2">總得分</div>
+                                    <div class="grid grid-cols-3 gap-2 items-center">
+                                        <div class="text-3xl font-bold text-gray-700">${leftTotalScore}</div>
+                                        <div class="text-lg text-gray-400">:</div>
+                                        <div class="text-3xl font-bold text-gray-700">${rightTotalScore}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-2">獲勝局點</div>
+                                    <div class="grid grid-cols-3 gap-2 items-center">
+                                        <div class="text-3xl font-bold ${leftMatchWin ? 'text-gray-800' : 'text-gray-600'}">${leftWins}</div>
+                                        <div class="text-lg text-gray-400">:</div>
+                                        <div class="text-3xl font-bold ${rightMatchWin ? 'text-gray-800' : 'text-gray-600'}">${rightWins}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// 顯示總成績 - 統計每個隊伍的獲勝場次和總得分
+function displayResults() {
+    const scoresList = document.getElementById('scoresList');
+    const noData = document.getElementById('noData');
+    
+    if (allScores.length === 0) {
+        scoresList.innerHTML = '';
+        noData.classList.remove('hidden');
+        return;
+    }
+    
+    // 統計每個隊伍的場次結果
+    const teamStats = {};
+    const matchSummaries = {};
+    
+    // 先計算每場比賽的結果
+    allScores.forEach(score => {
+        const matchNo = score['場次'];
+        const team1 = score['隊伍1'];
+        const team2 = score['隊伍2'];
+        const score1 = parseInt(score['隊伍1分數']) || 0;
+        const score2 = parseInt(score['隊伍2分數']) || 0;
+        const winner = score['獲勝方'];
+        
+        if (!matchSummaries[matchNo]) {
+            matchSummaries[matchNo] = {
+                team1: team1,
+                team2: team2,
+                team1TotalScore: 0,
+                team2TotalScore: 0,
+                team1Wins: 0,
+                team2Wins: 0,
+                team1PointCount: 0,
+                team2PointCount: 0
+            };
+        }
+        
+        matchSummaries[matchNo].team1TotalScore += score1;
+        matchSummaries[matchNo].team2TotalScore += score2;
+        matchSummaries[matchNo].team1PointCount++;
+        matchSummaries[matchNo].team2PointCount++;
+        
+        if (winner === team1) {
+            matchSummaries[matchNo].team1Wins++;
+        } else if (winner === team2) {
+            matchSummaries[matchNo].team2Wins++;
+        }
+    });
+    
+    // 統計每個隊伍的總成績
+    Object.keys(matchSummaries).forEach(matchNo => {
+        const summary = matchSummaries[matchNo];
+        const totalPoints = summary.team1Wins + summary.team2Wins;
+        
+        // 只統計完成5個局點的場次
+        if (totalPoints === 5) {
+            const team1 = summary.team1;
+            const team2 = summary.team2;
+            
+            // 初始化隊伍統計
+            if (!teamStats[team1]) {
+                teamStats[team1] = { matchWins: 0, totalScore: 0 };
+            }
+            if (!teamStats[team2]) {
+                teamStats[team2] = { matchWins: 0, totalScore: 0 };
+            }
+            
+            // 累加總得分
+            teamStats[team1].totalScore += summary.team1TotalScore;
+            teamStats[team2].totalScore += summary.team2TotalScore;
+            
+            // 判定場次獲勝：先比總得分，再比局點
+            if (summary.team1TotalScore > summary.team2TotalScore) {
+                teamStats[team1].matchWins++;
+            } else if (summary.team2TotalScore > summary.team1TotalScore) {
+                teamStats[team2].matchWins++;
+            } else {
+                // 總得分相同時，比較局點
+                if (summary.team1Wins > summary.team2Wins) {
+                    teamStats[team1].matchWins++;
+                } else if (summary.team2Wins > summary.team1Wins) {
+                    teamStats[team2].matchWins++;
+                }
+            }
+        }
+    });
+    
+    // 轉換為數組並排序
+    const teamRankings = Object.keys(teamStats).map(team => ({
+        team: team,
+        teamName: teamNames[team] || team,
+        matchWins: teamStats[team].matchWins,
+        totalScore: teamStats[team].totalScore
+    })).sort((a, b) => {
+        // 先比較獲勝場次
+        if (b.matchWins !== a.matchWins) {
+            return b.matchWins - a.matchWins;
+        }
+        // 獲勝場次相同時，比較總得分
+        return b.totalScore - a.totalScore;
+    });
+    
+    if (teamRankings.length === 0) {
+        scoresList.innerHTML = '';
+        noData.classList.remove('hidden');
+        return;
+    }
+    
+    noData.classList.add('hidden');
+    
+    scoresList.innerHTML = `
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">總成績排名</h2>
+            <p class="text-center text-gray-600">Final Rankings</p>
+        </div>
+        
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-purple-600 text-white">
+                    <tr>
+                        <th class="px-3 py-4 text-center w-20">排名</th>
+                        <th class="px-6 py-4 text-left">隊伍</th>
+                        <th class="px-8 py-4 text-center">獲勝場次</th>
+                        <th class="px-6 py-4 text-center">總得分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${teamRankings.map((team, index) => {
+                        const isChampion = index === 0;
+                        const rankBg = isChampion ? 'bg-yellow-50' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                        
+                        return `
+                            <tr class="${rankBg} border-b border-gray-200">
+                                <td class="px-3 py-4 w-20">
+                                    <div class="flex items-center justify-center">
+                                        <span class="text-xl font-bold ${isChampion ? 'text-yellow-600' : 'text-gray-700'}">
+                                            ${index + 1}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-lg text-gray-800">${team.team}</div>
+                                    <div class="text-sm text-gray-600">${team.teamName}</div>
+                                </td>
+                                <td class="px-8 py-4 text-center">
+                                    <div class="text-2xl font-bold ${isChampion ? 'text-yellow-600' : 'text-gray-800'}">${team.matchWins}</div>
+                                    <div class="text-xs text-gray-500">場</div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="text-2xl font-bold text-gray-700">${team.totalScore}</div>
+                                    <div class="text-xs text-gray-500">分</div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+</script>
+
+</body>
+</html>
