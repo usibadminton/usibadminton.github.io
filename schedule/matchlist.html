@@ -165,19 +165,30 @@ fetch(TEAM_CSV_URL)
             });
         });
 
-        // 填充場次選單
+        // 填充場次選單 - 只顯示兩隊都填滿的場次
         const matchSelect = document.getElementById('matchSelect');
         const matches = Object.keys(matchData).sort((a, b) => parseInt(a) - parseInt(b));
 
         matches.forEach(matchNo => {
             const teams = Object.keys(matchData[matchNo]);
-            const team1 = teams[0] || '';
-            const team2 = teams[1] || '?';
             
-            const option = document.createElement('option');
-            option.value = matchNo;
-            option.textContent = `場次 ${matchNo} - ${team1} vs ${team2}`;
-            matchSelect.appendChild(option);
+            // 檢查是否有兩隊
+            if (teams.length < 2) return;
+            
+            const team1 = teams[0];
+            const team2 = teams[1];
+            
+            // 檢查兩隊是否都填滿 5 個局點
+            const team1Complete = matchData[matchNo][team1].length === 5;
+            const team2Complete = matchData[matchNo][team2].length === 5;
+            
+            // 只有當兩隊都填滿時才顯示
+            if (team1Complete && team2Complete) {
+                const option = document.createElement('option');
+                option.value = matchNo;
+                option.textContent = `場次 ${matchNo} - ${team1} vs ${team2}`;
+                matchSelect.appendChild(option);
+            }
         });
 
         document.getElementById('loading').classList.add('hidden');
