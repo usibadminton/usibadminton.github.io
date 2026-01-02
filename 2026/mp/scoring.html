@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>計分系統 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+  <style>
+    .score-input::-webkit-inner-spin-button,
+    .score-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .score-input {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <a href="#" onclick="goBack()" class="text-white hover:text-cloud-dancer font-semibold text-lg flex items-center gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </a>
+      <h1 class="text-xl md:text-2xl font-bold text-white absolute left-1/2 transform -translate-x-1/2">
+        裁判單
+      </h1>
+      <div class="w-5"></div>
+    </div>
+  </nav>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <div class="max-w-4xl mx-auto p-4 md:p-8">
+    
+    <!-- Loading -->
+    <div id="loading" class="bg-white rounded-lg shadow-lg p-8">
+      <div class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+        <div class="text-gray-600">載入比賽資料...</div>
+      </div>
+    </div>
+
+    <!-- Match Info -->
+    <div id="matchInfo" class="hidden">
+      <!-- Match Header -->
+      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="relative">
+          <!-- Reset Button (僅在進行中時顯示) - 右上角 -->
+          <div id="resetButtonContainer" class="absolute top-0 right-0 hidden">
+            <button 
+              onclick="resetMatch()"
+              class="bg-gray-300 hover:bg-gray-600 text-white font-semibold py-1.5 px-3 rounded-lg transition text-xs whitespace-nowrap"
+            >
+              重置
+            </button>
+          </div>
+          
+          <div class="text-center">
+            <h2 id="matchTitle" class="text-2xl font-bold text-gray-800 mb-2">第 1 局</h2>
+            <p id="roundInfo" class="text-sm text-gray-600">Match-001</p>
+            <div id="matchStatusBadge" class="mt-3"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Score Section (Combined Players and Score Input) -->
+      <div id="scoringSection" class="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6">
+        
+        <!-- Section Title -->
+        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 text-center border-b-2 border-gray-200 pb-3">
+          比賽計分
+        </h3>
+        
+        <!-- Players Info -->
+        <div class="grid grid-cols-2 gap-3 md:gap-6 mb-6">
+          
+          <!-- 黑桃隊 -->
+          <div class="border-2 border-gray-300 rounded-lg overflow-hidden">
+            <div class="bg-gray-700 text-white px-2 md:px-4 py-2">
+              <h3 class="text-base md:text-xl font-bold text-center flex items-center justify-center gap-1 sm:gap-2">
+                <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                  <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+                </svg>
+                黑桃隊
+              </h3>
+            </div>
+            <div class="p-2 md:p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="bg-gray-100 text-gray-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-sm md:text-base">
+                  1
+                </div>
+                <div id="spade1" class="flex-1 bg-gray-50 px-2 py-2 md:py-3 rounded text-sm md:text-base font-semibold text-gray-800">
+                  ---
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="bg-gray-100 text-gray-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-sm md:text-base">
+                  2
+                </div>
+                <div id="spade2" class="flex-1 bg-gray-50 px-2 py-2 md:py-3 rounded text-sm md:text-base font-semibold text-gray-800">
+                  ---
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 紅心隊 -->
+          <div class="border-2 border-red-300 rounded-lg overflow-hidden">
+            <div class="bg-red-600 text-white px-2 md:px-4 py-2">
+              <h3 class="text-base md:text-xl font-bold text-center flex items-center justify-center gap-1 sm:gap-2">
+                <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                紅心隊
+              </h3>
+            </div>
+            <div class="p-2 md:p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="bg-red-100 text-red-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-sm md:text-base">
+                  1
+                </div>
+                <div id="heart1" class="flex-1 bg-red-50 px-2 py-2 md:py-3 rounded text-sm md:text-base font-semibold text-gray-800">
+                  ---
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="bg-red-100 text-red-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-sm md:text-base">
+                  2
+                </div>
+                <div id="heart2" class="flex-1 bg-red-50 px-2 py-2 md:py-3 rounded text-sm md:text-base font-semibold text-gray-800">
+                  ---
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        
+        <!-- Start Button (僅在未開始時顯示) -->
+        <div id="startButtonContainer" class="text-center mt-6">
+          <button 
+            onclick="startMatch()"
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition text-lg"
+          >
+            開始
+          </button>
+        </div>
+        
+        <!-- Score Input (計分開始後顯示) -->
+        <div id="scoreInputContainer" class="hidden">
+          <hr class="my-6 border-t-2 border-gray-200">
+          <div class="mb-4">
+            <h4 class="text-center text-md md:text-base font-semibold text-gray-700 mb-3">分數</h4>
+            <div class="flex items-center justify-center gap-3 md:gap-4">
+              <!-- 黑桃分數 -->
+              <div class="flex-1 text-center">
+                <input 
+                  type="number" 
+                  id="spadeScore" 
+                  min="0" 
+                  max="21"
+                  class="score-input w-full text-center text-3xl md:text-5xl font-bold border-4 border-gray-300 rounded-lg py-3 md:py-4 focus:border-gray-500 focus:ring-4 focus:ring-gray-200 focus:outline-none"
+                  placeholder="0"
+                  oninput="validateScore()"
+                >
+              </div>
+              
+              <!-- Colon Separator -->
+              <div class="text-3xl md:text-5xl font-bold text-gray-400">:</div>
+              
+              <!-- 紅心分數 -->
+              <div class="flex-1 text-center">
+                <input 
+                  type="number" 
+                  id="heartScore" 
+                  min="0" 
+                  max="21"
+                  class="score-input w-full text-center text-3xl md:text-5xl font-bold border-4 border-red-300 rounded-lg py-3 md:py-4 focus:border-red-500 focus:ring-4 focus:ring-red-200 focus:outline-none"
+                  placeholder="0"
+                  oninput="validateScore()"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Validation Message -->
+          <div id="validationMsg" class="text-center text-red-600 font-semibold mb-4 hidden"></div>
+
+          <!-- Submit Button(s) -->
+          <div id="buttonContainer" class="w-full mt-6">
+            <button 
+              onclick="handleSubmitButton()"
+              id="submitBtn"
+              disabled
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 md:py-4 rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed text-base md:text-lg"
+            >
+              確認
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div id="historySection" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
+        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          歷史紀錄
+        </h3>
+        <div id="historyList" class="space-y-2">
+          <!-- 歷史紀錄將動態插入 -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    // 檢查登入狀態
+    requireAuth();
+    
+    let roundId = '';
+    let matchNumber = 1;
+    let match = null;
+    let existingScore = null;
+    let isSubmitting = false;
+    let matchStatus = 'not-started'; // 比賽狀態
+    
+    // 初始化
+    async function init() {
+      roundId = getUrlParam('round') || 'Match-001';
+      matchNumber = parseInt(getUrlParam('match')) || 1;
+      
+      document.getElementById('matchTitle').textContent = `第 ${matchNumber} 局`;
+      document.getElementById('roundInfo').textContent = `${roundId}`;
+      
+      await loadMatchInfo();
+      await loadExistingScore();
+      
+      // 根據狀態顯示對應的界面
+      updateUI();
+      
+      hideElement('loading');
+      showElement('matchInfo');
+    }
+    
+    // 更新UI顯示
+    function updateUI() {
+      const statusBadge = document.getElementById('matchStatusBadge');
+      const startButtonContainer = document.getElementById('startButtonContainer');
+      const resetButtonContainer = document.getElementById('resetButtonContainer');
+      const scoreInputContainer = document.getElementById('scoreInputContainer');
+      
+      if (matchStatus === 'done') {
+        statusBadge.innerHTML = '<span class="inline-block bg-green-500 text-white px-4 py-1 rounded-full text-sm font-semibold">已完成</span>';
+        hideElement('startButtonContainer');
+        showElement('resetButtonContainer');
+        showElement('scoreInputContainer');
+      } else if (matchStatus === 'ongoing') {
+        statusBadge.innerHTML = '<span class="inline-block bg-yellow-500 text-white px-4 py-1 rounded-full text-sm font-semibold">進行中</span>';
+        hideElement('startButtonContainer');
+        showElement('resetButtonContainer');
+        showElement('scoreInputContainer');
+      } else {
+        statusBadge.innerHTML = '<span class="inline-block bg-gray-400 text-white px-4 py-1 rounded-full text-sm font-semibold">未開始</span>';
+        showElement('startButtonContainer');
+        hideElement('resetButtonContainer');
+        hideElement('scoreInputContainer');
+      }
+    }
+    
+    // 開始比賽
+    async function startMatch() {
+      try {
+        console.log('開始比賽 - roundId:', roundId, 'matchNumber:', matchNumber);
+        
+        // 更新狀態為進行中
+        await updateMatchStatus('ongoing');
+        matchStatus = 'ongoing';
+        updateUI();
+        showToast('比賽狀態:進行中', 'success');
+      } catch (error) {
+        console.error('開始比賽失敗:', error);
+        showToast('❌ 操作失敗：' + error.message, 'error');
+      }
+    }
+    
+    // 重置比賽
+    async function resetMatch() {
+      const confirmed = await confirmAction('確定要重置為未開始狀態嗎？這將清除所有比分記錄和當前輸入。');
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        console.log('重置比賽 - roundId:', roundId, 'matchNumber:', matchNumber);
+        
+        // 清空輸入框
+        document.getElementById('spadeScore').value = '';
+        document.getElementById('heartScore').value = '';
+        
+        // 刪除比分記錄
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('deleteScore', {
+            roundId: roundId,
+            matchNumber: matchNumber
+          });
+        }
+        
+        // 更新狀態為未開始
+        await updateMatchStatus('not-started');
+        matchStatus = 'not-started';
+        
+        // 清除歷史記錄顯示
+        existingScore = null;
+        hasExistingRecord = false;
+        hideElement('historySection');
+        document.getElementById('historyList').innerHTML = '';
+        
+        // 重新載入比分（應該是空的）
+        await loadExistingScore();
+        
+        // 切換到編輯模式
+        setEditMode(true);
+        
+        updateUI();
+        showToast('比賽狀態:未開始', 'success');
+      } catch (error) {
+        console.error('重置比賽失敗:', error);
+        showToast('❌ 操作失敗：' + error.message, 'error');
+      }
+    }
+    
+    // 更新比賽狀態
+    async function updateMatchStatus(status) {
+      console.log('updateMatchStatus 被調用 - status:', status);
+      
+      if (!CONFIG.SCRIPT_URL) {
+        console.warn('Apps Script 尚未設定');
+        showToast('⚠️ Apps Script 尚未設定', 'warning');
+        return;
+      }
+      
+      const statusData = {
+        roundId: roundId,
+        matchNumber: matchNumber,
+        status: status
+      };
+      
+      console.log('準備送出狀態更新:', statusData);
+      
+      try {
+        const result = await writeToSheet('updateMatchStatus', statusData);
+        console.log('狀態更新結果:', result);
+        return result;
+      } catch (error) {
+        console.error('更新狀態失敗:', error);
+        throw error;
+      }
+    }
+    
+    // 載入比賽資訊
+    async function loadMatchInfo() {
+      try {
+        const matches = await fetchCSV(CSV_URLS.MATCHES);
+        match = matches.find(m => 
+          m['場次ID'] === roundId && 
+          parseInt(m['局數']) === matchNumber
+        );
+        
+        if (!match) {
+          showToast('找不到比賽資料', 'error');
+          setTimeout(() => window.location.href = `matches.html?round=${roundId}`, 2000);
+          return;
+        }
+        
+        // 取得比賽狀態
+        matchStatus = match['狀態'] || match['status'] || 'not-started';
+        
+        // 顯示球員資訊（計分區）
+        document.getElementById('spade1').textContent = match['黑桃1'] || '---';
+        document.getElementById('spade2').textContent = match['黑桃2'] || '---';
+        document.getElementById('heart1').textContent = match['紅心1'] || '---';
+        document.getElementById('heart2').textContent = match['紅心2'] || '---';
+        
+      } catch (error) {
+        console.error('載入比賽資訊失敗:', error);
+        showToast('載入比賽資料失敗', 'error');
+      }
+    }
+    
+    // 載入已有的比分
+    async function loadExistingScore() {
+      try {
+        const scores = await fetchCSV(CSV_URLS.SCORES);
+        const history = scores.filter(s => 
+          s['場次ID'] === roundId && 
+          parseInt(s['局數']) === matchNumber
+        );
+        
+        if (history.length > 0) {
+          // 顯示最新的比分
+          existingScore = history[history.length - 1];
+          hasExistingRecord = true;
+          document.getElementById('spadeScore').value = existingScore['黑桃分數'];
+          document.getElementById('heartScore').value = existingScore['紅心分數'];
+          
+          // 設定為檢視模式（禁用輸入）
+          setEditMode(false);
+          
+          // 顯示歷史紀錄
+          showElement('historySection');
+          const historyList = document.getElementById('historyList');
+          historyList.innerHTML = history.map(s => `
+            <div class="bg-gray-50 px-4 py-3 rounded-lg flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <svg class="w-3 h-3 text-gray-700" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                  <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+                </svg>
+                <span class="font-bold text-gray-700">${s['黑桃分數']}</span>
+                <span class="mx-2">-</span>
+                <span class="font-bold text-red-600">${s['紅心分數']}</span>
+                <svg class="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+              <div class="text-sm text-gray-500">
+                ${s['記錄時間'] || ''}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          // 沒有歷史紀錄，設定為編輯模式
+          hasExistingRecord = false;
+          setEditMode(true);
+        }
+      } catch (error) {
+        console.error('載入比分紀錄失敗:', error);
+        // 載入失敗也設定為編輯模式
+        hasExistingRecord = false;
+        setEditMode(true);
+      }
+    }
+    
+    // 設定編輯模式
+    let isEditMode = false;
+    let hasExistingRecord = false;
+    
+    function setEditMode(mode) {
+      isEditMode = mode;
+      const spadeInput = document.getElementById('spadeScore');
+      const heartInput = document.getElementById('heartScore');
+      const submitBtn = document.getElementById('submitBtn');
+      const buttonContainer = document.getElementById('buttonContainer');
+      
+      if (mode) {
+        // 編輯模式：啟用輸入框
+        spadeInput.disabled = false;
+        heartInput.disabled = false;
+        submitBtn.textContent = '確認';
+        submitBtn.disabled = !validateScore();
+        
+        // 如果有歷史紀錄，顯示取消按鈕
+        if (hasExistingRecord) {
+          buttonContainer.innerHTML = `
+            <div class="grid grid-cols-2 gap-3">
+              <button 
+                onclick="cancelEdit()"
+                id="cancelBtn"
+                class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 md:py-4 rounded-lg transition text-base md:text-lg"
+              >
+                取消
+              </button>
+              <button 
+                onclick="handleSubmitButton()"
+                id="submitBtn"
+                disabled
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 md:py-4 rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed text-base md:text-lg"
+              >
+                確認
+              </button>
+            </div>
+          `;
+        } else {
+          // 沒有歷史紀錄，只顯示確認按鈕（藍色）
+          buttonContainer.innerHTML = `
+            <button 
+              onclick="handleSubmitButton()"
+              id="submitBtn"
+              disabled
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 md:py-4 rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed text-base md:text-lg"
+            >
+              確認
+            </button>
+          `;
+        }
+        
+        // 重新驗證以更新按鈕狀態
+        validateScore();
+      } else {
+        // 檢視模式：禁用輸入框，顯示更新比分按鈕（橙色）
+        spadeInput.disabled = true;
+        heartInput.disabled = true;
+        buttonContainer.innerHTML = `
+          <button 
+            onclick="handleSubmitButton()"
+            id="submitBtn"
+            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 md:py-4 rounded-lg transition text-base md:text-lg"
+          >
+            更新比分
+          </button>
+        `;
+      }
+    }
+    
+    // 取消編輯
+    function cancelEdit() {
+      // 恢復原始分數
+      if (existingScore) {
+        document.getElementById('spadeScore').value = existingScore['黑桃分數'];
+        document.getElementById('heartScore').value = existingScore['紅心分數'];
+      }
+      // 切換回檢視模式
+      setEditMode(false);
+    }
+    
+    // 處理按鈕點擊
+    function handleSubmitButton() {
+      if (isEditMode) {
+        // 目前是編輯模式，執行送出
+        submitScore();
+      } else {
+        // 目前是檢視模式，切換到編輯模式
+        setEditMode(true);
+      }
+    }
+    
+    // 驗證比分
+    function validateScore() {
+      const spadeInput = document.getElementById('spadeScore').value;
+      const heartInput = document.getElementById('heartScore').value;
+      const msgElement = document.getElementById('validationMsg');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      // 如果不是編輯模式，不需要驗證
+      if (!isEditMode) {
+        return true;
+      }
+      
+      // 清除訊息
+      msgElement.classList.add('hidden');
+      
+      // 規則 1: 檢查是否都有輸入
+      if (spadeInput === '' || heartInput === '') {
+        msgElement.textContent = '';
+        msgElement.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return false;
+      }
+      
+      const spadeScore = parseInt(spadeInput);
+      const heartScore = parseInt(heartInput);
+      
+      // 規則 2: 分數必須 >= 0
+      if (spadeScore < 0 || heartScore < 0) {
+        msgElement.textContent = '分數不能為負數';
+        msgElement.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return false;
+      }
+      
+      // 規則 3: 最高分數是 21
+      if (spadeScore > 21 || heartScore > 21) {
+        msgElement.textContent = '分數不能超過 21 分';
+        msgElement.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return false;
+      }
+      
+      // 規則 4: 至少一方必須是 21 分
+      if (spadeScore !== 21 && heartScore !== 21) {
+        msgElement.textContent = '至少一方必須是 21 分';
+        msgElement.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return false;
+      }
+      
+      // 規則 5: 不能雙方都是 21 分
+      if (spadeScore === 21 && heartScore === 21) {
+        msgElement.textContent = '請重新確認比分';
+        msgElement.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return false;
+      }
+      
+      // 驗證通過
+      submitBtn.disabled = false;
+      return true;
+    }
+    
+    // 送出比分
+    async function submitScore() {
+      if (isSubmitting) return;
+      
+      if (!validateScore()) {
+        showToast('請輸入有效的比分', 'warning');
+        return;
+      }
+      
+      const spadeScore = parseInt(document.getElementById('spadeScore').value);
+      const heartScore = parseInt(document.getElementById('heartScore').value);
+      
+      if (!await confirmAction('確定要送出比分嗎？')) {
+        return;
+      }
+      
+      isSubmitting = true;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').textContent = '送出中...';
+      
+      try {
+        const timestamp = formatDate(new Date(), 'datetime');
+        const scoreData = {
+          roundId: roundId,
+          matchNumber: matchNumber,
+          spadeScore: spadeScore,
+          heartScore: heartScore,
+          timestamp: timestamp
+        };
+        
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('addScore', scoreData);
+          showToast('比分已記錄', 'success');
+          
+          // 顯示勝負
+          const winner = spadeScore > heartScore ? '黑桃隊' : '紅心隊';
+          setTimeout(() => {
+            showToast(`🏆 ${winner} 獲勝！`, 'success', 3000);
+          }, 1000);
+          
+          // 重新載入歷史
+          await loadExistingScore();
+          
+          // 更新比賽狀態為已完成
+          await updateMatchStatus('done');
+          matchStatus = 'done';
+          updateUI();
+          
+          // 切換回檢視模式
+          setEditMode(false);
+          
+        } else {
+          showToast('⚠️ Apps Script 尚未設定，資料未同步', 'warning', 5000);
+        }
+        
+      } catch (error) {
+        console.error('送出比分失敗:', error);
+        showToast('❌ 送出失敗：' + error.message, 'error');
+      } finally {
+        isSubmitting = false;
+        if (isEditMode) {
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').textContent = '確認';
+        }
+      }
+    }
+    
+    // 返回賽程
+    function goBack() {
+      window.location.href = `matches.html?round=${roundId}`;
+    }
+    
+    // 初始化
+    init();
+  </script>
+
+</body>
+</html>

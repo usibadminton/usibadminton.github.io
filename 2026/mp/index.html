@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+</head>
+<body class="bg-gradient-to-br from-white via-cloud-dancer/50 to-reflected-breeze/20 min-h-screen">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-center relative">
+      <div class="text-center">
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">2025 歲末年終友誼盃</h1>
+      </div>
+      <div id="authStatus" class="absolute right-4 top-1/2 -translate-y-1/2 text-right text-xs">
+        <!-- 登入狀態將動態顯示 -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    
+    <!-- Quick Actions -->
+    <div id="quickActions" class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-reflected-breeze/20" style="display: none;">
+      <h2 class="text-2xl font-semibold text-gray-700 mb-4 tracking-tight">快速功能</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- 管理名單 -->
+        <button 
+          onclick="navigateToRoster()"
+          class="bg-white hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-6 px-6 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg"
+        >
+          <div class="mb-2 flex justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <div class="text-lg font-bold tracking-wide">參賽名單</div>
+          <div class="text-sm text-gray-600 mt-1 font-light">報到/編輯名單</div>
+        </button>
+        
+        <!-- 開始新場次 -->
+        <button 
+          onclick="createNewRound()"
+          class="bg-white hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-6 px-6 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg"
+        >
+          <div class="mb-2 flex justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </div>
+          <div class="text-lg font-bold tracking-wide">建立比賽</div>
+          <div class="text-sm text-gray-600 mt-1 font-light">抽牌分組</div>
+        </button>
+        
+        <!-- 查看統計 -->
+        <button 
+          onclick="viewStatistics()"
+          class="bg-white hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-6 px-6 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg"
+        >
+          <div class="mb-2 flex justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <div class="text-lg font-bold tracking-wide">查看統計</div>
+          <div class="text-sm text-gray-600 mt-1 font-light">戰績分析</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Round History -->
+    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-reflected-breeze/20">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold text-gray-700 tracking-tight">比賽列表</h2>
+        <span id="roundCount" class="text-sm text-gray-600 font-light"></span>
+      </div>
+      
+      <!-- Loading -->
+      <div id="loading" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
+        <div class="text-gray-600 font-light">載入場次資料...</div>
+      </div>
+      
+      <!-- Rounds List -->
+      <div id="roundsList" class="space-y-3 hidden">
+        <!-- 場次列表將動態插入 -->
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-12 hidden">
+        <p class="text-gray-700 text-lg mb-2 font-medium">尚無比賽</p>
+        <p class="text-gray-500 text-sm mb-6 font-light">點擊上方「建立比賽」按鈕</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    // 顯示登入狀態
+    function updateAuthStatus() {
+      const authStatus = document.getElementById('authStatus');
+      const quickActions = document.getElementById('quickActions');
+      
+      if (isAuthenticated()) {
+        const remaining = getRemainingAuthTime();
+        authStatus.innerHTML = `
+          <div class="flex flex-col md:gap-1 items-end justify-center">
+            <button onclick="handleLogout()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium">
+              登出
+            </button>
+            <div class="hidden md:block text-xs text-cloud-dancer/80 font-light">
+            ${remaining}
+            </div>
+          </div>
+        `;
+        // 顯示快速功能區塊（僅限管理員）
+        quickActions.style.display = 'block';
+      } else {
+        authStatus.innerHTML = `
+          <a href="login.html" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium inline-block">
+            登入
+          </a>
+        `;
+        // 隱藏快速功能區塊（非管理員）
+        quickActions.style.display = 'none';
+      }
+    }
+    
+    // 登出
+    async function handleLogout() {
+      const confirmed = await confirmAction('確定要登出嗎？');
+      if (confirmed) {
+        logout();
+        showToast('已登出', 'success');
+        updateAuthStatus();
+      }
+    }
+    
+    // 導航到名單管理（需要登入）
+    function navigateToRoster() {
+      if (!isAuthenticated()) {
+        showToast('請先登入', 'warning');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+        return;
+      }
+      window.location.href = 'roster.html';
+    }
+    
+    // 建立新場次（需要登入）
+    async function createNewRound() {
+      if (!isAuthenticated()) {
+        showToast('請先登入', 'warning');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+        return;
+      }
+      
+      // 取得當前場次數量
+      try {
+        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        const nextNumber = rounds.length + 1;
+        const roundId = generateRoundId(nextNumber);
+        
+        // 跳轉到分組頁面
+        window.location.href = `team-assign.html?round=${roundId}&new=true`;
+      } catch (error) {
+        console.error('建立場次失敗:', error);
+        // 如果讀取失敗，假設是第一場
+        window.location.href = 'team-assign.html?round=Match-001&new=true';
+      }
+    }
+    
+    // 載入場次列表
+    async function loadRounds() {
+      try {
+        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        
+        hideElement('loading');
+        
+        if (rounds.length === 0) {
+          showElement('emptyState');
+          document.getElementById('roundCount').textContent = '';
+        } else {
+          showElement('roundsList');
+          document.getElementById('roundCount').textContent = `共 ${rounds.length} 場`;
+          
+          const roundsList = document.getElementById('roundsList');
+          roundsList.innerHTML = rounds.reverse().map(round => {
+            const roundId = round['場次ID'] || round['场次ID'];
+            const date = round['日期'];
+            const note = round['備註'] || round['备注'] || '';
+            
+            return `
+              <div class="bg-white/60 hover:bg-reflected-breeze/20 border border-reflected-breeze/30 hover:border-alaskan-blue/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" onclick="viewRound('${roundId}')">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <div class="font-medium text-lg text-gray-700 tracking-tight">${roundId} ${note}</div>
+                    <div class="text-sm text-gray-500 mt-1 font-light">${date}</div>
+                  </div>
+                  <div class="text-alaskan-blue font-medium text-sm flex items-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (error) {
+        console.error('載入場次失敗:', error);
+        hideElement('loading');
+        showElement('emptyState');
+        document.getElementById('roundCount').textContent = '載入失敗';
+        showToast('載入場次資料失敗', 'error');
+      }
+    }
+    // 查看統計
+    function viewStatistics() {
+      window.location.href = 'statistics.html';
+    }
+    
+    // 查看場次詳情
+    function viewRound(roundId) {
+      window.location.href = `matches.html?round=${roundId}`;
+    }
+    
+    // 初始化
+    updateAuthStatus();
+    loadRounds();
+  </script>
+
+</body>
+</html>

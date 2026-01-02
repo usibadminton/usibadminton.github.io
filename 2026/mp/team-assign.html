@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隊伍登記 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+  <style>
+    .active-tab-spade {
+      background: #1f2937;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    .inactive-tab-spade {
+      background: #f3f4f6;
+      color: #1f2937;
+      border: 2px solid #e5e7eb;
+    }
+    .inactive-tab-spade:hover {
+      background: #e5e7eb;
+      border-color: #1f2937;
+    }
+    .active-tab-heart {
+      background: #dc2626;
+      color: white;
+      box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
+    }
+    .inactive-tab-heart {
+      background: #f3f4f6;
+      color: #dc2626;
+      border: 2px solid #e5e7eb;
+    }
+    .inactive-tab-heart:hover {
+      background: #fee2e2;
+      border-color: #dc2626;
+    }
+    
+    /* Poker Card Styles */
+    .poker-card {
+      aspect-ratio: 2.5/3.5;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .poker-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .poker-card.selected {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+    }
+    
+    .poker-card.spade-card.selected {
+      border-color: #1f2937;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      box-shadow: 0 4px 8px rgba(31, 41, 55, 0.4);
+    }
+    
+    .poker-card.heart-card.selected {
+      border-color: #dc2626;
+      background: linear-gradient(135deg, #f9e5e5 0%, #ffe2e2 100%);
+      box-shadow: 0 4px 8px rgba(220, 38, 38, 0.4);
+    }
+    
+    .card-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .spade-card .card-number {
+      color: #1f2937;
+    }
+    
+    .heart-card .card-number {
+      color: #dc2626;
+    }
+    
+    .card-player {
+      font-size: 1.0rem;
+      font-weight: 600;
+      text-align: center;
+      margin-top: auto;
+      padding-top: 12px;
+      padding-bottom: 4px;
+      border-top: 2px solid #e5e7eb;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .poker-card.selected .card-player {
+      border-top-color: currentColor;
+    }
+    
+    .card-empty {
+      color: #9ca3af;
+    }
+    
+    /* Confirm Modal Styles */
+    #confirmModal {
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <a href="index.html" class="text-white hover:text-cloud-dancer font-semibold text-lg flex items-center gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </a>
+      <h1 class="text-xl md:text-2xl font-bold text-white absolute left-1/2 transform -translate-x-1/2">
+        隊伍登記
+      </h1>
+      <button 
+        id="modeToggleBtn"
+        onclick="toggleMode()"
+        class="hidden p-2 rounded-lg transition bg-white bg-opacity-20 hover:bg-opacity-30"
+        title="切換模式"
+      >
+        <svg id="modeIcon" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="2"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <div class="max-w-6xl mx-auto p-4 md:p-8">
+    
+    <!-- Round Info -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="roundTitle" class="text-2xl font-bold text-gray-800">Match-001</h2>
+          <p class="text-sm text-gray-600 mt-1">請先分隊（黑桃、紅心）</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div id="assignCount" class="text-3xl font-bold text-green-600">
+            0/0
+          </div>
+          <button 
+            onclick="deleteMatch()"
+            class="bg-gray-300 hover:bg-gray-500 text-white p-3 rounded-lg transition flex items-center justify-center"
+            title="刪除此場次"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="bg-white rounded-lg shadow-lg p-8">
+      <div class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
+        <div class="text-gray-600">載入參賽者名單...</div>
+      </div>
+    </div>
+
+    <!-- Assignment Form -->
+    <div id="assignmentForm" class="hidden">
+      
+      <!-- Tabs -->
+      <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <div class="flex gap-2">
+          <button 
+            onclick="switchTab('spade')"
+            id="spadeTab"
+            class="flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-spade flex items-center justify-center gap-2"
+          >
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+              <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+            </svg>
+            黑桃隊
+          </button>
+          <button 
+            onclick="switchTab('heart')"
+            id="heartTab"
+            class="flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-heart flex items-center justify-center gap-2"
+          >
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            紅心隊
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 mb-6">
+        
+        <!-- 黑桃隊 -->
+        <div id="spadeContainer" class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-center mb-4 pb-4 border-b-2 border-gray-300">
+            <svg class="w-8 h-8 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+              <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+            </svg>
+            <h3 class="text-2xl font-bold text-gray-700">黑桃隊</h3>
+          </div>
+          <div id="spadeTeam" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+            <!-- 黑桃隊選單將動態插入 -->
+          </div>
+        </div>
+
+        <!-- 紅心隊 -->
+        <div id="heartContainer" class="bg-white rounded-lg shadow-lg p-6 hidden">
+          <div class="flex items-center justify-center mb-4 pb-4 border-b-2 border-red-200">
+            <svg class="w-8 h-8 mr-2 text-red-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <h3 class="text-2xl font-bold text-red-600">紅心隊</h3>
+          </div>
+          <div id="heartTeam" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+            <!-- 紅心隊選單將動態插入 -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Mode 2: Player List View -->
+      <div id="mode2Container" class="hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div class="mb-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">參賽者名單</h3>
+            <p class="text-sm text-gray-600">點擊人員選擇隊伍和號碼</p>
+          </div>
+          
+          <!-- Filter Tabs -->
+          <div class="flex gap-2 mb-4">
+            <button 
+              onclick="switchMode2Filter('all')"
+              id="mode2AllTab"
+              class="flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-alaskan-blue text-white"
+            >
+              全部
+            </button>
+            <button 
+              onclick="switchMode2Filter('selected')"
+              id="mode2SelectedTab"
+              class="flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-gray-200 text-gray-700 hover:bg-gray-300"
+            >
+              已分隊
+            </button>
+            <button 
+              onclick="switchMode2Filter('unselected')"
+              id="mode2UnselectedTab"
+              class="flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-gray-200 text-gray-700 hover:bg-gray-300"
+            >
+              未分隊
+            </button>
+          </div>
+          
+          <div id="playerList" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            <!-- Player list will be dynamically inserted -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Action Buttons - Fixed at Bottom -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-2 border-gray-200 shadow-lg">
+    <div class="max-w-6xl mx-auto p-4">
+      <div class="flex gap-4">
+        <button 
+          onclick="clearAssignment()"
+          class="flex-1 bg-gray-100 hover:bg-gray-500 border-2 border-gray-200 text-gray-500 font-bold py-4 rounded-lg transition"
+        >
+          清空重選
+        </button>
+        <button 
+          onclick="confirmAssignment()"
+          id="confirmBtn"
+          disabled
+          class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          確認分組
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spacer for fixed bottom buttons -->
+  <div class="h-24"></div>
+
+  <!-- Player Selection Modal -->
+  <div id="playerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div class="p-6 pb-4">
+        <h3 class="text-2xl font-bold">選擇參賽者 - <span id="modalCardNumber"></span>號</h3>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto px-6">
+        <div id="playerModalList" class="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-4">
+          <!-- Player buttons will be inserted here -->
+        </div>
+      </div>
+      
+      <div class="p-6 pt-4 border-t border-gray-200 bg-white">
+        <div class="flex gap-3">
+          <button 
+            onclick="clearPlayerSelection()"
+            class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 rounded-lg transition"
+          >
+            清除
+          </button>
+          <button 
+            onclick="closePlayerModal()"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition"
+          >
+            關閉
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[200] flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full mx-4">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mb-4"></div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">處理中...</h3>
+        <p class="text-gray-600">正在儲存資料，請稍候</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    // 檢查登入狀態
+    requireAuth();
+    
+    let players = [];
+    let roundId = '';
+    let isNewRound = false;
+    let currentTab = 'spade'; // 'spade' or 'heart'
+    let currentMode = 1; // 1: card mode, 2: player list mode
+    let mode2Filter = 'all'; // 'all', 'selected', 'unselected'
+    let assignments = {
+      spade: [],
+      heart: []
+    };
+    let currentCardIndex = -1;
+    let currentCardTeam = '';
+    
+    // 初始化分組陣列
+    function initAssignments() {
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      assignments.spade = Array(slotsPerTeam).fill(null);
+      assignments.heart = Array(slotsPerTeam).fill(null);
+    }
+    
+    // 初始化
+    async function init() {
+      // 初始化分組
+      initAssignments();
+      
+      // 取得場次ID
+      roundId = getUrlParam('round') || 'Match-001';
+      isNewRound = getUrlParam('new') === 'true';
+      
+      document.getElementById('roundTitle').textContent = `${roundId}`;
+      
+      // 如果是新場次，先寫入 Rounds 表
+      if (isNewRound) {
+        await createRound();
+      }
+      
+      // 載入參賽者名單
+      await loadPlayers();
+    }
+    
+    // 建立場次記錄
+    async function createRound() {
+      const datetime = formatDate(new Date(), 'datetime');
+      const roundNumber = parseRoundId(roundId);
+      
+      try {
+        // 先檢查此場次ID是否已存在
+        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        const exists = rounds.some(r => (r['場次ID'] || r['场次ID']) === roundId);
+        
+        if (exists) {
+          console.log('場次已存在，跳過建立');
+          return;
+        }
+        
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('addRound', {
+            roundId: roundId,
+            date: datetime,
+            note: ``
+          });
+          console.log('場次已建立');
+        } else {
+          console.warn('Apps Script 尚未設定，場次資料未寫入');
+        }
+      } catch (error) {
+        console.error('建立場次失敗:', error);
+      }
+    }
+    
+    // 載入參賽者名單
+    async function loadPlayers() {
+      try {
+        const data = await fetchCSV(CSV_URLS.PLAYERS);
+        players = data.map(p => p['姓名'] || '').filter(name => name.trim() !== '' && name !== '姓名');
+        
+        console.log('載入參賽者:', players);
+        
+        if (players.length === 0) {
+          showToast('尚未建立參賽者名單，請先前往「名單管理」新增參賽者', 'warning', 5000);
+          setTimeout(() => {
+            window.location.href = 'roster.html';
+          }, 3000);
+          return;
+        }
+        
+        // 如果不是新場次，載入已存在的分組資料
+        if (!isNewRound) {
+          await loadExistingAssignments();
+        }
+        
+        hideElement('loading');
+        showElement('assignmentForm');
+        document.getElementById('modeToggleBtn').classList.remove('hidden');
+        
+        renderSelects();
+        updateCount();
+      } catch (error) {
+        console.error('載入參賽者失敗:', error);
+        showToast('載入參賽者資料失敗', 'error');
+      }
+    }
+    
+    // 載入已存在的分組資料
+    async function loadExistingAssignments() {
+      try {
+        const teamsData = await fetchCSV(CSV_URLS.TEAMS);
+        const roundTeams = teamsData.filter(t => t['場次ID'] === roundId);
+        
+        if (roundTeams.length > 0) {
+          console.log('載入已存在的分組:', roundTeams);
+          
+          roundTeams.forEach(member => {
+            const team = member['隊伍'] === '黑桃' ? 'spade' : 'heart';
+            const number = parseInt(member['編號']) - 1; // 轉換為 0-based index
+            const name = member['姓名'];
+            
+            if (number >= 0 && number < assignments[team].length) {
+              assignments[team][number] = name;
+            }
+          });
+          
+          showToast('已載入現有分組資料', 'info');
+        }
+      } catch (error) {
+        console.error('載入分組資料失敗:', error);
+        // 不顯示錯誤訊息，允許繼續使用空白分組
+      }
+    }
+    
+    // 渲染下拉選單
+    function renderSelects() {
+      const spadeTeam = document.getElementById('spadeTeam');
+      const heartTeam = document.getElementById('heartTeam');
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      
+      // 黑桃隊
+      spadeTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
+        return createCardHTML(i + 1, 'spade', i);
+      }).join('');
+      
+      // 紅心隊
+      heartTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
+        return createCardHTML(i + 1, 'heart', i);
+      }).join('');
+      
+      // 如果是模式2，也更新列表
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+    }
+    
+    // 建立撲克牌 HTML
+    function createCardHTML(number, team, index) {
+      const player = assignments[team][index];
+      const isSelected = player !== null;
+      const teamClass = team === 'spade' ? 'spade-card' : 'heart-card';
+      const selectedClass = isSelected ? 'selected' : '';
+      const playerTextColor = (team === 'heart' && isSelected) ? 'text-red-600' : '';
+      
+      return `
+        <div 
+          class="poker-card ${teamClass} ${selectedClass}" 
+          onclick="openPlayerModal('${team}', ${index})"
+          data-team="${team}"
+          data-index="${index}"
+        >
+          <div class="card-number">${number}</div>
+          <div class="card-player ${!isSelected ? 'card-empty' : ''} ${playerTextColor}">
+            ${isSelected ? player : '選擇'}
+          </div>
+        </div>
+      `;
+    }
+    
+    // 渲染模式2：人員選位列表
+    function renderMode2PlayerList() {
+      const playerListContainer = document.querySelector('#mode2Container #playerList');
+      
+      // 取得已選擇的參賽者及其位置
+      const assignedPlayers = new Map();
+      assignments.spade.forEach((player, index) => {
+        if (player) assignedPlayers.set(player, { team: 'spade', number: index + 1 });
+      });
+      assignments.heart.forEach((player, index) => {
+        if (player) assignedPlayers.set(player, { team: 'heart', number: index + 1 });
+      });
+      
+      // 根據過濾器篩選玩家
+      let filteredPlayers = players.filter(player => {
+        const isAssigned = assignedPlayers.has(player);
+        if (mode2Filter === 'selected') return isAssigned;
+        if (mode2Filter === 'unselected') return !isAssigned;
+        return true; // 'all'
+      });
+      
+      // 如果是 'selected' 過濾器，按隊伍和號碼排序
+      if (mode2Filter === 'selected') {
+        filteredPlayers.sort((a, b) => {
+          const assignmentA = assignedPlayers.get(a);
+          const assignmentB = assignedPlayers.get(b);
+          
+          // 先按隊伍排序：spade 在前，heart 在後
+          if (assignmentA.team !== assignmentB.team) {
+            return assignmentA.team === 'spade' ? -1 : 1;
+          }
+          
+          // 同隊伍內按號碼升序排序
+          return assignmentA.number - assignmentB.number;
+        });
+      }
+      
+      if (filteredPlayers.length === 0) {
+        playerListContainer.innerHTML = `
+          <div class="col-span-full text-center py-8 text-gray-400">
+            <p class="text-sm">無資料</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // 如果是 'selected' 過濾器，按隊伍分組顯示
+      if (mode2Filter === 'selected') {
+        const spadePlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'spade');
+        const heartPlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'heart');
+        
+        const renderPlayerCard = (player) => {
+          const assignment = assignedPlayers.get(player);
+          const isAssigned = assignment !== undefined;
+          const teamIcon = assignment && assignment.team === 'spade' 
+            ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/><path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/></svg>'
+            : assignment && assignment.team === 'heart'
+            ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
+            : '';
+          
+          const teamColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+          const playerNameColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+          const playerNameWeight = isAssigned ? 'font-semibold' : 'font-normal';
+          const bgColor = isAssigned 
+            ? assignment.team === 'spade' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
+            : 'bg-white';
+          const borderColor = isAssigned 
+            ? assignment.team === 'spade' ? 'border-gray-700' : 'border-red-600'
+            : 'border-gray-200';
+          
+          return `
+            <div class="rounded-lg shadow-md border-2 ${borderColor} p-3 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer ${bgColor} h-32"
+                 onclick="openPositionModal('${player}')">
+              <div class="flex flex-col h-full">
+                <!-- Player Name (flexible space, 1-2 lines) -->
+                <div class="${playerNameWeight} ${playerNameColor} text-center text-sm break-word flex-1 flex items-center justify-center line-clamp-2">${player}</div>
+                
+                <!-- Separator Line -->
+                <div class="border-t-2 border-gray-300 my-2"></div>
+                
+                <!-- Team & Number or Select (Fixed Height) -->
+                <div class="text-center h-8 flex items-center justify-center flex-shrink-0">
+                  ${isAssigned ? `
+                    <div class="flex items-center justify-center gap-1 ${teamColor}">
+                      ${teamIcon}
+                      <span class="text-xl font-bold">${assignment.number}</span>
+                    </div>
+                  ` : `
+                    <div class="text-sm text-gray-400 font-medium">選擇</div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        };
+        
+        playerListContainer.innerHTML = `
+          ${spadePlayers.length > 0 ? `
+            <div class="col-span-full">
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-6 h-6 text-gray-700" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                  <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+                </svg>
+                <h3 class="text-lg font-bold text-gray-700">黑桃隊</h3>
+                <span class="text-sm text-gray-500">(${spadePlayers.length})</span>
+              </div>
+            </div>
+            ${spadePlayers.map(renderPlayerCard).join('')}
+          ` : ''}
+          
+          ${heartPlayers.length > 0 ? `
+            <div class="col-span-full ${spadePlayers.length > 0 ? 'mt-6' : ''}">
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <h3 class="text-lg font-bold text-red-600">紅心隊</h3>
+                <span class="text-sm text-gray-500">(${heartPlayers.length})</span>
+              </div>
+            </div>
+            ${heartPlayers.map(renderPlayerCard).join('')}
+          ` : ''}
+        `;
+        return;
+      }
+      
+      playerListContainer.innerHTML = filteredPlayers.map(player => {
+        const assignment = assignedPlayers.get(player);
+        const isAssigned = assignment !== undefined;
+        const teamIcon = assignment && assignment.team === 'spade' 
+          ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/><path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/></svg>'
+          : assignment && assignment.team === 'heart'
+          ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
+          : '';
+        
+        const teamColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+        const playerNameColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+        const playerNameWeight = isAssigned ? 'font-semibold' : 'font-normal';
+        const bgColor = isAssigned 
+          ? assignment.team === 'spade' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
+          : 'bg-white';
+        const borderColor = isAssigned 
+          ? assignment.team === 'spade' ? 'border-gray-700' : 'border-red-600'
+          : 'border-gray-200';
+        
+        return `
+          <div class="rounded-lg shadow-md border-2 ${borderColor} p-3 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer ${bgColor} h-32"
+               onclick="openPositionModal('${player}')">
+            <div class="flex flex-col h-full">
+              <!-- Player Name (flexible space, 1-2 lines) -->
+              <div class="${playerNameWeight} ${playerNameColor} text-center text-sm break-word flex-1 flex items-center justify-center line-clamp-2">${player}</div>
+              
+              <!-- Separator Line -->
+              <div class="border-t-2 border-gray-300 my-2"></div>
+              
+              <!-- Team & Number or Select (Fixed Height) -->
+              <div class="text-center h-8 flex items-center justify-center flex-shrink-0">
+                ${isAssigned ? `
+                  <div class="flex items-center justify-center gap-1 ${teamColor}">
+                    ${teamIcon}
+                    <span class="text-xl font-bold">${assignment.number}</span>
+                  </div>
+                ` : `
+                  <div class="text-sm text-gray-400 font-medium">選擇</div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // 切換模式2過濾器
+    function switchMode2Filter(filter) {
+      mode2Filter = filter;
+      
+      // 更新按鈕樣式
+      document.getElementById('mode2AllTab').className = 
+        filter === 'all' 
+          ? 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-alaskan-blue text-white'
+          : 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-gray-200 text-gray-700 hover:bg-gray-300';
+      
+      document.getElementById('mode2SelectedTab').className = 
+        filter === 'selected' 
+          ? 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-alaskan-blue text-white'
+          : 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-gray-200 text-gray-700 hover:bg-gray-300';
+      
+      document.getElementById('mode2UnselectedTab').className = 
+        filter === 'unselected' 
+          ? 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-alaskan-blue text-white'
+          : 'flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition bg-gray-200 text-gray-700 hover:bg-gray-300';
+      
+      // 重新渲染列表
+      renderMode2PlayerList();
+    }
+    
+    // 打開位置選擇彈窗
+    function openPositionModal(player) {
+      // 找出該玩家當前的位置
+      let currentTeam = null;
+      let currentIndex = -1;
+      
+      assignments.spade.forEach((p, i) => {
+        if (p === player) {
+          currentTeam = 'spade';
+          currentIndex = i;
+        }
+      });
+      assignments.heart.forEach((p, i) => {
+        if (p === player) {
+          currentTeam = 'heart';
+          currentIndex = i;
+        }
+      });
+      
+      // 建立彈窗
+      const modal = document.createElement('div');
+      modal.id = 'positionModal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4';
+      
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      
+      // 生成位置選項
+      const spadeOptions = Array.from({length: slotsPerTeam}, (_, i) => {
+        const isOccupied = assignments.spade[i] !== null && assignments.spade[i] !== player;
+        const isCurrent = currentTeam === 'spade' && currentIndex === i;
+        return `
+          <button 
+            onclick="assignPlayerToPosition('${player}', 'spade', ${i})"
+            class="px-4 py-3 rounded-lg font-semibold transition ${
+              isCurrent ? 'bg-gray-700 text-white' : 
+              isOccupied ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
+              'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
+            ${isOccupied ? 'disabled' : ''}
+          >
+            <div class="flex items-center gap-2 justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+              </svg>
+              ${i + 1}
+            </div>
+            ${isOccupied ? `<div class="text-xs mt-1">${assignments.spade[i]}</div>` : ''}
+          </button>
+        `;
+      }).join('');
+      
+      const heartOptions = Array.from({length: slotsPerTeam}, (_, i) => {
+        const isOccupied = assignments.heart[i] !== null && assignments.heart[i] !== player;
+        const isCurrent = currentTeam === 'heart' && currentIndex === i;
+        return `
+          <button 
+            onclick="assignPlayerToPosition('${player}', 'heart', ${i})"
+            class="px-4 py-3 rounded-lg font-semibold transition ${
+              isCurrent ? 'bg-red-600 text-white' : 
+              isOccupied ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
+              'bg-red-100 text-red-700 hover:bg-red-200'
+            }"
+            ${isOccupied ? 'disabled' : ''}
+          >
+            <div class="flex items-center gap-2 justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              ${i + 1}
+            </div>
+            ${isOccupied ? `<div class="text-xs mt-1">${assignments.heart[i]}</div>` : ''}
+          </button>
+        `;
+      }).join('');
+      
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-alaskan-blue to-cosmic-sky">
+            <h3 class="text-xl font-bold text-white">${player}</h3>
+            <p class="text-sm text-white mt-1">選擇隊伍和號碼</p>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <!-- 黑桃隊 -->
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                  <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+                </svg>
+                <h4 class="text-lg font-bold text-gray-700">黑桃隊</h4>
+              </div>
+              <div class="grid grid-cols-4 gap-2">
+                ${spadeOptions}
+              </div>
+            </div>
+            
+            <!-- 紅心隊 -->
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <h4 class="text-lg font-bold text-red-600">紅心隊</h4>
+              </div>
+              <div class="grid grid-cols-4 gap-2">
+                ${heartOptions}
+              </div>
+            </div>
+            
+            ${currentTeam ? `
+              <div class="pt-4 border-t border-gray-200">
+                <button 
+                  onclick="clearPlayerPosition('${player}')"
+                  class="w-full bg-gray-400 hover:bg-gray-500 text-white font-semibold py-3 rounded-lg transition"
+                >
+                  清除位置
+                </button>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="p-6 border-t border-gray-200 bg-gray-50">
+            <button 
+              onclick="closePositionModal()"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // 點擊背景關閉
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closePositionModal();
+        }
+      });
+    }
+    
+    // 分配玩家到位置
+    function assignPlayerToPosition(player, team, index) {
+      // 如果位置已被占用，不執行
+      if (assignments[team][index] !== null && assignments[team][index] !== player) {
+        return;
+      }
+      
+      // 清除該玩家在其他位置的分配
+      assignments.spade = assignments.spade.map(p => p === player ? null : p);
+      assignments.heart = assignments.heart.map(p => p === player ? null : p);
+      
+      // 分配到新位置
+      assignments[team][index] = player;
+      
+      // 更新顯示
+      updateCount();
+      
+      // 更新模式1卡片顯示
+      renderCards();
+      
+      // 更新模式2列表顯示
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+      
+      closePositionModal();
+    }
+    
+    // 清除玩家位置
+    function clearPlayerPosition(player) {
+      assignments.spade = assignments.spade.map(p => p === player ? null : p);
+      assignments.heart = assignments.heart.map(p => p === player ? null : p);
+      
+      updateCount();
+      
+      // 更新模式1卡片顯示
+      renderCards();
+      
+      // 更新模式2列表顯示
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+      
+      closePositionModal();
+    }
+    
+    // 關閉位置選擇彈窗
+    function closePositionModal() {
+      const modal = document.getElementById('positionModal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+    
+    // 打開參賽者選擇彈窗
+    function openPlayerModal(team, index) {
+      currentCardTeam = team;
+      currentCardIndex = index;
+      
+      document.getElementById('modalCardNumber').textContent = index + 1;
+      
+      // 取得已選擇的參賽者
+      const selectedPlayers = [...assignments.spade, ...assignments.heart].filter(p => p !== null);
+      
+      // 渲染參賽者列表
+      const playerModalList = document.getElementById('playerModalList');
+      playerModalList.innerHTML = players.map(player => {
+        const isUsed = selectedPlayers.includes(player);
+        const isCurrent = assignments[team][index] === player;
+        
+        return `
+          <button 
+            onclick="selectPlayer('${player}')"
+            class="px-4 py-3 rounded-lg font-semibold transition ${
+              isCurrent 
+                ? 'bg-blue-500 text-white' 
+                : isUsed 
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
+            ${isUsed && !isCurrent ? 'disabled' : ''}
+          >
+            ${player}
+          </button>
+        `;
+      }).join('');
+      
+      showElement('playerModal');
+    }
+    
+    // 選擇參賽者
+    function selectPlayer(playerName) {
+      assignments[currentCardTeam][currentCardIndex] = playerName;
+      closePlayerModal();
+      renderCards();
+      updateCount();
+      
+      // 如果是模式2，也更新列表
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+    }
+    
+    // 清除參賽者選擇
+    function clearPlayerSelection() {
+      assignments[currentCardTeam][currentCardIndex] = null;
+      closePlayerModal();
+      renderCards();
+      updateCount();
+      
+      // 如果是模式2，也更新列表
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+    }
+    
+    // 關閉參賽者選擇彈窗
+    function closePlayerModal() {
+      hideElement('playerModal');
+      currentCardTeam = '';
+      currentCardIndex = -1;
+    }
+    
+    // 重新渲染卡片
+    function renderCards() {
+      const spadeTeam = document.getElementById('spadeTeam');
+      const heartTeam = document.getElementById('heartTeam');
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      
+      // 黑桃隊
+      spadeTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
+        return createCardHTML(i + 1, 'spade', i);
+      }).join('');
+      
+      // 紅心隊
+      heartTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
+        return createCardHTML(i + 1, 'heart', i);
+      }).join('');
+    }
+    
+    // 切換標籤
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      // 更新標籤樣式
+      document.getElementById('spadeTab').className = 
+        tab === 'spade' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-spade flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-spade flex items-center justify-center gap-2';
+      document.getElementById('heartTab').className = 
+        tab === 'heart' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-heart flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-heart flex items-center justify-center gap-2';
+      
+      // 切換顯示容器
+      if (tab === 'spade') {
+        showElement('spadeContainer');
+        hideElement('heartContainer');
+      } else {
+        hideElement('spadeContainer');
+        showElement('heartContainer');
+      }
+    }
+    
+    // 切換模式
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // 更新導航欄按鈕圖示
+      const modeIcon = document.getElementById('modeIcon');
+      const modeToggleBtn = document.getElementById('modeToggleBtn');
+      
+      if (mode === 1) {
+        // 模式1：卡片選人 - 顯示卡片圖示
+        modeIcon.innerHTML = `
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="2"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+        `;
+        modeToggleBtn.title = '切換到人員選位';
+        
+        // 顯示模式1，隱藏模式2
+        document.querySelectorAll('#assignmentForm > div')[0].classList.remove('hidden'); // Tabs
+        document.querySelectorAll('#assignmentForm > div')[1].classList.remove('hidden'); // Grid container
+        hideElement('mode2Container');
+      } else {
+        // 模式2：人員選位 - 顯示人員圖示
+        modeIcon.innerHTML = `
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="7" r="4" stroke-width="2"/>
+        `;
+        modeToggleBtn.title = '切換到卡片選人';
+        
+        // 顯示模式2，隱藏模式1
+        document.querySelectorAll('#assignmentForm > div')[0].classList.add('hidden'); // Tabs
+        document.querySelectorAll('#assignmentForm > div')[1].classList.add('hidden'); // Grid container
+        showElement('mode2Container');
+        renderMode2PlayerList();
+      }
+    }
+    
+    // 切換模式 (Toggle)
+    function toggleMode() {
+      const newMode = currentMode === 1 ? 2 : 1;
+      switchMode(newMode);
+    }
+    
+    // 更新計數
+    function updateCount() {
+      const spadeAssignedCount = assignments.spade.filter(p => p).length;
+      const heartAssignedCount = assignments.heart.filter(p => p).length;
+      const assignedCount = spadeAssignedCount + heartAssignedCount;
+      
+      const totalNeeded = CONFIG.MAX_PLAYERS;
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      document.getElementById('assignCount').textContent = `${assignedCount}/${totalNeeded}`;
+      
+      // 控制確認按鈕 - 當任一隊伍分配完成時啟用
+      const confirmBtn = document.getElementById('confirmBtn');
+      if (spadeAssignedCount === slotsPerTeam || heartAssignedCount === slotsPerTeam) {
+        confirmBtn.disabled = false;
+      } else {
+        confirmBtn.disabled = true;
+      }
+    }
+    
+    // 清空分組
+    async function clearAssignment() {
+      const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
+      const confirmed = await confirmAction(`確定要清空${teamName}的分組嗎？`);
+      if (!confirmed) {
+        return;
+      }
+      
+      // 只清空當前分頁的隊伍
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      assignments[currentTab] = Array(slotsPerTeam).fill(null);
+      
+      renderCards();
+      updateCount();
+      
+      // 如果是模式2，也更新列表
+      if (currentMode === 2) {
+        renderMode2PlayerList();
+      }
+      
+      showToast(`已清空${teamName}`, 'info');
+    }
+    
+    // 確認分組
+    async function confirmAssignment() {
+      const spadeAssignedCount = assignments.spade.filter(p => p).length;
+      const heartAssignedCount = assignments.heart.filter(p => p).length;
+      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      
+      // 檢查至少一隊要完整
+      if (spadeAssignedCount < slotsPerTeam && heartAssignedCount < slotsPerTeam) {
+        showToast(`請至少完成一隊的分組（${slotsPerTeam}位參賽者）`, 'warning');
+        return;
+      }
+      
+      const confirmed = await confirmAction('確定要送出分組嗎？送出後將自動生成賽程表。');
+      if (!confirmed) {
+        return;
+      }
+      
+      // 顯示載入畫面
+      showElement('loadingOverlay');
+      
+      // 準備資料
+      const teamsData = [];
+      
+      assignments.spade.forEach((player, index) => {
+        if (player) {  // 只添加有參賽者的位置
+          teamsData.push({
+            roundId: roundId,
+            team: '黑桃',
+            number: index + 1,
+            name: player
+          });
+        }
+      });
+      
+      assignments.heart.forEach((player, index) => {
+        if (player) {  // 只添加有參賽者的位置
+          teamsData.push({
+            roundId: roundId,
+            team: '紅心',
+            number: index + 1,
+            name: player
+          });
+        }
+      });
+      
+      try {
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('saveTeams', teamsData);
+          showToast('分組已儲存', 'success');
+        } else {
+          console.warn('Apps Script 尚未設定，分組資料未寫入');
+          showToast('⚠️ Apps Script 尚未設定，資料未同步', 'warning', 5000);
+        }
+        
+        // 跳轉到賽程頁面
+        setTimeout(() => {
+          window.location.href = `matches.html?round=${roundId}&new=true`;
+        }, 1500);
+        
+      } catch (error) {
+        console.error('儲存分組失敗:', error);
+        hideElement('loadingOverlay');
+        showToast('儲存失敗', 'error');
+      }
+    }
+    
+    // 刪除場次
+    async function deleteMatch() {
+      const confirmed = await confirmAction(`確定要刪除場次「${roundId}」嗎？\n\n此操作將刪除：\n• 場次記錄\n• 分組資料\n• 所有比賽記錄\n\n此操作無法復原！`);
+      if (!confirmed) {
+        return;
+      }
+      
+      // 顯示載入畫面
+      showElement('loadingOverlay');
+      
+      try {
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('deleteRound', { roundId: roundId });
+          showToast('場次已刪除', 'success');
+          
+          // 延遲後跳轉回首頁
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } else {
+          console.warn('Apps Script 尚未設定，無法刪除場次');
+          showToast('⚠️ Apps Script 尚未設定，無法執行刪除', 'warning', 5000);
+          hideElement('loadingOverlay');
+        }
+      } catch (error) {
+        console.error('刪除場次失敗:', error);
+        hideElement('loadingOverlay');
+        showToast('刪除失敗：' + error.message, 'error');
+      }
+    }
+    
+    // 初始化
+    init();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>統計分析 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+  <style>
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .tab-btn:not(.active) {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .tab-btn:not(.active):hover {
+      background: #e5e7eb;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <a href="index.html" class="text-white hover:text-cloud-dancer font-semibold text-lg flex items-center gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </a>
+      <h1 class="text-xl md:text-2xl font-bold text-white absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+        統計
+      </h1>
+      <div class="w-5"></div>
+    </div>
+  </nav>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <div class="max-w-6xl mx-auto p-4 md:p-8">
+    
+    <!-- Overall Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="text-gray-600 text-sm mb-1">總場次</div>
+        <div id="totalRounds" class="text-3xl font-bold text-purple-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="text-gray-600 text-sm mb-1">總局數數</div>
+        <div id="totalMatches" class="text-3xl font-bold text-indigo-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="text-gray-600 text-sm mb-1">♠ 黑桃勝場</div>
+        <div id="spadeTotal" class="text-3xl font-bold text-gray-700">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="text-gray-600 text-sm mb-1">♥ 紅心勝場</div>
+        <div id="heartTotal" class="text-3xl font-bold text-red-600">0</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="bg-white rounded-lg shadow-lg p-8">
+      <div class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
+        <div class="text-gray-600">載入統計資料...</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div id="contentTabs" class="hidden">
+      <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <div class="grid grid-cols-2 gap-2">
+          <button 
+            onclick="switchTab('team')"
+            id="teamTab"
+            class="tab-btn py-3 px-4 rounded-lg font-bold transition active flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            隊伍戰績
+          </button>
+          <button 
+            onclick="switchTab('player')"
+            id="playerTab"
+            class="tab-btn py-3 px-4 rounded-lg font-bold transition flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+            </svg>
+            球員戰績
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="tabContent">
+        
+        <!-- Tab 1: 隊伍戰績 -->
+        <div id="teamContent" class="tab-content">
+          <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">總戰績對比</h3>
+            <div class="grid grid-cols-2 gap-6">
+              <div class="text-center">
+                <div class="text-4xl font-bold text-gray-700" id="spadeWinRate">0%</div>
+                <div class="text-gray-600 mt-2">♠ 黑桃隊勝率</div>
+              </div>
+              <div class="text-center">
+                <div class="text-4xl font-bold text-red-600" id="heartWinRate">0%</div>
+                <div class="text-gray-600 mt-2">♥ 紅心隊勝率</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">各場次戰績</h3>
+            <div id="roundStats" class="space-y-3">
+              <!-- 各場次戰績將動態插入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 球員戰績 -->
+        <div id="playerContent" class="tab-content hidden">
+          <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold text-gray-800">球員參賽統計</h3>
+              <div class="flex gap-2">
+                <button 
+                  onclick="sortPlayers('games')"
+                  class="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                >
+                  參賽次數
+                </button>
+                <button 
+                  onclick="sortPlayers('wins')"
+                  class="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                >
+                  勝場數
+                </button>
+                <button 
+                  onclick="sortPlayers('rate')"
+                  class="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                >
+                  勝率
+                </button>
+              </div>
+            </div>
+            <div id="playerStats" class="space-y-2">
+              <!-- 球員戰績將動態插入 -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    let rounds = [];
+    let teams = [];
+    let matches = [];
+    let scores = [];
+    let currentTab = 'team';
+    let playerStats = {};
+    
+    // 初始化
+    async function init() {
+      await loadAllData();
+      calculateStatistics();
+      
+      hideElement('loading');
+      showElement('contentTabs');
+    }
+    
+    // 載入所有資料
+    async function loadAllData() {
+      try {
+        rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        teams = await fetchCSV(CSV_URLS.TEAMS);
+        matches = await fetchCSV(CSV_URLS.MATCHES);
+        scores = await fetchCSV(CSV_URLS.SCORES);
+      } catch (error) {
+        console.error('載入資料失敗:', error);
+        showToast('載入統計資料失敗', 'error');
+      }
+    }
+    
+    // 計算統計資料
+    function calculateStatistics() {
+      // 基本統計
+      document.getElementById('totalRounds').textContent = rounds.length;
+      document.getElementById('totalMatches').textContent = matches.length;
+      
+      let spadeWins = 0;
+      let heartWins = 0;
+      
+      // 計算勝場數
+      scores.forEach(score => {
+        const spadeScore = parseInt(score['黑桃分數']);
+        const heartScore = parseInt(score['紅心分數']);
+        
+        if (spadeScore > heartScore) {
+          spadeWins++;
+        } else if (heartScore > spadeScore) {
+          heartWins++;
+        }
+      });
+      
+      document.getElementById('spadeTotal').textContent = spadeWins;
+      document.getElementById('heartTotal').textContent = heartWins;
+      
+      // 計算勝率
+      const totalGames = spadeWins + heartWins;
+      const spadeRate = totalGames > 0 ? ((spadeWins / totalGames) * 100).toFixed(1) : 0;
+      const heartRate = totalGames > 0 ? ((heartWins / totalGames) * 100).toFixed(1) : 0;
+      
+      document.getElementById('spadeWinRate').textContent = spadeRate + '%';
+      document.getElementById('heartWinRate').textContent = heartRate + '%';
+      
+      // 各場次戰績
+      renderRoundStats();
+      
+      // 計算球員戰績
+      calculatePlayerStats();
+      renderPlayerStats('games');
+    }
+    
+    // 渲染各場次戰績
+    function renderRoundStats() {
+      const roundStats = document.getElementById('roundStats');
+      
+      if (rounds.length === 0) {
+        roundStats.innerHTML = '<div class="text-center text-gray-500 py-8">尚無比賽資料</div>';
+        return;
+      }
+      
+      roundStats.innerHTML = rounds.map(round => {
+        const roundId = round['場次ID'];
+        const date = round['日期'];
+        const note = round['備註'] || '比賽場次';
+        
+        // 計算該場次的勝負
+        const roundScores = scores.filter(s => s['場次ID'] === roundId);
+        let spadeWins = 0;
+        let heartWins = 0;
+        
+        roundScores.forEach(score => {
+          const spadeScore = parseInt(score['黑桃分數']);
+          const heartScore = parseInt(score['紅心分數']);
+          
+          if (spadeScore > heartScore) {
+            spadeWins++;
+          } else if (heartScore > spadeScore) {
+            heartWins++;
+          }
+        });
+        
+        return `
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="font-bold text-gray-800">${roundId} - ${note}</div>
+                <div class="text-sm text-gray-600">📅 ${date}</div>
+              </div>
+              <div class="flex gap-4 items-center">
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-gray-700">♠ ${spadeWins}</div>
+                  <div class="text-xs text-gray-500">黑桃勝</div>
+                </div>
+                <div class="text-gray-400">-</div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-red-600">♥ ${heartWins}</div>
+                  <div class="text-xs text-gray-500">紅心勝</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).reverse().join('');
+    }
+    
+    // 計算球員戰績
+    function calculatePlayerStats() {
+      playerStats = {};
+      
+      // 遍歷所有比賽
+      scores.forEach(score => {
+        const roundId = score['場次ID'];
+        const matchNumber = score['局數'];
+        const spadeScore = parseInt(score['黑桃分數']);
+        const heartScore = parseInt(score['紅心分數']);
+        
+        // 找出該局數的球員
+        const match = matches.find(m => 
+          m['場次ID'] === roundId && 
+          m['局數'] == matchNumber
+        );
+        
+        if (!match) return;
+        
+        const spade1 = match['黑桃1'];
+        const spade2 = match['黑桃2'];
+        const heart1 = match['紅心1'];
+        const heart2 = match['紅心2'];
+        
+        const spadeWon = spadeScore > heartScore;
+        
+        // 記錄黑桃隊球員
+        [spade1, spade2].forEach(player => {
+          if (!player) return;
+          if (!playerStats[player]) {
+            playerStats[player] = { games: 0, wins: 0, losses: 0 };
+          }
+          playerStats[player].games++;
+          if (spadeWon) {
+            playerStats[player].wins++;
+          } else {
+            playerStats[player].losses++;
+          }
+        });
+        
+        // 記錄紅心隊球員
+        [heart1, heart2].forEach(player => {
+          if (!player) return;
+          if (!playerStats[player]) {
+            playerStats[player] = { games: 0, wins: 0, losses: 0 };
+          }
+          playerStats[player].games++;
+          if (!spadeWon) {
+            playerStats[player].wins++;
+          } else {
+            playerStats[player].losses++;
+          }
+        });
+      });
+    }
+    
+    // 渲染球員戰績
+    function renderPlayerStats(sortBy = 'games') {
+      const playerStatsDiv = document.getElementById('playerStats');
+      
+      if (Object.keys(playerStats).length === 0) {
+        playerStatsDiv.innerHTML = '<div class="text-center text-gray-500 py-8">尚無球員資料</div>';
+        return;
+      }
+      
+      // 轉換為陣列並排序
+      let players = Object.entries(playerStats).map(([name, stats]) => ({
+        name,
+        games: stats.games,
+        wins: stats.wins,
+        losses: stats.losses,
+        winRate: stats.games > 0 ? (stats.wins / stats.games * 100).toFixed(1) : 0
+      }));
+      
+      // 排序
+      if (sortBy === 'games') {
+        players.sort((a, b) => b.games - a.games);
+      } else if (sortBy === 'wins') {
+        players.sort((a, b) => b.wins - a.wins);
+      } else if (sortBy === 'rate') {
+        players.sort((a, b) => b.winRate - a.winRate);
+      }
+      
+      playerStatsDiv.innerHTML = players.map((player, index) => `
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <div class="bg-purple-100 text-purple-600 font-bold w-10 h-10 rounded-full flex items-center justify-center">
+                ${index + 1}
+              </div>
+              <div class="font-bold text-lg text-gray-800">${player.name}</div>
+            </div>
+            <div class="flex gap-6 text-sm">
+              <div class="text-center">
+                <div class="text-gray-600">參賽</div>
+                <div class="text-lg font-bold text-purple-600">${player.games}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-600">勝場</div>
+                <div class="text-lg font-bold text-green-600">${player.wins}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-600">敗場</div>
+                <div class="text-lg font-bold text-red-600">${player.losses}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-600">勝率</div>
+                <div class="text-lg font-bold text-blue-600">${player.winRate}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // 排序球員
+    function sortPlayers(sortBy) {
+      renderPlayerStats(sortBy);
+    }
+    
+    // 切換標籤
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      // 更新標籤樣式
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById(tab + 'Tab').classList.add('active');
+      
+      // 切換內容
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(tab + 'Content').classList.remove('hidden');
+    }
+    
+    // 初始化
+    init();
+  </script>
+
+</body>
+</html>

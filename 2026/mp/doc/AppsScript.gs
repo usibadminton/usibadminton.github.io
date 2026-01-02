@@ -1,0 +1,329 @@
+/**
+ * Google Apps Script for USI Badminton 2026
+ * 
+ * 設定步驟：
+ * 1. 在 Google Sheets 中，點選「擴充功能」>「Apps Script」
+ * 2. 將此檔案的內容貼到編輯器中
+ * 3. 點選「部署」>「新增部署作業」
+ * 4. 選擇類型：「網頁應用程式」
+ * 5. 執行身分：「我」
+ * 6. 存取權：「所有人」
+ * 7. 複製「網頁應用程式網址」
+ * 8. 將網址貼到 config.js 的 SCRIPT_URL
+ */
+
+// Spreadsheet ID (請替換成你的 Spreadsheet ID)
+const SPREADSHEET_ID = '1ej5da-A-kHbnrUA0fKqy3bGo_Y6rlHMdhy1GPcV55RA';
+
+// Sheet Names
+const SHEET_NAMES = {
+  PLAYERS: 'Players',
+  ROUNDS: 'Rounds',
+  TEAMS: 'Teams',
+  MATCHES: 'Matches',
+  SCORES: 'Scores'
+};
+
+/**
+ * 處理 POST 請求
+ */
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    const payload = data.data;
+    
+    let result;
+    
+    switch (action) {
+      case 'updatePlayers':
+        result = updatePlayers(payload);
+        break;
+      case 'addRound':
+        result = addRound(payload);
+        break;
+      case 'saveTeams':
+        result = saveTeams(payload);
+        break;
+      case 'saveMatches':
+        result = saveMatches(payload);
+        break;
+      case 'addScore':
+        result = addScore(payload);
+        break;
+      case 'updateMatchStatus':
+        result = updateMatchStatus(payload);
+        break;
+      case 'deleteScore':
+        result = deleteScore(payload);
+        break;
+      case 'deleteRound':
+        result = deleteRound(payload);
+        break;
+      default:
+        result = { success: false, message: 'Unknown action' };
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * 處理 GET 請求（測試用）
+ */
+function doGet() {
+  return ContentService.createTextOutput('USI Badminton 2026 API is running');
+}
+
+/**
+ * 更新球員名單
+ */
+function updatePlayers(players) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.PLAYERS);
+  
+  // 清空現有資料（保留標題）
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.deleteRows(2, lastRow - 1);
+  }
+  
+  // 寫入新資料
+  if (players.length > 0) {
+    const values = players.map(p => [
+      p['姓名'] || p.name || '',
+      p['簽到狀態'] === true ? 'true' : 'false'
+    ]);
+    sheet.getRange(2, 1, values.length, 2).setValues(values);
+  }
+  
+  return { success: true, count: players.length };
+}
+
+/**
+ * 新增場次
+ */
+function addRound(round) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.ROUNDS);
+  
+  sheet.appendRow([
+    round.roundId,
+    round.date,
+    round.note
+  ]);
+  
+  return { success: true };
+}
+
+/**
+ * 儲存分組
+ */
+function saveTeams(teams) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.TEAMS);
+  
+  // 刪除該場次的舊資料
+  const roundId = teams[0].roundId;
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = data.length - 1; i > 0; i--) {
+    if (data[i][0] === roundId) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 寫入新資料
+  const values = teams.map(t => [
+    t.roundId,
+    t.team,
+    t.number,
+    t.name
+  ]);
+  
+  sheet.getRange(sheet.getLastRow() + 1, 1, values.length, 4).setValues(values);
+  
+  return { success: true, count: teams.length };
+}
+
+/**
+ * 儲存賽程
+ */
+function saveMatches(matches) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.MATCHES);
+  
+  // 刪除該場次的舊資料
+  const roundId = matches[0].roundId;
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = data.length - 1; i > 0; i--) {
+    if (data[i][0] === roundId) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 寫入新資料
+  const values = matches.map(m => [
+    m.roundId,
+    m.matchNumber,
+    m.spade1,
+    m.spade2,
+    m.heart1,
+    m.heart2
+  ]);
+  
+  sheet.getRange(sheet.getLastRow() + 1, 1, values.length, 6).setValues(values);
+  
+  return { success: true, count: matches.length };
+}
+
+/**
+ * 新增比分
+ */
+function addScore(score) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.SCORES);
+  
+  // 檢查是否已有該場次的比分
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === score.roundId && data[i][1] == score.matchNumber) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+  
+  const timestamp = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss');
+  
+  if (rowIndex > 0) {
+    // 更新現有比分
+    sheet.getRange(rowIndex, 1, 1, 5).setValues([[
+      score.roundId,
+      score.matchNumber,
+      score.spadeScore,
+      score.heartScore,
+      timestamp
+    ]]);
+  } else {
+    // 新增比分
+    sheet.appendRow([
+      score.roundId,
+      score.matchNumber,
+      score.spadeScore,
+      score.heartScore,
+      timestamp
+    ]);
+  }
+  
+  return { success: true };
+}
+
+/**
+ * 更新比賽狀態
+ */
+function updateMatchStatus(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.MATCHES);
+  
+  // 找到對應的比賽
+  const dataRange = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < dataRange.length; i++) {
+    if (dataRange[i][0] === data.roundId && dataRange[i][1] == data.matchNumber) {
+      // 更新狀態欄（假設狀態在第7欄，如果還沒有這欄需要先添加）
+      // 如果 Matches sheet 沒有狀態欄，需要先在 Google Sheets 手動添加 "狀態" 欄
+      sheet.getRange(i + 1, 7).setValue(data.status);
+      return { success: true };
+    }
+  }
+  
+  return { success: false, message: '找不到對應的比賽' };
+}
+
+/**
+ * 刪除比分（用於重置比賽）
+ */
+function deleteScore(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.SCORES);
+  
+  // 找到並刪除對應的比分記錄
+  const dataRange = sheet.getDataRange().getValues();
+  
+  for (let i = dataRange.length - 1; i > 0; i--) {
+    if (dataRange[i][0] === data.roundId && dataRange[i][1] == data.matchNumber) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 同時重置比賽狀態為 not-started
+  const matchesSheet = ss.getSheetByName(SHEET_NAMES.MATCHES);
+  const matchesData = matchesSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < matchesData.length; i++) {
+    if (matchesData[i][0] === data.roundId && matchesData[i][1] == data.matchNumber) {
+      matchesSheet.getRange(i + 1, 7).setValue('not-started');
+      break;
+    }
+  }
+  
+  return { success: true };
+}
+
+/**
+ * 刪除整場比賽（包含所有相關資料）
+ */
+function deleteRound(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const roundId = data.roundId;
+  
+  // 1. 刪除 Scores 表中的所有比分
+  const scoresSheet = ss.getSheetByName(SHEET_NAMES.SCORES);
+  const scoresData = scoresSheet.getDataRange().getValues();
+  for (let i = scoresData.length - 1; i > 0; i--) {
+    if (scoresData[i][0] === roundId) {
+      scoresSheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 2. 刪除 Matches 表中的所有比賽
+  const matchesSheet = ss.getSheetByName(SHEET_NAMES.MATCHES);
+  const matchesData = matchesSheet.getDataRange().getValues();
+  for (let i = matchesData.length - 1; i > 0; i--) {
+    if (matchesData[i][0] === roundId) {
+      matchesSheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 3. 刪除 Teams 表中的所有分組
+  const teamsSheet = ss.getSheetByName(SHEET_NAMES.TEAMS);
+  const teamsData = teamsSheet.getDataRange().getValues();
+  for (let i = teamsData.length - 1; i > 0; i--) {
+    if (teamsData[i][0] === roundId) {
+      teamsSheet.deleteRow(i + 1);
+    }
+  }
+  
+  // 4. 刪除 Rounds 表中的場次記錄
+  const roundsSheet = ss.getSheetByName(SHEET_NAMES.ROUNDS);
+  const roundsData = roundsSheet.getDataRange().getValues();
+  for (let i = roundsData.length - 1; i > 0; i--) {
+    if (roundsData[i][0] === roundId) {
+      roundsSheet.deleteRow(i + 1);
+      break;
+    }
+  }
+  
+  return { success: true, message: '已刪除整場比賽及相關資料' };
+}
+

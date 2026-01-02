@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>賽程表 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <a href="index.html" class="text-white hover:text-cloud-dancer font-semibold text-lg flex items-center gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </a>
+      <h1 class="text-xl md:text-2xl font-bold text-white absolute left-1/2 transform -translate-x-1/2">
+        賽程表
+      </h1>
+      <div class="w-5"></div>
+    </div>
+  </nav>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <div class="max-w-6xl mx-auto p-4 md:p-8">
+    
+    <!-- Round Info -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex flex-col gap-4">
+        <!-- Top Row: Title and Buttons -->
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 id="roundTitle" class="text-2xl font-bold text-gray-800">場次 Match-001</h2>
+            <p id="roundDate" class="text-sm text-gray-600 mt-1">2026-01-01</p>
+          </div>
+          <div class="flex gap-2 items-center">
+            <button 
+              onclick="viewHistory()"
+              class="bg-teal-500 hover:bg-teal-600 text-white p-3 rounded-lg transition"
+              title="查看完整記錄"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </button>
+            <button 
+              onclick="deleteEntireMatch()"
+              id="deleteBtn"
+              class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg transition hidden"
+              title="刪除整場"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Bottom Row: Statistics -->
+        <div class="flex gap-2 justify-end">
+          <div class="text-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-300">
+            <div class="text-xs text-gray-600 flex items-center justify-center gap-1">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+              </svg>
+              黑桃隊
+            </div>
+            <div id="spadeWins" class="text-2xl font-bold text-gray-700">0</div>
+          </div>
+          <div class="text-center px-4 py-2 bg-red-50 rounded-lg border border-red-200">
+            <div class="text-xs text-gray-600 flex items-center justify-center gap-1">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              紅心隊
+            </div>
+            <div id="heartWins" class="text-2xl font-bold text-red-600">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="bg-white rounded-lg shadow-lg p-8">
+      <div class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
+        <div class="text-gray-600">載入賽程資料...</div>
+      </div>
+    </div>
+
+    <!-- Matches List -->
+    <div id="matchesList" class="space-y-4 hidden">
+      <!-- 賽程卡片將動態插入 -->
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    let roundId = '';
+    let isNewRound = false;
+    let teams = { spade: [], heart: [] };
+    let matches = [];
+    let scores = [];
+    
+    // 初始化
+    async function init() {
+      roundId = getUrlParam('round') || 'Match-001';
+      isNewRound = getUrlParam('new') === 'true';
+      
+      document.getElementById('roundTitle').textContent = `${roundId}`;
+      
+      await loadRoundInfo();
+      await loadTeams();
+      
+      if (isNewRound) {
+        // 新場次，自動生成賽程
+        await generateMatches();
+      } else {
+        // 已有場次，載入現有賽程
+        await loadMatches();
+      }
+      
+      await loadScores();
+      renderMatches();
+      
+      // Show delete button if authenticated
+      if (isAuthenticated()) {
+        document.getElementById('deleteBtn').classList.remove('hidden');
+      }
+    }
+    
+    // 載入場次資訊
+    async function loadRoundInfo() {
+      try {
+        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        const round = rounds.find(r => r['場次ID'] === roundId);
+        
+        if (round) {
+          document.getElementById('roundDate').textContent = `${round['日期']}`;
+        }
+      } catch (error) {
+        console.error('載入場次資訊失敗:', error);
+      }
+    }
+    
+    // 載入分組資料
+    async function loadTeams() {
+      try {
+        const data = await fetchCSV(CSV_URLS.TEAMS);
+        const roundTeams = data.filter(t => t['場次ID'] === roundId);
+        
+        teams.spade = roundTeams
+          .filter(t => t['隊伍'] === '黑桃')
+          .sort((a, b) => parseInt(a['編號']) - parseInt(b['編號']));
+        
+        teams.heart = roundTeams
+          .filter(t => t['隊伍'] === '紅心')
+          .sort((a, b) => parseInt(a['編號']) - parseInt(b['編號']));
+        
+        if (teams.spade.length === 0 || teams.heart.length === 0) {
+          await alertAction('尚未完成分組，請先進行分組作業。');
+          window.location.href = `team-assign.html?round=${roundId}`;
+        }
+      } catch (error) {
+        console.error('載入分組資料失敗:', error);
+        showToast('載入分組資料失敗', 'error');
+      }
+    }
+    
+    // 生成賽程
+    async function generateMatches() {
+      matches = [];
+      
+      // 6場雙打：1,2 vs 1,2 / 3,4 vs 3,4 / ...
+      for (let i = 0; i < 6; i++) {
+        const idx1 = i * 2;
+        const idx2 = i * 2 + 1;
+        
+        matches.push({
+          roundId: roundId,
+          matchNumber: i + 1,
+          spade1: teams.spade[idx1]['姓名'],
+          spade2: teams.spade[idx2]['姓名'],
+          heart1: teams.heart[idx1]['姓名'],
+          heart2: teams.heart[idx2]['姓名']
+        });
+      }
+      
+      // 寫入 Matches 表
+      try {
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('saveMatches', matches);
+          console.log('賽程已生成');
+        } else {
+          console.warn('Apps Script 尚未設定，賽程資料未寫入');
+        }
+      } catch (error) {
+        console.error('生成賽程失敗:', error);
+      }
+    }
+    
+    // 載入現有賽程
+    async function loadMatches() {
+      try {
+        const data = await fetchCSV(CSV_URLS.MATCHES);
+        matches = data.filter(m => m['場次ID'] === roundId);
+      } catch (error) {
+        console.error('載入賽程失敗:', error);
+      }
+    }
+    
+    // 載入比分
+    async function loadScores() {
+      try {
+        const data = await fetchCSV(CSV_URLS.SCORES);
+        scores = data.filter(s => s['場次ID'] === roundId);
+      } catch (error) {
+        console.error('載入比分失敗:', error);
+        scores = [];
+      }
+    }
+    
+    // 渲染賽程
+    function renderMatches() {
+      hideElement('loading');
+      showElement('matchesList');
+      
+      const matchesList = document.getElementById('matchesList');
+      
+      let spadeWins = 0;
+      let heartWins = 0;
+      
+      matchesList.innerHTML = matches.map((match, index) => {
+        const matchNumber = match['局數'] || match['matchNumber'] || (index + 1);
+        const spade1 = match['黑桃1'] || match['spade1'];
+        const spade2 = match['黑桃2'] || match['spade2'];
+        const heart1 = match['紅心1'] || match['heart1'];
+        const heart2 = match['紅心2'] || match['heart2'];
+        
+        // 檢查是否有比分
+        const score = scores.find(s => parseInt(s['局數']) === parseInt(matchNumber));
+        const hasScore = !!score;
+        const spadeScore = hasScore ? score['黑桃分數'] : '-';
+        const heartScore = hasScore ? score['紅心分數'] : '-';
+        
+        // 取得比賽狀態
+        const matchStatus = match['狀態'] || match['status'] || 'not-started';
+        
+        // 狀態顯示
+        let statusBadge = '';
+        if (hasScore || matchStatus === 'done') {
+          statusBadge = '<span class="bg-green-500 px-3 py-1 rounded-2xl text-sm font-semibold">已完成</span>';
+        } else if (matchStatus === 'ongoing') {
+          statusBadge = '<span class="bg-yellow-500 px-3 py-1 rounded-2xl text-sm font-semibold">進行中</span>';
+        } else {
+          statusBadge = '<span class="bg-gray-500 px-3 py-1 rounded-2xl text-sm font-semibold">未開始</span>';
+        }
+        
+        // 判斷勝負
+        let winner = '';
+        if (hasScore) {
+          if (parseInt(spadeScore) > parseInt(heartScore)) {
+            winner = 'spade';
+            spadeWins++;
+          } else {
+            winner = 'heart';
+            heartWins++;
+          }
+        }
+        
+        return `
+          <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-reflected-breeze text-white px-6 py-3">
+              <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-bold">第 ${matchNumber} 局</h3>
+                ${statusBadge}
+              </div>
+            </div>
+            
+            <div class="p-4 md:p-6">
+              <div class="grid grid-cols-2 gap-3 md:gap-6 items-stretch">
+                
+                <!-- 黑桃隊 -->
+                <div class="border-2 ${winner === 'spade' ? 'border-gray-700 shadow-lg' : 'border-gray-300'} rounded-lg overflow-hidden flex flex-col">
+                  <div class="bg-gray-700 text-white px-2 md:px-4 py-2 ${winner === 'spade' ? 'bg-gradient-to-r from-gray-700 to-gray-600' : ''}">
+                    <div class="flex items-center justify-center gap-1 sm:gap-2">
+                      <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+                        <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+                      </svg>
+                      <h3 class="text-sm md:text-base font-bold text-center">黑桃隊</h3>
+                    </div>
+                  </div>
+                  <div class="p-2 md:p-4 space-y-2 flex-1 flex flex-col justify-center">
+                    <div class="flex items-center gap-2">
+                      <div class="bg-gray-100 text-gray-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm flex-shrink-0">
+                        1
+                      </div>
+                      <div class="flex-1 bg-gray-50 px-2 py-2 md:py-3 rounded text-xs md:text-base font-semibold text-gray-800 text-center break-words">
+                        ${spade1}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="bg-gray-100 text-gray-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm flex-shrink-0">
+                        2
+                      </div>
+                      <div class="flex-1 bg-gray-50 px-2 py-2 md:py-3 rounded text-xs md:text-base font-semibold text-gray-800 text-center break-words">
+                        ${spade2}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 紅心隊 -->
+                <div class="border-2 ${winner === 'heart' ? 'border-red-600 shadow-lg' : 'border-red-300'} rounded-lg overflow-hidden flex flex-col">
+                  <div class="bg-red-600 text-white px-2 md:px-4 py-2 ${winner === 'heart' ? 'bg-gradient-to-r from-red-600 to-red-500' : ''}">
+                    <div class="flex items-center justify-center gap-1 sm:gap-2">
+                      <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <h3 class="text-sm md:text-base font-bold text-center">紅心隊</h3>
+                    </div>
+                  </div>
+                  <div class="p-2 md:p-4 space-y-2 flex-1 flex flex-col justify-center">
+                    <div class="flex items-center gap-2">
+                      <div class="bg-red-100 text-red-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm flex-shrink-0">
+                        1
+                      </div>
+                      <div class="flex-1 bg-red-50 px-2 py-2 md:py-3 rounded text-xs md:text-base font-semibold text-gray-800 text-center break-words">
+                        ${heart1}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="bg-red-100 text-red-600 font-bold w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm flex-shrink-0">
+                        2
+                      </div>
+                      <div class="flex-1 bg-red-50 px-2 py-2 md:py-3 rounded text-xs md:text-base font-semibold text-gray-800 text-center break-words">
+                        ${heart2}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              
+              <!-- Score Display -->
+              ${hasScore ? `
+                <div class="mt-4 pt-4 border-t-2 border-gray-200">
+                  <div class="flex items-center justify-center gap-3">
+                    <div class="flex items-center gap-2">
+                      ${winner === 'spade' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold">WIN</span>' : '<div class="w-14 md:w-16"></div>'}
+                      <div class="text-4xl sm:text-5xl font-bold text-gray-700">${spadeScore}</div>
+                    </div>
+                    <div class="text-3xl sm:text-4xl font-bold text-gray-400">:</div>
+                    <div class="flex items-center gap-2">
+                      <div class="text-4xl sm:text-5xl font-bold text-red-600">${heartScore}</div>
+                      ${winner === 'heart' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold">WIN</span>' : '<div class="w-14 md:w-16"></div>'}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              <!-- Actions -->
+              <div class="flex gap-3 mt-4 justify-center">
+                ${hasScore && isAuthenticated() ? `
+                  <button 
+                    onclick="viewScore(${matchNumber})"
+                    class="bg-alaskan-blue/20 hover:bg-alaskan-blue/30 text-alaskan-blue font-semibold py-3 px-8 rounded-lg transition text-base"
+                  >
+                    編輯
+                  </button>
+                ` : !hasScore && isAuthenticated() ? `
+                  <button 
+                    onclick="startScoring(${matchNumber})"
+                    class="bg-reflected-breeze/80 hover:bg-reflected-breeze/90 text-white font-semibold py-3 px-8 rounded-lg transition text-base border-4 border-double"
+                  >
+                    GO!
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // 更新勝場數
+      document.getElementById('spadeWins').textContent = spadeWins;
+      document.getElementById('heartWins').textContent = heartWins;
+    }
+    
+    // 開始計分（需要登入）
+    function startScoring(matchNumber) {
+      if (!isAuthenticated()) {
+        showToast('請先登入才能計分', 'warning');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+        return;
+      }
+      window.location.href = `scoring.html?round=${roundId}&match=${matchNumber}`;
+    }
+    
+    // 查看比分
+    function viewScore(matchNumber) {
+      window.location.href = `scoring.html?round=${roundId}&match=${matchNumber}`;
+    }
+    
+    // 查看完整記錄
+    function viewHistory() {
+      window.location.href = `history.html?round=${roundId}`;
+    }
+    
+    // 刪除整場比賽
+    async function deleteEntireMatch() {
+      if (!isAuthenticated()) {
+        showToast('請先登入才能刪除整場比賽', 'warning');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+        return;
+      }
+      
+      const confirmed = await confirmAction(`確定要刪除整場比賽 ${roundId} 嗎？\n\n這將刪除：\n- 所有局數比賽資料\n- 所有比分記錄\n- 所有分組資料\n- 場次記錄\n\n此操作無法復原！`);
+      if (!confirmed) {
+        return;
+      }
+      
+      // 顯示載入畫面
+      showElement('loading');
+      hideElement('matchesList');
+      
+      try {
+        // 如果有 Apps Script，呼叫刪除 API
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('deleteRound', {
+            roundId: roundId
+          });
+          showToast('場次已刪除', 'success');
+        } else {
+          showToast('⚠️ Apps Script 尚未設定，資料未同步刪除', 'warning');
+        }
+        
+        // 延遲後返回首頁
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1500);
+      } catch (error) {
+        console.error('刪除失敗:', error);
+        hideElement('loading');
+        showElement('matchesList');
+        showToast('❌ 刪除失敗：' + error.message, 'error');
+      }
+    }
+    
+    // 初始化
+    init();
+  </script>
+
+</body>
+</html>
