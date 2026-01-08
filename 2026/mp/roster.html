@@ -32,9 +32,21 @@
     
     <!-- Player Count & Mode Toggle -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-      <div class="flex justify-between items-center flex-wrap gap-4">
-        <!-- Mode Toggle (Left) -->
-        <div class="flex bg-gray-200 rounded-lg p-1">
+      <div class="flex flex-col gap-4">
+        <!-- Stats (Center) -->
+        <div class="flex gap-6 items-center justify-center">
+          <div class="text-center">
+            <div class="text-sm text-gray-600">已簽到</div>
+            <div id="checkedInCount" class="text-3xl font-bold text-green-600">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-600">總人數</div>
+            <div id="playerCount" class="text-3xl font-bold text-blue-600">0</div>
+          </div>
+        </div>
+        
+        <!-- Mode Toggle (Center) - Only show for authenticated users -->
+        <div id="modeToggle" class="flex bg-gray-200 rounded-lg p-1 hidden justify-center">
           <button 
             id="checkedModeBtn"
             onclick="switchMode('checked')"
@@ -49,18 +61,6 @@
           >
             編輯
           </button>
-        </div>
-        
-        <!-- Stats (Right) -->
-        <div class="flex gap-6 items-center">
-          <div class="text-center">
-            <div class="text-sm text-gray-600">已簽到</div>
-            <div id="checkedInCount" class="text-3xl font-bold text-green-600">0</div>
-          </div>
-          <div class="text-center">
-            <div class="text-sm text-gray-600">總人數</div>
-            <div id="playerCount" class="text-3xl font-bold text-blue-600">0</div>
-          </div>
         </div>
       </div>
     </div>
@@ -104,26 +104,26 @@
         <button 
           id="allPlayersTab"
           onclick="switchFilter('all')"
-          class="flex-1 py-3 px-4 rounded-lg font-bold transition bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-white shadow flex flex-col items-center justify-center gap-1"
+          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-alaskan-blue text-white shadow flex flex-col items-center justify-center gap-1 text-sm"
         >
           <span>全部</span>
-          <span id="allCount" class="bg-white text-alaskan-blue px-2 py-1 rounded-full text-sm font-bold">0</span>
+          <span id="allCount" class="bg-white text-alaskan-blue px-2 py-0.5 rounded-full text-xs font-bold">0</span>
         </button>
         <button 
           id="uncheckedTab"
           onclick="switchFilter('unchecked')"
-          class="flex-1 py-3 px-4 rounded-lg font-bold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1"
+          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-sm"
         >
           <span>未到</span>
-          <span id="uncheckedCount" class="bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm font-bold">0</span>
+          <span id="uncheckedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
         </button>
         <button 
           id="checkedTab"
           onclick="switchFilter('checked')"
-          class="flex-1 py-3 px-4 rounded-lg font-bold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1"
+          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-sm"
         >
           <span>已到</span>
-          <span id="checkedCount" class="bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm font-bold">0</span>
+          <span id="checkedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
         </button>
       </div>
     </div>
@@ -134,11 +134,11 @@
         <!-- 選手列表將動態插入 -->
       </div>
       
-      <!-- Add Player Button -->
+      <!-- Add Player Button - Only show for authenticated users -->
       <button 
         onclick="showAddPlayerForm()"
         id="addPlayerBtn"
-        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg transition flex items-center justify-center gap-2"
+        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg transition flex items-center justify-center gap-2 hidden"
       >
         <span class="text-xl">+</span>
         <span>新增選手</span>
@@ -191,9 +191,6 @@
   <script src="js/utils.js"></script>
   
   <script>
-    // 檢查登入狀態
-    requireAuth();
-    
     let players = [];
     let editingIndex = -1;
     let currentMode = 'checked'; // 'checked' or 'edit'
@@ -238,7 +235,7 @@
       
       // 重置所有按鈕樣式
       [allTab, uncheckedTab, checkedTab].forEach(tab => {
-        tab.classList.remove('bg-gradient-to-r', 'from-reflected-breeze', 'to-cosmic-sky', 'text-white', 'shadow');
+        tab.classList.remove('bg-alaskan-blue', 'text-white', 'shadow');
         tab.classList.add('bg-gray-100', 'text-gray-600');
       });
       
@@ -253,7 +250,7 @@
       }
       
       activeTab.classList.remove('bg-gray-100', 'text-gray-600');
-      activeTab.classList.add('bg-gradient-to-r', 'from-reflected-breeze', 'to-cosmic-sky', 'text-white', 'shadow');
+      activeTab.classList.add('bg-alaskan-blue', 'text-white', 'shadow');
       
       // 更新徽章顏色
       const allCount = document.getElementById('allCount');
@@ -333,6 +330,12 @@
         // 顯示篩選標籤（因為預設是簽到模式）
         document.getElementById('filterTabs').classList.remove('hidden');
         
+        // Show edit features only for authenticated users
+        if (isAuthenticated()) {
+          document.getElementById('modeToggle').classList.remove('hidden');
+          document.getElementById('addPlayerBtn').classList.remove('hidden');
+        }
+        
         renderPlayers();
       } catch (error) {
         console.error('載入選手失敗:', error);
@@ -411,40 +414,51 @@
         const name = player['姓名'] || '';
         const checkedIn = player['簽到狀態'] === true;
         
-        // 根據模式顯示不同的按鈕
+        // 根據模式和登入狀態顯示不同的按鈕
         let actionButtons = '';
-        if (currentMode === 'checked') {
-          // 簽到模式：只顯示簽到按鈕
+        if (isAuthenticated()) {
+          if (currentMode === 'checked') {
+            // 簽到模式：只顯示簽到按鈕
+            actionButtons = `
+              <button 
+                onclick="toggleCheckIn(${index})"
+                class="${checkedIn ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500'} text-white w-10 h-10 rounded-full transition flex items-center justify-center"
+                title="${checkedIn ? '已簽到' : '點擊簽到'}"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            `;
+          } else {
+            // 編輯模式：顯示編輯和刪除按鈕
+            actionButtons = `
+              <button 
+                onclick="editPlayer(${index})"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-2xl transition text-sm font-semibold flex items-center gap-1"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </button>
+              <button 
+                onclick="deletePlayer(${index})"
+                class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-2xl transition text-sm font-semibold flex items-center gap-1"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            `;
+          }
+        } else {
+          // 未登入：顯示簽到狀態（不可點擊）
           actionButtons = `
-            <button 
-              onclick="toggleCheckIn(${index})"
-              class="${checkedIn ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500'} text-white w-10 h-10 rounded-full transition flex items-center justify-center"
-              title="${checkedIn ? '已簽到' : '點擊簽到'}"
-            >
+            <div class="${checkedIn ? 'bg-green-500' : 'bg-gray-400'} text-white w-10 h-10 rounded-full flex items-center justify-center">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
               </svg>
-            </button>
-          `;
-        } else {
-          // 編輯模式：顯示編輯和刪除按鈕
-          actionButtons = `
-            <button 
-              onclick="editPlayer(${index})"
-              class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-2xl transition text-sm font-semibold flex items-center gap-1"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-              </svg>
-            </button>
-            <button 
-              onclick="deletePlayer(${index})"
-              class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-2xl transition text-sm font-semibold flex items-center gap-1"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </button>
+            </div>
           `;
         }
         

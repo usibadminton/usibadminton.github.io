@@ -48,6 +48,16 @@
       </div>
     </div>
 
+    <!-- Reset Loading Overlay -->
+    <div id="resetLoading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl p-8">
+        <div class="text-center">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+          <div class="text-gray-800 font-semibold text-lg">重置中...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Match Info -->
     <div id="matchInfo" class="hidden">
       <!-- Match Header -->
@@ -209,19 +219,6 @@
         </div>
       </div>
 
-      <!-- History -->
-      <div id="historySection" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
-        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-          </svg>
-          歷史紀錄
-        </h3>
-        <div id="historyList" class="space-y-2">
-          <!-- 歷史紀錄將動態插入 -->
-        </div>
-      </div>
-
     </div>
 
   </div>
@@ -281,22 +278,49 @@
         showElement('startButtonContainer');
         hideElement('resetButtonContainer');
         hideElement('scoreInputContainer');
+        
+        // 重置開始按鈕狀態
+        const startBtnContainer = document.getElementById('startButtonContainer');
+        if (startBtnContainer) {
+          startBtnContainer.innerHTML = `
+            <button 
+              onclick="startMatch()"
+              class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition text-lg"
+            >
+              開始
+            </button>
+          `;
+        }
       }
     }
     
     // 開始比賽
     async function startMatch() {
+      const startBtn = event.target;
+      const originalText = startBtn.textContent;
+      
       try {
+        // 顯示 loading 狀態
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>開始中...';
+        
         console.log('開始比賽 - roundId:', roundId, 'matchNumber:', matchNumber);
         
-        // 更新狀態為進行中
-        await updateMatchStatus('ongoing');
+        // 立即更新前端狀態
         matchStatus = 'ongoing';
         updateUI();
+        
+        // 非同步更新後端（不等待）
+        updateMatchStatus('ongoing').catch(error => {
+          console.error('後端狀態更新失敗:', error);
+        });
+        
         showToast('比賽狀態:進行中', 'success');
       } catch (error) {
         console.error('開始比賽失敗:', error);
         showToast('❌ 操作失敗：' + error.message, 'error');
+        startBtn.disabled = false;
+        startBtn.textContent = originalText;
       }
     }
     
@@ -307,42 +331,44 @@
         return;
       }
       
+      const resetBtn = event.target;
+      const originalText = resetBtn.textContent;
+      
       try {
+        // 顯示 loading overlay
+        showElement('resetLoading');
+        resetBtn.disabled = true;
+        
         console.log('重置比賽 - roundId:', roundId, 'matchNumber:', matchNumber);
         
-        // 清空輸入框
-        document.getElementById('spadeScore').value = '';
-        document.getElementById('heartScore').value = '';
-        
-        // 刪除比分記錄
+        // 等待後端更新完成
         if (CONFIG.SCRIPT_URL) {
-          await writeToSheet('deleteScore', {
-            roundId: roundId,
-            matchNumber: matchNumber
-          });
+          await Promise.all([
+            writeToSheet('deleteScore', {
+              roundId: roundId,
+              matchNumber: matchNumber
+            }),
+            updateMatchStatus('not-started')
+          ]);
         }
         
-        // 更新狀態為未開始
-        await updateMatchStatus('not-started');
-        matchStatus = 'not-started';
-        
-        // 清除歷史記錄顯示
+        // 後端成功後，才更新前端狀態
+        document.getElementById('spadeScore').value = '';
+        document.getElementById('heartScore').value = '';
         existingScore = null;
         hasExistingRecord = false;
-        hideElement('historySection');
-        document.getElementById('historyList').innerHTML = '';
-        
-        // 重新載入比分（應該是空的）
-        await loadExistingScore();
-        
-        // 切換到編輯模式
+        matchStatus = 'not-started';
+        updateUI();
         setEditMode(true);
         
-        updateUI();
         showToast('比賽狀態:未開始', 'success');
       } catch (error) {
         console.error('重置比賽失敗:', error);
         showToast('❌ 操作失敗：' + error.message, 'error');
+      } finally {
+        // 隱藏 loading overlay 並恢復按鈕狀態
+        hideElement('resetLoading');
+        resetBtn.disabled = false;
       }
     }
     
@@ -422,29 +448,6 @@
           
           // 設定為檢視模式（禁用輸入）
           setEditMode(false);
-          
-          // 顯示歷史紀錄
-          showElement('historySection');
-          const historyList = document.getElementById('historyList');
-          historyList.innerHTML = history.map(s => `
-            <div class="bg-gray-50 px-4 py-3 rounded-lg flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <svg class="w-3 h-3 text-gray-700" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
-                  <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
-                </svg>
-                <span class="font-bold text-gray-700">${s['黑桃分數']}</span>
-                <span class="mx-2">-</span>
-                <span class="font-bold text-red-600">${s['紅心分數']}</span>
-                <svg class="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              <div class="text-sm text-gray-500">
-                ${s['記錄時間'] || ''}
-              </div>
-            </div>
-          `).join('');
         } else {
           // 沒有歷史紀錄，設定為編輯模式
           hasExistingRecord = false;
@@ -647,12 +650,6 @@
         if (CONFIG.SCRIPT_URL) {
           await writeToSheet('addScore', scoreData);
           showToast('比分已記錄', 'success');
-          
-          // 顯示勝負
-          const winner = spadeScore > heartScore ? '黑桃隊' : '紅心隊';
-          setTimeout(() => {
-            showToast(`🏆 ${winner} 獲勝！`, 'success', 3000);
-          }, 1000);
           
           // 重新載入歷史
           await loadExistingScore();

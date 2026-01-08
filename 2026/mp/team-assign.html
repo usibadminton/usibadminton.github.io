@@ -423,16 +423,8 @@
       const roundNumber = parseRoundId(roundId);
       
       try {
-        // 先檢查此場次ID是否已存在
-        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
-        const exists = rounds.some(r => (r['場次ID'] || r['场次ID']) === roundId);
-        
-        if (exists) {
-          console.log('場次已存在，跳過建立');
-          return;
-        }
-        
         if (CONFIG.SCRIPT_URL) {
+          // 直接建立場次，讓後端處理重複檢查（更快速）
           await writeToSheet('addRound', {
             roundId: roundId,
             date: datetime,
@@ -444,6 +436,10 @@
         }
       } catch (error) {
         console.error('建立場次失敗:', error);
+        // 如果是重複建立的錯誤，可以忽略
+        if (!error.message?.includes('已存在')) {
+          showToast('建立場次時發生錯誤', 'error');
+        }
       }
     }
     
@@ -1105,9 +1101,9 @@
       const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
       document.getElementById('assignCount').textContent = `${assignedCount}/${totalNeeded}`;
       
-      // 控制確認按鈕 - 當任一隊伍分配完成時啟用
+      // 控制確認按鈕 - 當至少有一個參賽者時啟用
       const confirmBtn = document.getElementById('confirmBtn');
-      if (spadeAssignedCount === slotsPerTeam || heartAssignedCount === slotsPerTeam) {
+      if (assignedCount > 0) {
         confirmBtn.disabled = false;
       } else {
         confirmBtn.disabled = true;
@@ -1116,36 +1112,49 @@
     
     // 清空分組
     async function clearAssignment() {
-      const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
-      const confirmed = await confirmAction(`確定要清空${teamName}的分組嗎？`);
+      let confirmMsg;
+      if (currentMode === 1) {
+        // 模式1：只清空當前標籤的隊伍
+        const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
+        confirmMsg = `確定要清空${teamName}的分組嗎？`;
+      } else {
+        // 模式2：清空所有分組
+        confirmMsg = '確定要清空所有分組嗎？';
+      }
+      
+      const confirmed = await confirmAction(confirmMsg);
       if (!confirmed) {
         return;
       }
       
-      // 只清空當前分頁的隊伍
       const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
-      assignments[currentTab] = Array(slotsPerTeam).fill(null);
       
-      renderCards();
-      updateCount();
-      
-      // 如果是模式2，也更新列表
-      if (currentMode === 2) {
+      if (currentMode === 1) {
+        // 模式1：只清空當前分頁的隊伍
+        const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
+        assignments[currentTab] = Array(slotsPerTeam).fill(null);
+        renderCards();
+        updateCount();
+        showToast(`已清空${teamName}`, 'info');
+      } else {
+        // 模式2：清空所有分組
+        assignments.spade = Array(slotsPerTeam).fill(null);
+        assignments.heart = Array(slotsPerTeam).fill(null);
         renderMode2PlayerList();
+        updateCount();
+        showToast('已清空所有分組', 'info');
       }
-      
-      showToast(`已清空${teamName}`, 'info');
     }
     
     // 確認分組
     async function confirmAssignment() {
       const spadeAssignedCount = assignments.spade.filter(p => p).length;
       const heartAssignedCount = assignments.heart.filter(p => p).length;
-      const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
+      const totalAssignedCount = spadeAssignedCount + heartAssignedCount;
       
-      // 檢查至少一隊要完整
-      if (spadeAssignedCount < slotsPerTeam && heartAssignedCount < slotsPerTeam) {
-        showToast(`請至少完成一隊的分組（${slotsPerTeam}位參賽者）`, 'warning');
+      // 檢查至少有一個參賽者
+      if (totalAssignedCount === 0) {
+        showToast('請至少分配一位參賽者', 'warning');
         return;
       }
       
@@ -1216,16 +1225,17 @@
       try {
         if (CONFIG.SCRIPT_URL) {
           await writeToSheet('deleteRound', { roundId: roundId });
+          hideElement('loadingOverlay');
           showToast('場次已刪除', 'success');
           
-          // 延遲後跳轉回首頁
+          // 縮短延遲時間並跳轉回首頁
           setTimeout(() => {
             window.location.href = 'index.html';
-          }, 1500);
+          }, 800);
         } else {
           console.warn('Apps Script 尚未設定，無法刪除場次');
-          showToast('⚠️ Apps Script 尚未設定，無法執行刪除', 'warning', 5000);
           hideElement('loadingOverlay');
+          showToast('⚠️ Apps Script 尚未設定，無法執行刪除', 'warning', 5000);
         }
       } catch (error) {
         console.error('刪除場次失敗:', error);

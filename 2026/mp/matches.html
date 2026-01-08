@@ -63,25 +63,45 @@
         </div>
         
         <!-- Bottom Row: Statistics -->
-        <div class="flex gap-2 justify-end">
-          <div class="text-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-300">
-            <div class="text-xs text-gray-600 flex items-center justify-center gap-1">
+        <div class="flex gap-3 justify-end">
+          <div class="text-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-300">
+            <div class="text-xs text-gray-600 flex items-center justify-center gap-1 mb-2">
               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
                 <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
               </svg>
               黑桃隊
             </div>
-            <div id="spadeWins" class="text-2xl font-bold text-gray-700">0</div>
+            <div class="flex items-center justify-center gap-4">
+              <div class="text-center">
+                <div id="spadeWins" class="text-2xl font-bold text-gray-700">0</div>
+                <div class="text-xs text-gray-500 mt-1">勝</div>
+              </div>
+              <div class="text-gray-300 font-bold text-xl">|</div>
+              <div class="text-center">
+                <div id="spadeTotal" class="text-2xl font-bold text-gray-700">0</div>
+                <div class="text-xs text-gray-500 mt-1">分</div>
+              </div>
+            </div>
           </div>
-          <div class="text-center px-4 py-2 bg-red-50 rounded-lg border border-red-200">
-            <div class="text-xs text-gray-600 flex items-center justify-center gap-1">
+          <div class="text-center px-6 py-3 bg-red-50 rounded-lg border border-red-200">
+            <div class="text-xs text-gray-600 flex items-center justify-center gap-1 mb-2">
               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
               紅心隊
             </div>
-            <div id="heartWins" class="text-2xl font-bold text-red-600">0</div>
+            <div class="flex items-center justify-center gap-4">
+              <div class="text-center">
+                <div id="heartWins" class="text-2xl font-bold text-red-600">0</div>
+                <div class="text-xs text-gray-500 mt-1">勝</div>
+              </div>
+              <div class="text-red-200 font-bold text-xl">|</div>
+              <div class="text-center">
+                <div id="heartTotal" class="text-2xl font-bold text-red-600">0</div>
+                <div class="text-xs text-gray-500 mt-1">分</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -120,8 +140,8 @@
       
       document.getElementById('roundTitle').textContent = `${roundId}`;
       
-      await loadRoundInfo();
-      await loadTeams();
+      // 並行載入場次資訊和分組資料
+      await Promise.all([loadRoundInfo(), loadTeams()]);
       
       if (isNewRound) {
         // 新場次，自動生成賽程
@@ -240,6 +260,8 @@
       
       let spadeWins = 0;
       let heartWins = 0;
+      let spadeTotal = 0;
+      let heartTotal = 0;
       
       matchesList.innerHTML = matches.map((match, index) => {
         const matchNumber = match['局數'] || match['matchNumber'] || (index + 1);
@@ -270,7 +292,13 @@
         // 判斷勝負
         let winner = '';
         if (hasScore) {
-          if (parseInt(spadeScore) > parseInt(heartScore)) {
+          const spadeScoreNum = parseInt(spadeScore);
+          const heartScoreNum = parseInt(heartScore);
+          
+          spadeTotal += spadeScoreNum;
+          heartTotal += heartScoreNum;
+          
+          if (spadeScoreNum > heartScoreNum) {
             winner = 'spade';
             spadeWins++;
           } else {
@@ -357,15 +385,15 @@
               <!-- Score Display -->
               ${hasScore ? `
                 <div class="mt-4 pt-4 border-t-2 border-gray-200">
-                  <div class="flex items-center justify-center gap-3">
-                    <div class="flex items-center gap-2">
-                      ${winner === 'spade' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold">WIN</span>' : '<div class="w-14 md:w-16"></div>'}
+                  <div class="flex items-center justify-center gap-2 md:gap-4">
+                    <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                      ${winner === 'spade' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold whitespace-nowrap">WIN</span>' : ''}
                       <div class="text-4xl sm:text-5xl font-bold text-gray-700">${spadeScore}</div>
                     </div>
-                    <div class="text-3xl sm:text-4xl font-bold text-gray-400">:</div>
-                    <div class="flex items-center gap-2">
+                    <div class="text-3xl sm:text-4xl font-bold text-gray-400 flex-shrink-0">:</div>
+                    <div class="flex items-center gap-2 min-w-0 flex-1 justify-start">
                       <div class="text-4xl sm:text-5xl font-bold text-red-600">${heartScore}</div>
-                      ${winner === 'heart' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold">WIN</span>' : '<div class="w-14 md:w-16"></div>'}
+                      ${winner === 'heart' ? '<span class="text-xs md:text-sm px-2 py-1 bg-yellow-400 text-gray-800 rounded-full font-bold whitespace-nowrap">WIN</span>' : ''}
                     </div>
                   </div>
                 </div>
@@ -394,9 +422,11 @@
         `;
       }).join('');
       
-      // 更新勝場數
+      // 更新勝場數和總分
       document.getElementById('spadeWins').textContent = spadeWins;
       document.getElementById('heartWins').textContent = heartWins;
+      document.getElementById('spadeTotal').textContent = spadeTotal;
+      document.getElementById('heartTotal').textContent = heartTotal;
     }
     
     // 開始計分（需要登入）

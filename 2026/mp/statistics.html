@@ -186,10 +186,13 @@
     // 載入所有資料
     async function loadAllData() {
       try {
-        rounds = await fetchCSV(CSV_URLS.ROUNDS);
-        teams = await fetchCSV(CSV_URLS.TEAMS);
-        matches = await fetchCSV(CSV_URLS.MATCHES);
-        scores = await fetchCSV(CSV_URLS.SCORES);
+        // 並行載入所有資料以提升速度
+        [rounds, teams, matches, scores] = await Promise.all([
+          fetchCSV(CSV_URLS.ROUNDS),
+          fetchCSV(CSV_URLS.TEAMS),
+          fetchCSV(CSV_URLS.MATCHES),
+          fetchCSV(CSV_URLS.SCORES)
+        ]);
       } catch (error) {
         console.error('載入資料失敗:', error);
         showToast('載入統計資料失敗', 'error');
