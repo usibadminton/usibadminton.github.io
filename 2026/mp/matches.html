@@ -41,15 +41,6 @@
           </div>
           <div class="flex gap-2 items-center">
             <button 
-              onclick="viewHistory()"
-              class="bg-teal-500 hover:bg-teal-600 text-white p-3 rounded-lg transition"
-              title="查看完整記錄"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-              </svg>
-            </button>
-            <button 
               onclick="deleteEntireMatch()"
               id="deleteBtn"
               class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg transition hidden"
@@ -63,43 +54,43 @@
         </div>
         
         <!-- Bottom Row: Statistics -->
-        <div class="flex gap-3 justify-end">
-          <div class="text-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-300">
-            <div class="text-xs text-gray-600 flex items-center justify-center gap-1 mb-2">
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <div class="flex gap-3 md:gap-4 justify-end">
+          <div class="text-center px-6 py-3 md:px-8 md:py-4 bg-gray-50 rounded-lg border border-gray-300">
+            <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
+              <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
                 <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
               </svg>
               黑桃隊
             </div>
-            <div class="flex items-center justify-center gap-4">
+            <div class="flex items-center justify-center gap-4 md:gap-6">
               <div class="text-center">
-                <div id="spadeWins" class="text-2xl font-bold text-gray-700">0</div>
-                <div class="text-xs text-gray-500 mt-1">勝</div>
+                <div id="spadeWins" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
               </div>
-              <div class="text-gray-300 font-bold text-xl">|</div>
+              <div class="text-gray-300 font-bold text-xl md:text-3xl">|</div>
               <div class="text-center">
-                <div id="spadeTotal" class="text-2xl font-bold text-gray-700">0</div>
-                <div class="text-xs text-gray-500 mt-1">分</div>
+                <div id="spadeTotal" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
               </div>
             </div>
           </div>
-          <div class="text-center px-6 py-3 bg-red-50 rounded-lg border border-red-200">
-            <div class="text-xs text-gray-600 flex items-center justify-center gap-1 mb-2">
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <div class="text-center px-6 py-3 md:px-8 md:py-4 bg-red-50 rounded-lg border border-red-200">
+            <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
+              <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
               紅心隊
             </div>
-            <div class="flex items-center justify-center gap-4">
+            <div class="flex items-center justify-center gap-4 md:gap-6">
               <div class="text-center">
-                <div id="heartWins" class="text-2xl font-bold text-red-600">0</div>
-                <div class="text-xs text-gray-500 mt-1">勝</div>
+                <div id="heartWins" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
               </div>
-              <div class="text-red-200 font-bold text-xl">|</div>
+              <div class="text-red-200 font-bold text-xl md:text-3xl">|</div>
               <div class="text-center">
-                <div id="heartTotal" class="text-2xl font-bold text-red-600">0</div>
-                <div class="text-xs text-gray-500 mt-1">分</div>
+                <div id="heartTotal" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
               </div>
             </div>
           </div>
@@ -444,11 +435,6 @@
     // 查看比分
     function viewScore(matchNumber) {
       window.location.href = `scoring.html?round=${roundId}&match=${matchNumber}`;
-    }
-    
-    // 查看完整記錄
-    function viewHistory() {
-      window.location.href = `history.html?round=${roundId}`;
     }
     
     // 刪除整場比賽
