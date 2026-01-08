@@ -1,6 +1,19 @@
 // Authentication Management
 
 /**
+ * SHA-256 雜湊函數
+ * @param {string} message - 要雜湊的訊息
+ * @returns {Promise<string>} 雜湊值（十六進制字串）
+ */
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+/**
  * 檢查使用者是否已登入
  * @returns {boolean} 是否已登入
  */
@@ -26,12 +39,14 @@ function isAuthenticated() {
 }
 
 /**
- * 登入
+ * 登入（使用 SHA-256 雜湊比對）
  * @param {string} password - 密碼
- * @returns {boolean} 登入是否成功
+ * @returns {Promise<boolean>} 登入是否成功
  */
-function login(password) {
-  if (password === CONFIG.ADMIN_PASSWORD) {
+async function login(password) {
+  const passwordHash = await sha256(password);
+  
+  if (passwordHash === CONFIG.ADMIN_PASSWORD_HASH) {
     localStorage.setItem('adminAuth', 'true');
     localStorage.setItem('authTime', Date.now().toString());
     return true;

@@ -68,13 +68,16 @@
       window.location.href = 'index.html';
     }
     
-    function handleLogin(event) {
+    async function handleLogin(event) {
       event.preventDefault();
       
       const password = document.getElementById('password').value;
       const errorMessage = document.getElementById('errorMessage');
       
-      if (login(password)) {
+      // 使用 await 等待異步登入結果
+      const success = await login(password);
+      
+      if (success) {
         // 登入成功
         window.location.href = 'index.html';
       } else {
