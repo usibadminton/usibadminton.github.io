@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系統設定 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/tailwind-config.js"></script>
+</head>
+<body class="bg-gradient-to-br from-white via-cloud-dancer/50 to-reflected-breeze/20 min-h-screen">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <button onclick="goBack()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h1 class="absolute left-1/2 -translate-x-1/2 text-xl md:text-2xl font-bold tracking-tight text-white">系統設定</h1>
+    </div>
+  </header>
+
+  <!-- Spacer -->
+  <div class="h-16"></div>
+
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    
+    <!-- 隊伍設定 -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-6 border border-reflected-breeze/20">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-200">
+        <svg class="w-7 h-7 text-scuba-plunge" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-800">隊伍設定</h2>
+      </div>
+
+      <div class="space-y-6">
+        <!-- 隊伍A名稱 -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            隊伍 A 名稱
+          </label>
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
+              <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+            </svg>
+            <input 
+              type="text" 
+              id="teamAName" 
+              placeholder="請輸入隊伍名稱"
+              maxlength="20"
+              class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-scuba-plunge transition text-lg"
+            >
+          </div>
+        </div>
+
+        <!-- 隊伍B名稱 -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            隊伍 B 名稱
+          </label>
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <input 
+              type="text" 
+              id="teamBName" 
+              placeholder="請輸入隊伍名稱"
+              maxlength="20"
+              class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500 transition text-lg"
+            >
+          </div>
+        </div>
+
+        <!-- 說明 -->
+        <div class="bg-cyan-50 border-l-4 border-scuba-plunge p-4 rounded-lg">
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-scuba-plunge flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div class="text-sm text-gray-700">
+              <p class="font-semibold mb-1">設定說明</p>
+              <ul class="space-y-1 text-gray-600">
+                <li>• 此設定將套用到所有新建立的比賽場次</li>
+                <li>• 已建立的場次不會受影響</li>
+                <li>• 自訂隊伍名稱讓比賽更有特色</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按鈕 -->
+    <div class="flex gap-4">
+      <button 
+        onclick="saveSettings()"
+        class="flex-1 bg-gradient-to-r from-scuba-plunge to-alaskan-blue hover:from-alaskan-blue hover:to-scuba-plunge text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+      >
+        <div class="flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          儲存設定
+        </div>
+      </button>
+      <button 
+        onclick="resetSettings()"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+      >
+        重置
+      </button>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    // 從 CSV 解析設定
+    function parseSettingsCSV(csvText) {
+      const lines = csvText.trim().split('\n');
+      const settings = {};
+      
+      // 跳過標題行（第一行）
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // 簡單的 CSV 解析（處理可能的引號）
+        const parts = line.split(',').map(part => part.replace(/^"|"$/g, '').trim());
+        
+        if (parts.length >= 3) {
+          const category = parts[0];
+          const key = parts[1];
+          const value = parts[2];
+          
+          if (key) {
+            settings[key] = value || '';
+          }
+        }
+      }
+      
+      return settings;
+    }
+    
+    // 載入設定（優先使用 CSV）
+    async function loadSettings() {
+      try {
+        // 方法 1: 從 CSV 讀取（無 CORS 問題）
+        try {
+          const response = await fetch(CSV_URLS.SETTINGS);
+          if (response.ok) {
+            const csvText = await response.text();
+            const settings = parseSettingsCSV(csvText);
+            
+            document.getElementById('teamAName').value = settings.teamAName || '';
+            document.getElementById('teamBName').value = settings.teamBName || '';
+            
+            console.log('✅ 從 CSV 載入設定成功');
+            return;
+          }
+        } catch (csvError) {
+          console.warn('CSV 載入失敗，嘗試使用 Apps Script...', csvError);
+        }
+        
+        // 方法 2: 備用 - 使用 Apps Script API
+        const response = await fetch(CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'getSettings'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          const settings = result.settings || {};
+          document.getElementById('teamAName').value = settings.teamAName || '';
+          document.getElementById('teamBName').value = settings.teamBName || '';
+          console.log('✅ 從 Apps Script 載入設定成功');
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (error) {
+        console.error('載入設定失敗:', error);
+        showToast('載入設定失敗，使用本地設定', 'warning');
+        
+        // 方法 3: 最後備用 - 從 localStorage 讀取
+        document.getElementById('teamAName').value = localStorage.getItem('teamAName') || '';
+        document.getElementById('teamBName').value = localStorage.getItem('teamBName') || '';
+      }
+    }
+    
+    // 儲存設定
+    async function saveSettings() {
+      const teamAName = document.getElementById('teamAName').value.trim();
+      const teamBName = document.getElementById('teamBName').value.trim();
+      
+      try {
+        console.log('開始儲存設定...');
+        console.log('Apps Script URL:', CONFIG.SCRIPT_URL);
+        console.log('資料:', { teamAName, teamBName });
+        
+        // 儲存到 Google Sheets
+        const response = await fetch(CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'saveSettings',
+            data: {
+              teamAName: teamAName,
+              teamBName: teamBName
+            }
+          })
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Response data:', result);
+        
+        if (result.success) {
+          // 同時儲存到 localStorage（作為快取）
+          localStorage.setItem('teamAName', teamAName);
+          localStorage.setItem('teamBName', teamBName);
+          
+          showToast('✅ 設定已儲存到雲端，所有用戶都會看到更新', 'success', 3000);
+          
+          // 簡單確認訊息
+          setTimeout(() => {
+            showToast('隊伍名稱設定完成！', 'info');
+          }, 1500);
+        } else {
+          throw new Error(result.message || '儲存失敗');
+        }
+      } catch (error) {
+        console.error('儲存設定失敗:', error);
+        
+        if (error.message.includes('Failed to fetch')) {
+          showToast('❌ 無法連接到 Google Apps Script\n\n可能原因：\n1. Apps Script 尚未部署\n2. 部署 URL 已過期\n3. 權限設定錯誤\n\n請檢查 doc/AppsScript.gs 的部署狀態', 'error', 8000);
+        } else {
+          showToast('❌ 儲存失敗：' + error.message, 'error', 5000);
+        }
+      }
+    }
+    
+    // 重置設定
+    async function resetSettings() {
+      const confirmed = await confirmAction('確定要清空隊伍名稱嗎？');
+      if (confirmed) {
+        try {
+          // 清空 Google Sheets 的設定
+          const response = await fetch(CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'saveSettings',
+              data: {
+                teamAName: '',
+                teamBName: ''
+              }
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // 清除 localStorage
+            localStorage.removeItem('teamAName');
+            localStorage.removeItem('teamBName');
+            
+            // 重置表單
+            document.getElementById('teamAName').value = '';
+            document.getElementById('teamBName').value = '';
+            
+            showToast('隊伍名稱已清空', 'success');
+          } else {
+            throw new Error(result.message);
+          }
+        } catch (error) {
+          console.error('重置失敗:', error);
+          showToast('重置失敗：' + error.message, 'error');
+        }
+      }
+    }
+    
+    // 返回
+    function goBack() {
+      window.history.back();
+    }
+    
+    // 檢查登入
+    if (!isAuthenticated()) {
+      showToast('請先登入', 'warning');
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1000);
+    } else {
+      loadSettings();
+    }
+  </script>
+
+</body>
+</html>

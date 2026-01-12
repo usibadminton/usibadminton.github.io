@@ -169,8 +169,8 @@
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
       <div class="flex justify-between items-center">
         <div>
-          <h2 id="roundTitle" class="text-2xl font-bold text-gray-800">Match-001</h2>
-          <p class="text-sm text-gray-600 mt-1">請先分隊（黑桃、紅心）</p>
+          <h2 id="roundTitle" class="text-2xl font-bold text-gray-800">Match</h2>
+          <p class="text-sm text-gray-600 mt-1">請先分隊</p>
         </div>
         <div class="flex items-center gap-4">
           <div id="assignCount" class="text-3xl font-bold text-green-600">
@@ -204,7 +204,7 @@
       <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
         <div class="flex gap-2">
           <button 
-            onclick="switchTab('spade')"
+            onclick="switchTab('teamA')"
             id="spadeTab"
             class="flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-spade flex items-center justify-center gap-2"
           >
@@ -212,47 +212,47 @@
               <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
               <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
             </svg>
-            黑桃隊
+            TeamA
           </button>
           <button 
-            onclick="switchTab('heart')"
+            onclick="switchTab('teamB')"
             id="heartTab"
             class="flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-heart flex items-center justify-center gap-2"
           >
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
-            紅心隊
+            TeamB
           </button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 gap-6 mb-6">
         
-        <!-- 黑桃隊 -->
+        <!-- TeamA -->
         <div id="spadeContainer" class="bg-white rounded-lg shadow-lg p-6">
           <div class="flex items-center justify-center mb-4 pb-4 border-b-2 border-gray-300">
             <svg class="w-8 h-8 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
               <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
             </svg>
-            <h3 class="text-2xl font-bold text-gray-700">黑桃隊</h3>
+            <h3 class="text-2xl font-bold text-gray-700">TeamA</h3>
           </div>
           <div id="spadeTeam" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-            <!-- 黑桃隊選單將動態插入 -->
+            <!-- TeamA選單將動態插入 -->
           </div>
         </div>
 
-        <!-- 紅心隊 -->
+        <!-- TeamB -->
         <div id="heartContainer" class="bg-white rounded-lg shadow-lg p-6 hidden">
           <div class="flex items-center justify-center mb-4 pb-4 border-b-2 border-red-200">
             <svg class="w-8 h-8 mr-2 text-red-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
-            <h3 class="text-2xl font-bold text-red-600">紅心隊</h3>
+            <h3 class="text-2xl font-bold text-red-600">TeamB</h3>
           </div>
           <div id="heartTeam" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-            <!-- 紅心隊選單將動態插入 -->
+            <!-- TeamB選單將動態插入 -->
           </div>
         </div>
 
@@ -380,7 +380,7 @@
     let players = [];
     let roundId = '';
     let isNewRound = false;
-    let currentTab = 'spade'; // 'spade' or 'heart'
+    let currentTab = 'teamA'; // 'spade' or 'heart'
     let currentMode = 1; // 1: card mode, 2: player list mode
     let mode2Filter = 'all'; // 'all', 'selected', 'unselected'
     let assignments = {
@@ -393,8 +393,8 @@
     // 初始化分組陣列
     function initAssignments() {
       const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
-      assignments.spade = Array(slotsPerTeam).fill(null);
-      assignments.heart = Array(slotsPerTeam).fill(null);
+      assignments.teamA = Array(slotsPerTeam).fill(null);
+      assignments.teamB = Array(slotsPerTeam).fill(null);
     }
     
     // 初始化
@@ -402,7 +402,22 @@
       // 初始化分組
       initAssignments();
       
-      // 取得場次ID
+      // 載入隊伍名稱
+      await loadTeamNames();
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
+      // 更新 UI 中的隊伍名稱
+      document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.trim() === 'TeamA') btn.textContent = teamAName;
+        if (btn.textContent.trim() === 'TeamB') btn.textContent = teamBName;
+      });
+      document.querySelectorAll('h3, h4').forEach(heading => {
+        if (heading.textContent.trim() === 'TeamA') heading.textContent = teamAName;
+        if (heading.textContent.trim() === 'TeamB') heading.textContent = teamBName;
+      });
+      
+      // 取得matchID
       roundId = getUrlParam('round') || 'Match-001';
       isNewRound = getUrlParam('new') === 'true';
       
@@ -411,6 +426,10 @@
       // 如果是新場次，先寫入 Rounds 表
       if (isNewRound) {
         await createRound();
+        // 建立完成後，移除 URL 中的 new 參數，避免重新整理時重複建立
+        const newUrl = window.location.pathname + `?round=${roundId}`;
+        window.history.replaceState({}, '', newUrl);
+        isNewRound = false; // 更新狀態
       }
       
       // 載入參賽者名單
@@ -447,7 +466,7 @@
     async function loadPlayers() {
       try {
         const data = await fetchCSV(CSV_URLS.PLAYERS);
-        players = data.map(p => p['姓名'] || '').filter(name => name.trim() !== '' && name !== '姓名');
+        players = data.map(p => p['name'] || '').filter(name => name.trim() !== '' && name !== 'name');
         
         console.log('載入參賽者:', players);
         
@@ -480,15 +499,29 @@
     async function loadExistingAssignments() {
       try {
         const teamsData = await fetchCSV(CSV_URLS.TEAMS);
-        const roundTeams = teamsData.filter(t => t['場次ID'] === roundId);
+        const roundTeams = teamsData.filter(t => t['matchID'] === roundId);
         
         if (roundTeams.length > 0) {
           console.log('載入已存在的分組:', roundTeams);
           
+          // 取得當前的隊伍名稱設定
+          const teamAName = getTeamName('teamA');
+          const teamBName = getTeamName('teamB');
+          
           roundTeams.forEach(member => {
-            const team = member['隊伍'] === '黑桃' ? 'spade' : 'heart';
-            const number = parseInt(member['編號']) - 1; // 轉換為 0-based index
-            const name = member['姓名'];
+            const teamValue = member['team'];
+            // 判斷隊伍：支援舊的黑桃/紅心或新的 Team A/Team B
+            let team;
+            if (teamValue === teamAName || teamValue === 'Team A') {
+              team = 'teamA';
+            } else if (teamValue === teamBName || teamValue === 'Team B') {
+              team = 'teamB';
+            } else {
+              console.warn('未知的隊伍名稱:', teamValue);
+              return;
+            }
+            const number = parseInt(member['no']) - 1; // 轉換為 0-based index
+            const name = member['name'];
             
             if (number >= 0 && number < assignments[team].length) {
               assignments[team][number] = name;
@@ -509,14 +542,14 @@
       const heartTeam = document.getElementById('heartTeam');
       const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
       
-      // 黑桃隊
+      // Team A
       spadeTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
-        return createCardHTML(i + 1, 'spade', i);
+        return createCardHTML(i + 1, 'teamA', i);
       }).join('');
       
-      // 紅心隊
+      // Team B
       heartTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
-        return createCardHTML(i + 1, 'heart', i);
+        return createCardHTML(i + 1, 'teamB', i);
       }).join('');
       
       // 如果是模式2，也更新列表
@@ -529,9 +562,9 @@
     function createCardHTML(number, team, index) {
       const player = assignments[team][index];
       const isSelected = player !== null;
-      const teamClass = team === 'spade' ? 'spade-card' : 'heart-card';
+      const teamClass = team === 'teamA' ? 'spade-card' : 'heart-card';
       const selectedClass = isSelected ? 'selected' : '';
-      const playerTextColor = (team === 'heart' && isSelected) ? 'text-red-600' : '';
+      const playerTextColor = (team === 'teamB' && isSelected) ? 'text-red-600' : '';
       
       return `
         <div 
@@ -554,11 +587,11 @@
       
       // 取得已選擇的參賽者及其位置
       const assignedPlayers = new Map();
-      assignments.spade.forEach((player, index) => {
-        if (player) assignedPlayers.set(player, { team: 'spade', number: index + 1 });
+      assignments.teamA.forEach((player, index) => {
+        if (player) assignedPlayers.set(player, { team: 'teamA', number: index + 1 });
       });
-      assignments.heart.forEach((player, index) => {
-        if (player) assignedPlayers.set(player, { team: 'heart', number: index + 1 });
+      assignments.teamB.forEach((player, index) => {
+        if (player) assignedPlayers.set(player, { team: 'teamB', number: index + 1 });
       });
       
       // 根據過濾器篩選玩家
@@ -577,7 +610,7 @@
           
           // 先按隊伍排序：spade 在前，heart 在後
           if (assignmentA.team !== assignmentB.team) {
-            return assignmentA.team === 'spade' ? -1 : 1;
+            return assignmentA.team === 'teamA' ? -1 : 1;
           }
           
           // 同隊伍內按號碼升序排序
@@ -596,26 +629,26 @@
       
       // 如果是 'selected' 過濾器，按隊伍分組顯示
       if (mode2Filter === 'selected') {
-        const spadePlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'spade');
-        const heartPlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'heart');
+        const spadePlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'teamA');
+        const heartPlayers = filteredPlayers.filter(player => assignedPlayers.get(player).team === 'teamB');
         
         const renderPlayerCard = (player) => {
           const assignment = assignedPlayers.get(player);
           const isAssigned = assignment !== undefined;
-          const teamIcon = assignment && assignment.team === 'spade' 
+          const teamIcon = assignment && assignment.team === 'teamA' 
             ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/><path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/></svg>'
-            : assignment && assignment.team === 'heart'
+            : assignment && assignment.team === 'teamB'
             ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
             : '';
           
-          const teamColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
-          const playerNameColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+          const teamColor = assignment && assignment.team === 'teamA' ? 'text-gray-700' : assignment && assignment.team === 'teamB' ? 'text-red-600' : 'text-gray-400';
+          const playerNameColor = assignment && assignment.team === 'teamA' ? 'text-gray-700' : assignment && assignment.team === 'teamB' ? 'text-red-600' : 'text-gray-400';
           const playerNameWeight = isAssigned ? 'font-semibold' : 'font-normal';
           const bgColor = isAssigned 
-            ? assignment.team === 'spade' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
+            ? assignment.team === 'teamA' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
             : 'bg-white';
           const borderColor = isAssigned 
-            ? assignment.team === 'spade' ? 'border-gray-700' : 'border-red-600'
+            ? assignment.team === 'teamA' ? 'border-gray-700' : 'border-red-600'
             : 'border-gray-200';
           
           return `
@@ -652,7 +685,7 @@
                   <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
                   <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
                 </svg>
-                <h3 class="text-lg font-bold text-gray-700">黑桃隊</h3>
+                <h3 class="text-lg font-bold text-gray-700">TeamA</h3>
                 <span class="text-sm text-gray-500">(${spadePlayers.length})</span>
               </div>
             </div>
@@ -665,7 +698,7 @@
                 <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <h3 class="text-lg font-bold text-red-600">紅心隊</h3>
+                <h3 class="text-lg font-bold text-red-600">TeamB</h3>
                 <span class="text-sm text-gray-500">(${heartPlayers.length})</span>
               </div>
             </div>
@@ -678,20 +711,20 @@
       playerListContainer.innerHTML = filteredPlayers.map(player => {
         const assignment = assignedPlayers.get(player);
         const isAssigned = assignment !== undefined;
-        const teamIcon = assignment && assignment.team === 'spade' 
+        const teamIcon = assignment && assignment.team === 'teamA' 
           ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/><path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/></svg>'
-          : assignment && assignment.team === 'heart'
+          : assignment && assignment.team === 'teamB'
           ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
           : '';
         
-        const teamColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
-        const playerNameColor = assignment && assignment.team === 'spade' ? 'text-gray-700' : assignment && assignment.team === 'heart' ? 'text-red-600' : 'text-gray-400';
+        const teamColor = assignment && assignment.team === 'teamA' ? 'text-gray-700' : assignment && assignment.team === 'teamB' ? 'text-red-600' : 'text-gray-400';
+        const playerNameColor = assignment && assignment.team === 'teamA' ? 'text-gray-700' : assignment && assignment.team === 'teamB' ? 'text-red-600' : 'text-gray-400';
         const playerNameWeight = isAssigned ? 'font-semibold' : 'font-normal';
         const bgColor = isAssigned 
-          ? assignment.team === 'spade' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
+          ? assignment.team === 'teamA' ? 'bg-gradient-to-br from-gray-50 to-gray-100' : 'bg-gradient-to-br from-red-50 to-red-100'
           : 'bg-white';
         const borderColor = isAssigned 
-          ? assignment.team === 'spade' ? 'border-gray-700' : 'border-red-600'
+          ? assignment.team === 'teamA' ? 'border-gray-700' : 'border-red-600'
           : 'border-gray-200';
         
         return `
@@ -751,15 +784,15 @@
       let currentTeam = null;
       let currentIndex = -1;
       
-      assignments.spade.forEach((p, i) => {
+      assignments.teamA.forEach((p, i) => {
         if (p === player) {
-          currentTeam = 'spade';
+          currentTeam = 'teamA';
           currentIndex = i;
         }
       });
-      assignments.heart.forEach((p, i) => {
+      assignments.teamB.forEach((p, i) => {
         if (p === player) {
-          currentTeam = 'heart';
+          currentTeam = 'teamB';
           currentIndex = i;
         }
       });
@@ -773,11 +806,11 @@
       
       // 生成位置選項
       const spadeOptions = Array.from({length: slotsPerTeam}, (_, i) => {
-        const isOccupied = assignments.spade[i] !== null && assignments.spade[i] !== player;
-        const isCurrent = currentTeam === 'spade' && currentIndex === i;
+        const isOccupied = assignments.teamA[i] !== null && assignments.teamA[i] !== player;
+        const isCurrent = currentTeam === 'teamA' && currentIndex === i;
         return `
           <button 
-            onclick="assignPlayerToPosition('${player}', 'spade', ${i})"
+            onclick="assignPlayerToPosition('${player}', 'teamA', ${i})"
             class="px-4 py-3 rounded-lg font-semibold transition ${
               isCurrent ? 'bg-gray-700 text-white' : 
               isOccupied ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
@@ -792,17 +825,17 @@
               </svg>
               ${i + 1}
             </div>
-            ${isOccupied ? `<div class="text-xs mt-1">${assignments.spade[i]}</div>` : ''}
+            ${isOccupied ? `<div class="text-xs mt-1">${assignments.teamA[i]}</div>` : ''}
           </button>
         `;
       }).join('');
       
       const heartOptions = Array.from({length: slotsPerTeam}, (_, i) => {
-        const isOccupied = assignments.heart[i] !== null && assignments.heart[i] !== player;
-        const isCurrent = currentTeam === 'heart' && currentIndex === i;
+        const isOccupied = assignments.teamB[i] !== null && assignments.teamB[i] !== player;
+        const isCurrent = currentTeam === 'teamB' && currentIndex === i;
         return `
           <button 
-            onclick="assignPlayerToPosition('${player}', 'heart', ${i})"
+            onclick="assignPlayerToPosition('${player}', 'teamB', ${i})"
             class="px-4 py-3 rounded-lg font-semibold transition ${
               isCurrent ? 'bg-red-600 text-white' : 
               isOccupied ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
@@ -816,7 +849,7 @@
               </svg>
               ${i + 1}
             </div>
-            ${isOccupied ? `<div class="text-xs mt-1">${assignments.heart[i]}</div>` : ''}
+            ${isOccupied ? `<div class="text-xs mt-1">${assignments.teamB[i]}</div>` : ''}
           </button>
         `;
       }).join('');
@@ -829,27 +862,27 @@
           </div>
           
           <div class="p-6 space-y-6">
-            <!-- 黑桃隊 -->
+            <!-- TeamA -->
             <div>
               <div class="flex items-center gap-2 mb-3">
                 <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
                   <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
                 </svg>
-                <h4 class="text-lg font-bold text-gray-700">黑桃隊</h4>
+                <h4 class="text-lg font-bold text-gray-700">TeamA</h4>
               </div>
               <div class="grid grid-cols-4 gap-2">
                 ${spadeOptions}
               </div>
             </div>
             
-            <!-- 紅心隊 -->
+            <!-- TeamB -->
             <div>
               <div class="flex items-center gap-2 mb-3">
                 <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <h4 class="text-lg font-bold text-red-600">紅心隊</h4>
+                <h4 class="text-lg font-bold text-red-600">TeamB</h4>
               </div>
               <div class="grid grid-cols-4 gap-2">
                 ${heartOptions}
@@ -897,8 +930,8 @@
       }
       
       // 清除該玩家在其他位置的分配
-      assignments.spade = assignments.spade.map(p => p === player ? null : p);
-      assignments.heart = assignments.heart.map(p => p === player ? null : p);
+      assignments.teamA = assignments.teamA.map(p => p === player ? null : p);
+      assignments.teamB = assignments.teamB.map(p => p === player ? null : p);
       
       // 分配到新位置
       assignments[team][index] = player;
@@ -919,8 +952,8 @@
     
     // 清除玩家位置
     function clearPlayerPosition(player) {
-      assignments.spade = assignments.spade.map(p => p === player ? null : p);
-      assignments.heart = assignments.heart.map(p => p === player ? null : p);
+      assignments.teamA = assignments.teamA.map(p => p === player ? null : p);
+      assignments.teamB = assignments.teamB.map(p => p === player ? null : p);
       
       updateCount();
       
@@ -951,7 +984,7 @@
       document.getElementById('modalCardNumber').textContent = index + 1;
       
       // 取得已選擇的參賽者
-      const selectedPlayers = [...assignments.spade, ...assignments.heart].filter(p => p !== null);
+      const selectedPlayers = [...assignments.teamA, ...assignments.teamB].filter(p => p !== null);
       
       // 渲染參賽者列表
       const playerModalList = document.getElementById('playerModalList');
@@ -1018,14 +1051,14 @@
       const heartTeam = document.getElementById('heartTeam');
       const slotsPerTeam = CONFIG.MAX_PLAYERS / 2;
       
-      // 黑桃隊
+      // TeamA
       spadeTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
-        return createCardHTML(i + 1, 'spade', i);
+        return createCardHTML(i + 1, 'teamA', i);
       }).join('');
       
-      // 紅心隊
+      // TeamB
       heartTeam.innerHTML = Array.from({ length: slotsPerTeam }, (_, i) => {
-        return createCardHTML(i + 1, 'heart', i);
+        return createCardHTML(i + 1, 'teamB', i);
       }).join('');
     }
     
@@ -1035,12 +1068,12 @@
       
       // 更新標籤樣式
       document.getElementById('spadeTab').className = 
-        tab === 'spade' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-spade flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-spade flex items-center justify-center gap-2';
+        tab === 'teamA' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-spade flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-spade flex items-center justify-center gap-2';
       document.getElementById('heartTab').className = 
-        tab === 'heart' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-heart flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-heart flex items-center justify-center gap-2';
+        tab === 'teamB' ? 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition active-tab-heart flex items-center justify-center gap-2' : 'flex-1 py-3 px-4 rounded-lg font-bold text-lg transition inactive-tab-heart flex items-center justify-center gap-2';
       
       // 切換顯示容器
-      if (tab === 'spade') {
+      if (tab === 'teamA') {
         showElement('spadeContainer');
         hideElement('heartContainer');
       } else {
@@ -1093,8 +1126,8 @@
     
     // 更新計數
     function updateCount() {
-      const spadeAssignedCount = assignments.spade.filter(p => p).length;
-      const heartAssignedCount = assignments.heart.filter(p => p).length;
+      const spadeAssignedCount = assignments.teamA.filter(p => p).length;
+      const heartAssignedCount = assignments.teamB.filter(p => p).length;
       const assignedCount = spadeAssignedCount + heartAssignedCount;
       
       const totalNeeded = CONFIG.MAX_PLAYERS;
@@ -1115,7 +1148,7 @@
       let confirmMsg;
       if (currentMode === 1) {
         // 模式1：只清空當前標籤的隊伍
-        const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
+        const teamName = getTeamName(currentTab);
         confirmMsg = `確定要清空${teamName}的分組嗎？`;
       } else {
         // 模式2：清空所有分組
@@ -1131,15 +1164,15 @@
       
       if (currentMode === 1) {
         // 模式1：只清空當前分頁的隊伍
-        const teamName = currentTab === 'spade' ? '黑桃隊' : '紅心隊';
+        const teamName = getTeamName(currentTab);
         assignments[currentTab] = Array(slotsPerTeam).fill(null);
         renderCards();
         updateCount();
         showToast(`已清空${teamName}`, 'info');
       } else {
         // 模式2：清空所有分組
-        assignments.spade = Array(slotsPerTeam).fill(null);
-        assignments.heart = Array(slotsPerTeam).fill(null);
+        assignments.teamA = Array(slotsPerTeam).fill(null);
+        assignments.teamB = Array(slotsPerTeam).fill(null);
         renderMode2PlayerList();
         updateCount();
         showToast('已清空所有分組', 'info');
@@ -1148,8 +1181,8 @@
     
     // 確認分組
     async function confirmAssignment() {
-      const spadeAssignedCount = assignments.spade.filter(p => p).length;
-      const heartAssignedCount = assignments.heart.filter(p => p).length;
+      const spadeAssignedCount = assignments.teamA.filter(p => p).length;
+      const heartAssignedCount = assignments.teamB.filter(p => p).length;
       const totalAssignedCount = spadeAssignedCount + heartAssignedCount;
       
       // 檢查至少有一個參賽者
@@ -1166,25 +1199,29 @@
       // 顯示載入畫面
       showElement('loadingOverlay');
       
+      // 獲取隊伍名稱
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
       // 準備資料
       const teamsData = [];
       
-      assignments.spade.forEach((player, index) => {
+      assignments.teamA.forEach((player, index) => {
         if (player) {  // 只添加有參賽者的位置
           teamsData.push({
             roundId: roundId,
-            team: '黑桃',
+            team: teamAName,
             number: index + 1,
             name: player
           });
         }
       });
       
-      assignments.heart.forEach((player, index) => {
+      assignments.teamB.forEach((player, index) => {
         if (player) {  // 只添加有參賽者的位置
           teamsData.push({
             roundId: roundId,
-            team: '紅心',
+            team: teamBName,
             number: index + 1,
             name: player
           });

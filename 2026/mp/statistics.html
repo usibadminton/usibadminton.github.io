@@ -55,11 +55,11 @@
         <div id="totalMatches" class="text-3xl font-bold text-indigo-600">0</div>
       </div>
       <div class="bg-white rounded-lg shadow-lg p-6">
-        <div class="text-gray-600 text-sm mb-1">♠ 黑桃勝場</div>
+        <div class="text-gray-600 text-sm mb-1">♠ teamA 勝場</div>
         <div id="spadeTotal" class="text-3xl font-bold text-gray-700">0</div>
       </div>
       <div class="bg-white rounded-lg shadow-lg p-6">
-        <div class="text-gray-600 text-sm mb-1">♥ 紅心勝場</div>
+        <div class="text-gray-600 text-sm mb-1">♥ teamB 勝場</div>
         <div id="heartTotal" class="text-3xl font-bold text-red-600">0</div>
       </div>
     </div>
@@ -109,11 +109,11 @@
             <div class="grid grid-cols-2 gap-6">
               <div class="text-center">
                 <div class="text-4xl font-bold text-gray-700" id="spadeWinRate">0%</div>
-                <div class="text-gray-600 mt-2">♠ 黑桃隊勝率</div>
+                <div class="text-gray-600 mt-2">♠ teamA 勝率</div>
               </div>
               <div class="text-center">
                 <div class="text-4xl font-bold text-red-600" id="heartWinRate">0%</div>
-                <div class="text-gray-600 mt-2">♥ 紅心隊勝率</div>
+                <div class="text-gray-600 mt-2">♥ teamB 勝率</div>
               </div>
             </div>
           </div>
@@ -210,8 +210,8 @@
       
       // 計算勝場數
       scores.forEach(score => {
-        const spadeScore = parseInt(score['黑桃分數']);
-        const heartScore = parseInt(score['紅心分數']);
+        const spadeScore = parseInt(score['teamA_score']);
+        const heartScore = parseInt(score['teamB_score']);
         
         if (spadeScore > heartScore) {
           spadeWins++;
@@ -249,18 +249,18 @@
       }
       
       roundStats.innerHTML = rounds.map(round => {
-        const roundId = round['場次ID'];
-        const date = round['日期'];
-        const note = round['備註'] || '比賽場次';
+        const roundId = round['matchID'];
+        const date = round['time'];
+        const note = round['note'] || '比賽場次';
         
         // 計算該場次的勝負
-        const roundScores = scores.filter(s => s['場次ID'] === roundId);
+        const roundScores = scores.filter(s => s['matchID'] === roundId);
         let spadeWins = 0;
         let heartWins = 0;
         
         roundScores.forEach(score => {
-          const spadeScore = parseInt(score['黑桃分數']);
-          const heartScore = parseInt(score['紅心分數']);
+          const spadeScore = parseInt(score['teamA_score']);
+          const heartScore = parseInt(score['teamB_score']);
           
           if (spadeScore > heartScore) {
             spadeWins++;
@@ -279,12 +279,12 @@
               <div class="flex gap-4 items-center">
                 <div class="text-center">
                   <div class="text-2xl font-bold text-gray-700">♠ ${spadeWins}</div>
-                  <div class="text-xs text-gray-500">黑桃勝</div>
+                  <div class="text-xs text-gray-500">teamA 勝</div>
                 </div>
                 <div class="text-gray-400">-</div>
                 <div class="text-center">
                   <div class="text-2xl font-bold text-red-600">♥ ${heartWins}</div>
-                  <div class="text-xs text-gray-500">紅心勝</div>
+                  <div class="text-xs text-gray-500">teamB 勝</div>
                 </div>
               </div>
             </div>
@@ -299,27 +299,27 @@
       
       // 遍歷所有比賽
       scores.forEach(score => {
-        const roundId = score['場次ID'];
-        const matchNumber = score['局數'];
-        const spadeScore = parseInt(score['黑桃分數']);
-        const heartScore = parseInt(score['紅心分數']);
+        const roundId = score['matchID'];
+        const matchNumber = score['game'];
+        const spadeScore = parseInt(score['teamA_score']);
+        const heartScore = parseInt(score['teamB_score']);
         
         // 找出該局數的球員
         const match = matches.find(m => 
-          m['場次ID'] === roundId && 
-          m['局數'] == matchNumber
+          m['matchID'] === roundId && 
+          m['game'] == matchNumber
         );
         
         if (!match) return;
         
-        const spade1 = match['黑桃1'];
-        const spade2 = match['黑桃2'];
-        const heart1 = match['紅心1'];
-        const heart2 = match['紅心2'];
+        const spade1 = match['teamA_1'];
+        const spade2 = match['teamA_2'];
+        const heart1 = match['teamB_1'];
+        const heart2 = match['teamB_2'];
         
         const spadeWon = spadeScore > heartScore;
         
-        // 記錄黑桃隊球員
+        // 記錄 teamA 球員
         [spade1, spade2].forEach(player => {
           if (!player) return;
           if (!playerStats[player]) {
@@ -333,7 +333,7 @@
           }
         });
         
-        // 記錄紅心隊球員
+        // 記錄 teamB 球員
         [heart1, heart2].forEach(player => {
           if (!player) return;
           if (!playerStats[player]) {

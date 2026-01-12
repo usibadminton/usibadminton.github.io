@@ -92,7 +92,7 @@
         <!-- Players Info -->
         <div class="grid grid-cols-2 gap-3 md:gap-6 mb-6">
           
-          <!-- 黑桃隊 -->
+          <!-- TeamA -->
           <div class="border-2 border-gray-300 rounded-lg overflow-hidden">
             <div class="bg-gray-700 text-white px-2 md:px-4 py-2">
               <h3 class="text-base md:text-xl font-bold text-center flex items-center justify-center gap-1 sm:gap-2">
@@ -100,7 +100,7 @@
                   <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
                   <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
                 </svg>
-                黑桃隊
+                <span id="teamANameLabel"></span>
               </h3>
             </div>
             <div class="p-2 md:p-4 space-y-2">
@@ -123,14 +123,14 @@
             </div>
           </div>
 
-          <!-- 紅心隊 -->
+          <!-- TeamB -->
           <div class="border-2 border-red-300 rounded-lg overflow-hidden">
             <div class="bg-red-600 text-white px-2 md:px-4 py-2">
               <h3 class="text-base md:text-xl font-bold text-center flex items-center justify-center gap-1 sm:gap-2">
                 <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                紅心隊
+                <span id="teamBNameLabel"></span>
               </h3>
             </div>
             <div class="p-2 md:p-4 space-y-2">
@@ -245,6 +245,15 @@
       
       document.getElementById('matchTitle').textContent = `第 ${matchNumber} 局`;
       document.getElementById('roundInfo').textContent = `${roundId}`;
+      
+      // 載入隊伍名稱並更新 UI
+      await loadTeamNames();
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
+      // 更新頁面中隊伍名稱標籤
+      document.getElementById('teamANameLabel').textContent = teamAName;
+      document.getElementById('teamBNameLabel').textContent = teamBName;
       
       await loadMatchInfo();
       await loadExistingScore();
@@ -405,8 +414,8 @@
       try {
         const matches = await fetchCSV(CSV_URLS.MATCHES);
         match = matches.find(m => 
-          m['場次ID'] === roundId && 
-          parseInt(m['局數']) === matchNumber
+          m['matchID'] === roundId && 
+          parseInt(m['game']) === matchNumber
         );
         
         if (!match) {
@@ -416,13 +425,13 @@
         }
         
         // 取得比賽狀態
-        matchStatus = match['狀態'] || match['status'] || 'not-started';
+        matchStatus = match['status'] || 'not-started';
         
         // 顯示球員資訊（計分區）
-        document.getElementById('spade1').textContent = match['黑桃1'] || '---';
-        document.getElementById('spade2').textContent = match['黑桃2'] || '---';
-        document.getElementById('heart1').textContent = match['紅心1'] || '---';
-        document.getElementById('heart2').textContent = match['紅心2'] || '---';
+        document.getElementById('spade1').textContent = match['teamA_1'] || '---';
+        document.getElementById('spade2').textContent = match['teamA_2'] || '---';
+        document.getElementById('heart1').textContent = match['teamB_1'] || '---';
+        document.getElementById('heart2').textContent = match['teamB_2'] || '---';
         
       } catch (error) {
         console.error('載入比賽資訊失敗:', error);
@@ -435,16 +444,16 @@
       try {
         const scores = await fetchCSV(CSV_URLS.SCORES);
         const history = scores.filter(s => 
-          s['場次ID'] === roundId && 
-          parseInt(s['局數']) === matchNumber
+          s['matchID'] === roundId && 
+          parseInt(s['game']) === matchNumber
         );
         
         if (history.length > 0) {
           // 顯示最新的比分
           existingScore = history[history.length - 1];
           hasExistingRecord = true;
-          document.getElementById('spadeScore').value = existingScore['黑桃分數'];
-          document.getElementById('heartScore').value = existingScore['紅心分數'];
+          document.getElementById('spadeScore').value = existingScore['teamA_score'];
+          document.getElementById('heartScore').value = existingScore['teamB_score'];
           
           // 設定為檢視模式（禁用輸入）
           setEditMode(false);
@@ -536,8 +545,8 @@
     function cancelEdit() {
       // 恢復原始分數
       if (existingScore) {
-        document.getElementById('spadeScore').value = existingScore['黑桃分數'];
-        document.getElementById('heartScore').value = existingScore['紅心分數'];
+        document.getElementById('spadeScore').value = existingScore['teamA_score'];
+        document.getElementById('heartScore').value = existingScore['teamB_score'];
       }
       // 切換回檢視模式
       setEditMode(false);

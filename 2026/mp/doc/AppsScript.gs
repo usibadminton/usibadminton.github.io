@@ -21,7 +21,8 @@ const SHEET_NAMES = {
   ROUNDS: 'Rounds',
   TEAMS: 'Teams',
   MATCHES: 'Matches',
-  SCORES: 'Scores'
+  SCORES: 'Scores',
+  SETTINGS: 'Settings'
 };
 
 /**
@@ -59,6 +60,12 @@ function doPost(e) {
         break;
       case 'deleteRound':
         result = deleteRound(payload);
+        break;
+      case 'getSettings':
+        result = getSettings();
+        break;
+      case 'saveSettings':
+        result = saveSettings(payload);
         break;
       default:
         result = { success: false, message: 'Unknown action' };
@@ -98,8 +105,8 @@ function updatePlayers(players) {
   // 寫入新資料
   if (players.length > 0) {
     const values = players.map(p => [
-      p['姓名'] || p.name || '',
-      p['簽到狀態'] === true ? 'true' : 'false'
+      p['name'] || p.name || '',
+      p['checked'] === true ? 'true' : 'false'
     ]);
     sheet.getRange(2, 1, values.length, 2).setValues(values);
   }
@@ -327,3 +334,83 @@ function deleteRound(data) {
   return { success: true, message: '已刪除整場比賽及相關資料' };
 }
 
+/**
+ * 讀取系統設定
+ */
+function getSettings() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let settingsSheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
+  
+  // 如果 Settings 工作表不存在，建立它
+  if (!settingsSheet) {
+    settingsSheet = ss.insertSheet(SHEET_NAMES.SETTINGS);
+    settingsSheet.appendRow(['category', 'item', 'value']);
+    settingsSheet.getRange('A1:C1').setFontWeight('bold');
+  }
+  
+  const data = settingsSheet.getDataRange().getValues();
+  const settings = {};
+  
+  // 從第二列開始讀取（第一列是標題）
+  for (let i = 1; i < data.length; i++) {
+    const category = data[i][0];
+    const key = data[i][1];
+    const value = data[i][2];
+    if (key) {
+      settings[key] = value || '';
+    }
+  }
+  
+  return { 
+    success: true, 
+    settings: settings 
+  };
+}
+
+/**
+ * 儲存系統設定
+ */
+function saveSettings(settings) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let settingsSheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
+  
+  // 如果 Settings 工作表不存在，建立它
+  if (!settingsSheet) {
+    settingsSheet = ss.insertSheet(SHEET_NAMES.SETTINGS);
+    settingsSheet.appendRow(['category', 'item', 'value']);
+    settingsSheet.getRange('A1:C1').setFontWeight('bold');
+  }
+  
+  const data = settingsSheet.getDataRange().getValues();
+  
+  // 定義設定項目的分類
+  const categoryMap = {
+    teamAName: '隊伍設定',
+    teamBName: '隊伍設定'
+  };
+  
+  // 更新每個設定項目
+  for (const key in settings) {
+    let found = false;
+    const category = categoryMap[key] || '其他';
+    
+    // 檢查是否已存在
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][1] === key) {
+        settingsSheet.getRange(i + 1, 3).setValue(settings[key]);
+        found = true;
+        break;
+      }
+    }
+    
+    // 如果不存在，新增一列
+    if (!found) {
+      settingsSheet.appendRow([category, key, settings[key]]);
+    }
+  }
+  
+  return { 
+    success: true, 
+    message: '設定已儲存' 
+  };
+}

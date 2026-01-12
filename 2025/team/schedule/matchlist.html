@@ -143,7 +143,7 @@ fetch(TEAM_CSV_URL)
         // 整理資料：按場次分組
         allRecords.forEach(record => {
             const matchNo = record['場次'];
-            const team = record['隊伍'];
+            const team = record['team'];
             const point = record['局點'];
             const player1 = record['選手1'];
             const player2 = record['選手2'];

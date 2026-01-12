@@ -57,11 +57,11 @@
         </div>
         <div class="flex gap-2">
           <div class="text-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-300">
-            <div class="text-xs text-gray-600">黑桃隊</div>
+            <div id="teamAWinLabel" class="text-xs text-gray-600">TeamA</div>
             <div id="spadeWins" class="text-2xl font-bold text-gray-700">0</div>
           </div>
           <div class="text-center px-4 py-2 bg-red-50 rounded-lg border border-red-200">
-            <div class="text-xs text-gray-600">紅心隊</div>
+            <div id="teamBWinLabel" class="text-xs text-gray-600">TeamB</div>
             <div id="heartWins" class="text-2xl font-bold text-red-600">0</div>
           </div>
         </div>
@@ -120,23 +120,23 @@
         <div id="teamsContent" class="tab-content">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <!-- 黑桃隊 -->
+            <!-- TeamA -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
               <div class="bg-blue-600 text-white px-6 py-4">
-                <h3 class="text-xl font-bold text-center">♠ 黑桃隊</h3>
+                <h3 id="teamATeamHeader" class="text-xl font-bold text-center">♠ TeamA</h3>
               </div>
               <div id="spadeTeamList" class="p-6 space-y-2">
-                <!-- 黑桃隊名單將動態插入 -->
+                <!-- TeamA名單將動態插入 -->
               </div>
             </div>
 
-            <!-- 紅心隊 -->
+            <!-- TeamB -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
               <div class="bg-red-600 text-white px-6 py-4">
-                <h3 class="text-xl font-bold text-center">♥ 紅心隊</h3>
+                <h3 id="teamBTeamHeader" class="text-xl font-bold text-center">♥ TeamB</h3>
               </div>
               <div id="heartTeamList" class="p-6 space-y-2">
-                <!-- 紅心隊名單將動態插入 -->
+                <!-- TeamB名單將動態插入 -->
               </div>
             </div>
 
@@ -195,6 +195,17 @@
       roundId = getUrlParam('round') || 'Match-001';
       document.getElementById('roundTitle').textContent = `場次 ${roundId}`;
       
+      // 載入隊伍名稱並更新 UI
+      await loadTeamNames();
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
+      // 更新頁面中隊伍名稱標籤
+      document.getElementById('teamAWinLabel').textContent = teamAName;
+      document.getElementById('teamBWinLabel').textContent = teamBName;
+      document.getElementById('teamATeamHeader').textContent = `♠ ${teamAName}`;
+      document.getElementById('teamBTeamHeader').textContent = `♥ ${teamBName}`;
+      
       await loadRoundInfo();
       await loadTeams();
       await loadMatches();
@@ -213,11 +224,11 @@
     async function loadRoundInfo() {
       try {
         const rounds = await fetchCSV(CSV_URLS.ROUNDS);
-        const round = rounds.find(r => r['場次ID'] === roundId);
+        const round = rounds.find(r => r['matchID'] === roundId);
         
         if (round) {
-          document.getElementById('roundDate').textContent = `📅 ${round['日期'] || ''}`;
-          document.getElementById('roundNote').textContent = round['備註'] || '';
+          document.getElementById('roundDate').textContent = `📅 ${round['time'] || ''}`;
+          document.getElementById('roundNote').textContent = round['note'] || '';
         }
       } catch (error) {
         console.error('載入場次資訊失敗:', error);
@@ -228,15 +239,19 @@
     async function loadTeams() {
       try {
         const data = await fetchCSV(CSV_URLS.TEAMS);
-        const roundTeams = data.filter(t => t['場次ID'] === roundId);
+        const roundTeams = data.filter(t => t['matchID'] === roundId);
         
-        teams.spade = roundTeams
-          .filter(t => t['隊伍'] === '黑桃')
-          .sort((a, b) => parseInt(a['編號']) - parseInt(b['編號']));
+        // 取得當前的隊伍名稱設定
+        const teamAName = getTeamName('teamA');
+        const teamBName = getTeamName('teamB');
         
-        teams.heart = roundTeams
-          .filter(t => t['隊伍'] === '紅心')
-          .sort((a, b) => parseInt(a['編號']) - parseInt(b['編號']));
+        teams.teamA = roundTeams
+          .filter(t => t['team'] === teamAName || t['team'] === '黑桃' || t['team'] === 'Team A')
+          .sort((a, b) => parseInt(a['no']) - parseInt(b['no']));
+        
+        teams.teamB = roundTeams
+          .filter(t => t['team'] === teamBName || t['team'] === '紅心' || t['team'] === 'Team B')
+          .sort((a, b) => parseInt(a['no']) - parseInt(b['no']));
       } catch (error) {
         console.error('載入分組失敗:', error);
       }
@@ -246,7 +261,7 @@
     async function loadMatches() {
       try {
         const data = await fetchCSV(CSV_URLS.MATCHES);
-        matches = data.filter(m => m['場次ID'] === roundId);
+        matches = data.filter(m => m['matchID'] === roundId);
       } catch (error) {
         console.error('載入賽程失敗:', error);
       }
@@ -256,7 +271,7 @@
     async function loadScores() {
       try {
         const data = await fetchCSV(CSV_URLS.SCORES);
-        scores = data.filter(s => s['場次ID'] === roundId);
+        scores = data.filter(s => s['matchID'] === roundId);
       } catch (error) {
         console.error('載入比分失敗:', error);
         scores = [];
@@ -273,7 +288,7 @@
           <div class="bg-blue-100 text-blue-600 font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
             ${index + 1}
           </div>
-          <div class="text-lg font-semibold text-gray-800">${player['姓名'] || '---'}</div>
+          <div class="text-lg font-semibold text-gray-800">${player['name'] || '---'}</div>
         </div>
       `).join('');
       
@@ -282,7 +297,7 @@
           <div class="bg-red-100 text-red-600 font-bold w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
             ${index + 1}
           </div>
-          <div class="text-lg font-semibold text-gray-800">${player['姓名'] || '---'}</div>
+          <div class="text-lg font-semibold text-gray-800">${player['name'] || '---'}</div>
         </div>
       `).join('');
     }
@@ -291,22 +306,26 @@
     function renderMatches() {
       const matchesList = document.getElementById('matchesList');
       
+      // 獲取隊伍名稱
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
       matchesList.innerHTML = matches.map((match, index) => {
-        const matchNumber = match['局數'] || (index + 1);
-        const spade1 = match['黑桃1'] || '---';
-        const spade2 = match['黑桃2'] || '---';
-        const heart1 = match['紅心1'] || '---';
-        const heart2 = match['紅心2'] || '---';
+        const matchNumber = match['game'] || (index + 1);
+        const spade1 = match['teamA_1'] || '---';
+        const spade2 = match['teamA_2'] || '---';
+        const heart1 = match['teamB_1'] || '---';
+        const heart2 = match['teamB_2'] || '---';
         
         // 找出比分
-        const score = scores.find(s => parseInt(s['局數']) === parseInt(matchNumber));
+        const score = scores.find(s => parseInt(s['game']) === parseInt(matchNumber));
         const hasScore = !!score;
-        const spadeScore = hasScore ? score['黑桃分數'] : '-';
-        const heartScore = hasScore ? score['紅心分數'] : '-';
+        const spadeScore = hasScore ? score['teamA_score'] : '-';
+        const heartScore = hasScore ? score['teamB_score'] : '-';
         
         let winner = '';
         if (hasScore) {
-          winner = parseInt(spadeScore) > parseInt(heartScore) ? 'spade' : 'heart';
+          winner = parseInt(spadeScore) > parseInt(heartScore) ? 'teamA' : 'teamB';
         }
         
         return `
@@ -329,11 +348,11 @@
             <div class="p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                <!-- 黑桃隊 -->
-                <div class="bg-gray-50 rounded-lg p-4 border-2 ${winner === 'spade' ? 'border-gray-700' : 'border-gray-300'}">
+                <!-- TeamA -->
+                <div class="bg-gray-50 rounded-lg p-4 border-2 ${winner === 'teamA' ? 'border-gray-700' : 'border-gray-300'}">
                   <div class="flex items-center justify-between mb-3">
-                    <div class="text-lg font-bold text-gray-700">♠ 黑桃隊</div>
-                    ${winner === 'spade' ? '<div class="text-2xl">🏆</div>' : ''}
+                    <div class="text-lg font-bold text-gray-700">♠ ${teamAName}</div>
+                    ${winner === 'teamA' ? '<div class="text-2xl">🏆</div>' : ''}
                   </div>
                   <div class="space-y-2">
                     <div class="bg-white px-3 py-2 rounded text-gray-800">${spade1}</div>
@@ -341,11 +360,11 @@
                   </div>
                 </div>
                 
-                <!-- 紅心隊 -->
-                <div class="bg-red-50 rounded-lg p-4 border-2 ${winner === 'heart' ? 'border-red-500' : 'border-red-200'}">
+                <!-- TeamB -->
+                <div class="bg-red-50 rounded-lg p-4 border-2 ${winner === 'teamB' ? 'border-red-500' : 'border-red-200'}">
                   <div class="flex items-center justify-between mb-3">
-                    <div class="text-lg font-bold text-red-600">♥ 紅心隊</div>
-                    ${winner === 'heart' ? '<div class="text-2xl">🏆</div>' : ''}
+                    <div class="text-lg font-bold text-red-600">♥ ${teamBName}</div>
+                    ${winner === 'teamB' ? '<div class="text-2xl">🏆</div>' : ''}
                   </div>
                   <div class="space-y-2">
                     <div class="bg-white px-3 py-2 rounded text-gray-800">${heart1}</div>
@@ -374,11 +393,11 @@
       }
       
       scoresList.innerHTML = scores.map(score => {
-        const matchNumber = score['局數'];
-        const spadeScore = score['黑桃分數'];
-        const heartScore = score['紅心分數'];
-        const timestamp = score['記錄時間'] || '';
-        const winner = parseInt(spadeScore) > parseInt(heartScore) ? 'spade' : 'heart';
+        const matchNumber = score['game'];
+        const spadeScore = score['teamA_score'];
+        const heartScore = score['teamB_score'];
+        const timestamp = score['time'] || '';
+        const winner = parseInt(spadeScore) > parseInt(heartScore) ? 'teamA' : 'teamB';
         
         return `
           <div class="bg-white rounded-lg shadow-lg p-6">
@@ -389,12 +408,12 @@
                 </div>
                 <div>
                   <div class="text-2xl font-bold">
-                    <span class="${winner === 'spade' ? 'text-gray-700' : 'text-gray-600'}">♠ ${spadeScore}</span>
+                    <span class="${winner === 'teamA' ? 'text-gray-700' : 'text-gray-600'}">♠ ${spadeScore}</span>
                     <span class="mx-2 text-gray-400">-</span>
-                    <span class="${winner === 'heart' ? 'text-red-600' : 'text-gray-600'}">♥ ${heartScore}</span>
+                    <span class="${winner === 'teamB' ? 'text-red-600' : 'text-gray-600'}">♥ ${heartScore}</span>
                   </div>
                   <div class="text-sm text-gray-500 mt-1">
-                    🏆 ${winner === 'spade' ? '黑桃隊' : '紅心隊'} 獲勝
+                    🏆 ${winner === 'teamA' ? getTeamName('teamA') : getTeamName('teamB')} 獲勝
                   </div>
                 </div>
               </div>
@@ -414,7 +433,7 @@
       
       let filteredScores = scores;
       if (filter !== 'all') {
-        filteredScores = scores.filter(s => s['局數'] === filter);
+        filteredScores = scores.filter(s => s['game'] === filter);
       }
       
       if (filteredScores.length === 0) {
@@ -427,11 +446,11 @@
       }
       
       scoresList.innerHTML = filteredScores.map(score => {
-        const matchNumber = score['局數'];
-        const spadeScore = score['黑桃分數'];
-        const heartScore = score['紅心分數'];
-        const timestamp = score['記錄時間'] || '';
-        const winner = parseInt(spadeScore) > parseInt(heartScore) ? 'spade' : 'heart';
+        const matchNumber = score['game'];
+        const spadeScore = score['teamA_score'];
+        const heartScore = score['teamB_score'];
+        const timestamp = score['time'] || '';
+        const winner = parseInt(spadeScore) > parseInt(heartScore) ? 'teamA' : 'teamB';
         
         return `
           <div class="bg-white rounded-lg shadow-lg p-6">
@@ -442,12 +461,12 @@
                 </div>
                 <div>
                   <div class="text-2xl font-bold">
-                    <span class="${winner === 'spade' ? 'text-gray-700' : 'text-gray-600'}">♠ ${spadeScore}</span>
+                    <span class="${winner === 'teamA' ? 'text-gray-700' : 'text-gray-600'}">♠ ${spadeScore}</span>
                     <span class="mx-2 text-gray-400">-</span>
-                    <span class="${winner === 'heart' ? 'text-red-600' : 'text-gray-600'}">♥ ${heartScore}</span>
+                    <span class="${winner === 'teamB' ? 'text-red-600' : 'text-gray-600'}">♥ ${heartScore}</span>
                   </div>
                   <div class="text-sm text-gray-500 mt-1">
-                    🏆 ${winner === 'spade' ? '黑桃隊' : '紅心隊'} 獲勝
+                    🏆 ${winner === 'teamA' ? getTeamName('teamA') : getTeamName('teamB')} 獲勝
                   </div>
                 </div>
               </div>
@@ -466,8 +485,8 @@
       let heartWins = 0;
       
       scores.forEach(score => {
-        const spadeScore = parseInt(score['黑桃分數']);
-        const heartScore = parseInt(score['紅心分數']);
+        const spadeScore = parseInt(score['teamA_score']);
+        const heartScore = parseInt(score['teamB_score']);
         
         if (spadeScore > heartScore) {
           spadeWins++;

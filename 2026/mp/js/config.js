@@ -10,11 +10,12 @@ const CONFIG = {
     TEAMS: "980069661",
     MATCHES: "1415380546",
     SCORES: "794606399",
-    ANNOUNCEMENTS: "1479866467"
+    ANNOUNCEMENTS: "1479866467",
+    SETTINGS: "68465225"
   },
   
   // Google Apps Script Web App URL (待設定)
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycby79zrHxui49EhzWGggCVFKq3-X54l3dE3zRNVp-TW9RcV7_2Eb3ImHIE9f5kLKkXhxuw/exec", // 稍後從 Google Apps Script 取得
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxlSBtBMtcstWU5DqqFozqwAXDxFi45GIEEfwAUYDxM8C-S3ZLKh-SAlFgijB5w7jq6dQ/exec", // 稍後從 Google Apps Script 取得
   
   ADMIN_PASSWORD_HASH: "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
   
@@ -32,5 +33,6 @@ const CSV_URLS = {
   TEAMS: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.TEAMS}`,
   MATCHES: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.MATCHES}`,
   SCORES: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.SCORES}`,
-  ANNOUNCEMENTS: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.ANNOUNCEMENTS}`
+  ANNOUNCEMENTS: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.ANNOUNCEMENTS}`,
+  SETTINGS: `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv&gid=${CONFIG.GID.SETTINGS}`
 };

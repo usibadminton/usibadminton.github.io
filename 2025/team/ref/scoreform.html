@@ -203,7 +203,7 @@ fetch(TEAM_CSV_URL)
         
         lineupData.forEach(record => {
             const matchNo = record['場次'];
-            const team = record['隊伍'];
+            const team = record['team'];
             const point = record['局點'];
             
             if (!matchNo || !team || !point) return;

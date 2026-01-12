@@ -13,6 +13,9 @@
   <!-- Header -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-center relative">
+      <div id="settingsBtn" class="absolute left-4 top-1/2 -translate-y-1/2" style="display: none;">
+        <!-- 設定按鈕 -->
+      </div>
       <div class="text-center">
         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">2025 歲末年終友誼盃</h1>
       </div>
@@ -39,7 +42,7 @@
           公告
         </h2>
       </div>
-      <div id="announcementContent" class="space-y-2 md:space-y-3 text-base md:text-lg text-gray-700 pl-2">
+      <div id="announcementContent" class="text-base md:text-lg text-gray-700 pl-2">
         <!-- 載入中 -->
         <div class="text-center py-4">
           <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-scuba-plunge"></div>
@@ -121,6 +124,21 @@
       
       if (isAuthenticated()) {
         const remaining = getRemainingAuthTime();
+        
+        // 顯示設定按鈕（左側）
+        const settingsBtn = document.getElementById('settingsBtn');
+        settingsBtn.style.display = 'block';
+        settingsBtn.innerHTML = `
+          <a href="settings.html" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium inline-flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="hidden md:inline"></span>
+          </a>
+        `;
+        
+        // 登出按鈕（右側）
         authStatus.innerHTML = `
           <div class="flex flex-col md:gap-1 items-end justify-center">
             <button onclick="handleLogout()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium">
@@ -134,6 +152,9 @@
         // 顯示建立比賽按鈕（僅限管理員）
         createMatchBtn.style.display = 'block';
       } else {
+        // 隱藏設定按鈕
+        document.getElementById('settingsBtn').style.display = 'none';
+        
         authStatus.innerHTML = `
           <a href="login.html" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium inline-block">
             登入
@@ -215,26 +236,32 @@
         
         // 渲染分組
         groups.forEach((group, index) => {
-          // 分組容器（有分隔線除了最後一組）
-          const needBorder = index < groups.length - 1;
-          html += `<div class="space-y-1.5${needBorder ? ' pb-2 md:pb-2.5 border-b border-cyan-200' : ''} bg-white/60 p-2 md:p-3 rounded-2xl my-4">`;
-          
-          // 分組標題（如果有的話）
+          // 分組標題（如果有的話）- 在區塊外
           if (group.title) {
-            html += `<div class="font-bold text-gray-800 mb-1">${group.title}</div>`;
+            html += `<div class="text-lg font-bold text-scuba-plunge mt-4 mb-2">${group.title}</div>`;
           }
+          
+          // 分組容器
+          html += `<div class="space-y-1 bg-white/60 p-2 md:p-3 rounded-2xl">`;
           
           // 分組項目
           group.items.forEach(item => {
             html += `
-              <div class="flex items-start gap-1.5">
-                <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-                <span class="break-words"><strong>${item.label}：</strong>${item.value}</span>
+              <div class="leading-relaxed" style="display: grid; grid-template-columns: 5em 1fr; gap: 0.5rem; align-items: start;">
+                
+                <span class="font-semibold text-gray-800">
+                <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base mr-2">•</span>${item.label}</span>
+                <span class="whitespace-pre-wrap break-words">${item.value}</span>
               </div>
             `;
           });
           
           html += '</div>';
+          
+          // 在區塊之間加分隔線（除了最後一組）
+          if (index < groups.length - 1) {
+            html += `<div class="m-4 border-t-2 border-cyan-300"></div>`;
+          }
         });
         
         contentDiv.innerHTML = html || '<p class="text-gray-500">暫無公告</p>';
@@ -248,40 +275,7 @@
     // 顯示預設公告（後備方案）
     function displayDefaultAnnouncement() {
       const contentDiv = document.getElementById('announcementContent');
-      contentDiv.innerHTML = `
-        <div class="space-y-1.5 pb-2 md:pb-2.5 border-b border-cyan-200 bg-white/60 p-2 md:p-3 rounded-2xl my-4">
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>比賽時間：</strong>2026/01/15 19:00 - 21:30</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>報到時間：</strong>18:30 開始報到</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>比賽賽制：</strong>雙打，21分制（不加分）</span>
-          </div>
-        </div>
-        <div class="space-y-1.5 bg-white/60 p-2 md:p-3 rounded-2xl my-4">
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>總召：</strong>Sophie</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>裁判：</strong>Bonnie | Hannah</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>餐點：</strong>Polly</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="text-scuba-plunge font-bold flex-shrink-0 text-sm md:text-base">•</span>
-            <span class="break-words"><strong>贊助商：</strong>Sandra</span>
-          </div>
-        </div>
-      `;
+      contentDiv.innerHTML = '<p class="text-gray-500">暫無公告</p>';
     }
     
     // 建立新場次（需要登入）
@@ -325,9 +319,9 @@
           
           const roundsList = document.getElementById('roundsList');
           roundsList.innerHTML = rounds.reverse().map(round => {
-            const roundId = round['場次ID'] || round['场次ID'];
-            const date = round['日期'];
-            const note = round['備註'] || round['备注'] || '';
+            const roundId = round['matchID'];
+            const date = round['time'];
+            const note = round['note'] || round['备注'] || '';
             
             return `
               <div class="bg-white/60 hover:bg-reflected-breeze/20 border border-reflected-breeze/30 hover:border-alaskan-blue/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" onclick="viewRound('${roundId}')">

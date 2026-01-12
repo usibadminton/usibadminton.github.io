@@ -29,7 +29,26 @@
   <div class="h-16"></div>
 
   <div class="max-w-4xl mx-auto p-4 md:p-8">
-    
+    <div class="bg-white rounded-lg shadow-lg mb-6">
+      <!-- Mode Toggle (Center) - Only show for authenticated users -->
+      <div id="modeToggle" class="flex bg-gray-200 rounded-lg p-1 hidden justify-center">
+        <button 
+          id="checkedModeBtn"
+          onclick="switchMode('checked')"
+          class="px-4 py-3 rounded-md text-lg font-semibold transition bg-white text-alaskan-blue shadow"
+        >
+          簽到
+        </button>
+        <button 
+          id="editModeBtn"
+          onclick="switchMode('edit')"
+          class="px-4 py-3 rounded-md text-lg font-semibold transition text-gray-600"
+        >
+          編輯
+        </button>
+      </div>
+    </div>
+
     <!-- Player Count & Mode Toggle -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
       <div class="flex flex-col gap-4">
@@ -45,23 +64,6 @@
           </div>
         </div>
         
-        <!-- Mode Toggle (Center) - Only show for authenticated users -->
-        <div id="modeToggle" class="flex bg-gray-200 rounded-lg p-1 hidden justify-center">
-          <button 
-            id="checkedModeBtn"
-            onclick="switchMode('checked')"
-            class="px-4 py-3 rounded-md text-lg font-semibold transition bg-white text-alaskan-blue shadow"
-          >
-            簽到
-          </button>
-          <button 
-            id="editModeBtn"
-            onclick="switchMode('edit')"
-            class="px-4 py-3 rounded-md text-lg font-semibold transition text-gray-600"
-          >
-            編輯
-          </button>
-        </div>
       </div>
     </div>
 
@@ -312,14 +314,14 @@
         players = await fetchCSV(CSV_URLS.PLAYERS);
         
         // 移除標題列（如果第一筆是標題）
-        if (players.length > 0 && players[0]['姓名'] === '姓名') {
+        if (players.length > 0 && players[0]['name'] === 'name') {
           players.shift();
         }
         
         // 初始化簽到狀態（如果沒有的話）
         players = players.map(p => ({
-          '姓名': p['姓名'] || '',
-          '簽到狀態': p['簽到狀態'] === 'TRUE' || p['簽到狀態'] === true
+          'name': p['name'] || '',
+          'checked': p['checked'] === 'TRUE' || p['checked'] === true
         }));
         
         hideElement('loading');
@@ -352,8 +354,8 @@
       playerCount.textContent = `${players.length}`;
       
       // 計算簽到人數
-      const checkedInPlayers = players.filter(p => p['簽到狀態'] === true);
-      const uncheckedPlayers = players.filter(p => p['簽到狀態'] !== true);
+      const checkedInPlayers = players.filter(p => p['checked'] === true);
+      const uncheckedPlayers = players.filter(p => p['checked'] !== true);
       checkedInCount.textContent = `${checkedInPlayers.length}`;
       
       // 更新篩選標籤的計數
@@ -376,7 +378,7 @@
       // 根據搜尋關鍵字過濾
       if (searchQuery) {
         filteredPlayers = filteredPlayers.filter(player => {
-          const name = (player['姓名'] || '').toLowerCase();
+          const name = (player['name'] || '').toLowerCase();
           return name.includes(searchQuery);
         });
       }
@@ -411,8 +413,8 @@
       playersList.innerHTML = filteredPlayers.map((player, originalIndex) => {
         // 找回原始索引
         const index = players.indexOf(player);
-        const name = player['姓名'] || '';
-        const checkedIn = player['簽到狀態'] === true;
+        const name = player['name'] || '';
+        const checkedIn = player['checked'] === true;
         
         // 根據模式和登入狀態顯示不同的按鈕
         let actionButtons = '';
@@ -498,9 +500,9 @@
     
     // 切換簽到狀態
     function toggleCheckIn(index) {
-      players[index]['簽到狀態'] = !players[index]['簽到狀態'];
+      players[index]['checked'] = !players[index]['checked'];
       savePlayersToSheet();
-      showToast(players[index]['簽到狀態'] ? '已簽到' : '已取消', 'success');
+      showToast(players[index]['checked'] ? '已簽到' : '已取消', 'success');
     }
     
     // 編輯選手
@@ -508,7 +510,7 @@
       editingIndex = index;
       const player = players[index];
       document.getElementById('modalTitle').textContent = '編輯選手';
-      document.getElementById('playerName').value = player['姓名'] || '';
+      document.getElementById('playerName').value = player['name'] || '';
       showElement('playerModal');
       document.getElementById('playerName').focus();
     }
@@ -516,7 +518,7 @@
     // 刪除選手
     function deletePlayer(index) {
       const player = players[index];
-      const name = player['姓名'] || '';
+      const name = player['name'] || '';
       
       if (!confirmAction(`確定要刪除「${name}」嗎？`)) {
         return;
@@ -539,13 +541,13 @@
       const name = document.getElementById('playerName').value.trim();
       
       if (!name) {
-        showToast('請輸入姓名', 'warning');
+        showToast('請輸入name', 'warning');
         return;
       }
       
       // 檢查重複
       const isDuplicate = players.some((p, i) => 
-        i !== editingIndex && (p['姓名'] || '') === name
+        i !== editingIndex && (p['name'] || '') === name
       );
       
       if (isDuplicate) {
@@ -555,7 +557,7 @@
       
       if (editingIndex >= 0) {
         // 編輯
-        players[editingIndex]['姓名'] = name;
+        players[editingIndex]['name'] = name;
         showToast('選手資料已更新', 'success');
       } else {
         // 新增
@@ -565,8 +567,8 @@
           return;
         }
         players.push({ 
-          '姓名': name,
-          '簽到狀態': false 
+          'name': name,
+          'checked': false 
         });
         showToast('選手已新增', 'success');
       }

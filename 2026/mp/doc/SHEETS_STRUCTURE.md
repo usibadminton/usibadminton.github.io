@@ -9,14 +9,14 @@
 ## 2. Rounds Sheet
 | Column | Header Name | Example Value |
 |--------|-------------|---------------|
-| A | 場次ID | Match-001 |
+| A | matchID | Match-001 |
 | B | 日期 | 2025-12-31 |
 | C | 備註 | 第1次比賽 |
 
 ## 3. Teams Sheet
 | Column | Header Name | Example Value |
 |--------|-------------|---------------|
-| A | 場次ID | Match-001 |
+| A | matchID | Match-001 |
 | B | 隊伍 | 黑桃 / 紅心 |
 | C | 編號 | 1, 2, 3... 12 |
 | D | 姓名 | 王小明 |
@@ -24,7 +24,7 @@
 ## 4. Matches Sheet
 | Column | Header Name | Example Value |
 |--------|-------------|---------------|
-| A | 場次ID | Match-001 |
+| A | matchID | Match-001 |
 | B | 局數 | 1, 2, 3... 6 |
 | C | 黑桃1 | 王小明 |
 | D | 黑桃2 | 李小華 |
@@ -34,7 +34,7 @@
 ## 5. Scores Sheet
 | Column | Header Name | Example Value |
 |--------|-------------|---------------|
-| A | 場次ID | Match-001 |
+| A | matchID | Match-001 |
 | B | 局數 | 1, 2, 3... 6 |
 | C | 黑桃分數 | 21 |
 | D | 紅心分數 | 19 |
@@ -62,7 +62,7 @@
 ## Troubleshooting
 
 If matches.html shows nothing:
-1. Check that Teams sheet has data for the round (場次ID = Match-001)
+1. Check that Teams sheet has data for the round (matchID = Match-001)
 2. Check that Teams sheet has "黑桃" and "紅心" teams with 12 players each
 3. Check that column headers match exactly (case-sensitive)
 4. Open browser console (F12) to see any error messages

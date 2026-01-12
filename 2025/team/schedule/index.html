@@ -186,7 +186,7 @@ function checkIfMatchFilled() {
             // 計算此隊伍此場次的紀錄數
             let recordCount = 0;
             parsed.data.forEach(record => {
-                const t = record['隊伍']?.trim();
+                const t = record['team']?.trim();
                 const m = record['場次']?.trim();
                 if (t === team && m === matchNo) {
                     recordCount++;
