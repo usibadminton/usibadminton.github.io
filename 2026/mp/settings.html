@@ -211,6 +211,7 @@
         // 儲存到 Google Sheets
         const response = await fetch(CONFIG.SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'saveSettings',
