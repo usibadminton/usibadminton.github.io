@@ -105,7 +105,9 @@
       if (confirmed) {
         logout();
         showToast('已登出', 'success');
-        updateAuthStatus();
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 500);
       }
     }
     
@@ -179,9 +181,19 @@
           mergedOrders[name].total += quantity;
         });
         
-        // 轉換成陣列並按姓名排序
+        // 轉換成陣列並按姓名排序（英文名字優先）
         const sortedMealTypes = Array.from(mealTypes).sort();
-        const orderArray = Object.values(mergedOrders).sort((a, b) => a.name.localeCompare(b.name));
+        const orderArray = Object.values(mergedOrders).sort((a, b) => {
+          const aIsEnglish = /^[A-Za-z]/.test(a.name);
+          const bIsEnglish = /^[A-Za-z]/.test(b.name);
+          
+          // 如果一個是英文一個是中文，英文在前
+          if (aIsEnglish && !bIsEnglish) return -1;
+          if (!aIsEnglish && bIsEnglish) return 1;
+          
+          // 同類型則按字母/拼音排序
+          return a.name.localeCompare(b.name);
+        });
         
         // Debug: 顯示合併後的 pickedUp 狀態
         console.log('合併後的訂單狀態:');
@@ -209,6 +221,7 @@
         document.getElementById('orderCount').textContent = `${orderArray.length} 人訂餐，總計 ${totals.total} 份`;
         
         const orderListDiv = document.getElementById('orderList');
+        const isLoggedIn = isAuthenticated(); // 檢查是否登入
         
         // === 手機版：極簡一行式 ===
         let mobileCards = '<div class="md:hidden h-full overflow-y-auto space-y-1.5">';
@@ -227,7 +240,7 @@
           mobileCards += `
             <div class="bg-white border border-slate-300 rounded-lg px-3 py-3 shadow-sm flex items-center justify-between gap-2 ${isPicked ? 'opacity-50' : ''}" data-order-index="${index}" data-order-name="${order.name}">
               <div class="flex items-center gap-2 flex-1 min-w-0">
-                <span class="text-xs font-semibold text-gray-400 flex-shrink-0">#${index + 1}</span>
+                <span class="text-xs font-semibold text-gray-400 w-6 flex-shrink-0">#${index + 1}</span>
                 <span class="font-medium text-gray-900 flex-shrink-0 w-20 text-left">${order.name}</span>
                 <div class="flex items-center gap-1.5 flex-wrap">
                   ${mealsText}
@@ -253,7 +266,7 @@
         mobileCards += `
           <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-slate-300 rounded-lg px-3 py-2 shadow-sm flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 flex-1">
-              <span class="font-bold text-sm text-slate-700 flex-shrink-0">總計</span>
+              <span class="font-bold text-sm text-slate-700 flex-shrink-0 w-8">總計</span>
               <div class="flex items-center gap-1.5 text-sm flex-wrap">
                 ${totalMealsText}
               </div>
@@ -303,9 +316,10 @@
           desktopTable += `
               <td class="px-4 py-3 text-center">
                 <button 
-                  onclick="togglePickup('${order.name}', this)" 
-                  class="pickup-btn text-base font-semibold ${isPicked ? 'text-gray-400 line-through' : 'text-alaskan-blue hover:bg-alaskan-blue/10'} px-2 py-1 rounded transition cursor-pointer"
+                  ${isLoggedIn ? `onclick="togglePickup('${order.name}', this)"` : ''}
+                  class="pickup-btn text-base font-semibold ${isPicked ? 'text-gray-400 line-through' : isLoggedIn ? 'text-alaskan-blue hover:bg-alaskan-blue/10' : 'text-gray-400'} px-2 py-1 rounded transition ${isLoggedIn ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}"
                   data-picked="${isPicked}"
+                  ${isLoggedIn ? '' : 'disabled'}
                 >
                   ${order.total} 個
                 </button>
@@ -350,6 +364,11 @@
     
     // 切換取餐狀態
     async function togglePickup(name, button) {
+      // 檢查登入狀態
+      if (!isAuthenticated()) {
+        return;
+      }
+      
       const isPicked = button.dataset.picked === 'true';
       const row = button.closest('[data-order-index]');
       const newStatus = !isPicked;
