@@ -44,7 +44,6 @@
 ├── team-assign.html     # 分組登記
 ├── matches.html         # 賽程表
 ├── scoring.html         # 計分系統
-├── history.html         # 歷史查詢
 ├── statistics.html      # 統計分析
 ├── debug.html           # 資料檢查工具
 │
@@ -370,8 +369,7 @@ https://usibadminton.github.io/2026/mp/index.html
          │
          v
 ┌─────────────────┐
-│歷史查詢(history)│
-│統計分析(stats)  │
+││統計分析(stats)  │
 └─────────────────┘
 ```
 

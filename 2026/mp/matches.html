@@ -43,7 +43,7 @@
             <button 
               onclick="deleteEntireMatch()"
               id="deleteBtn"
-              class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg transition hidden"
+              class="bg-gray-300 hover:bg-red-600 text-white p-3 rounded-lg transition hidden"
               title="刪除整場"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,8 +54,8 @@
         </div>
         
         <!-- Bottom Row: Statistics -->
-        <div class="flex gap-3 md:gap-4 justify-end">
-          <div class="text-center px-6 py-3 md:px-8 md:py-4 bg-gray-50 rounded-lg border border-gray-300">
+        <div class="flex gap-3 md:gap-4 justify-center md:justify-end">
+          <div class="text-center px-4 py-3 md:px-8 md:py-4 bg-gray-50 rounded-lg border border-gray-300 flex-1 md:flex-none">
             <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
               <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
@@ -66,16 +66,16 @@
             <div class="flex items-center justify-center gap-4 md:gap-6">
               <div class="text-center">
                 <div id="spadeWins" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
-                <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">勝場</div>
               </div>
               <div class="text-gray-300 font-bold text-xl md:text-3xl">|</div>
               <div class="text-center">
                 <div id="spadeTotal" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
-                <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">總分</div>
               </div>
             </div>
           </div>
-          <div class="text-center px-6 py-3 md:px-8 md:py-4 bg-red-50 rounded-lg border border-red-200">
+          <div class="text-center px-4 py-3 md:px-8 md:py-4 bg-red-50 rounded-lg border border-red-200 flex-1 md:flex-none">
             <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
               <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -85,12 +85,12 @@
             <div class="flex items-center justify-center gap-4 md:gap-6">
               <div class="text-center">
                 <div id="heartWins" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
-                <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">勝場</div>
               </div>
               <div class="text-red-200 font-bold text-xl md:text-3xl">|</div>
               <div class="text-center">
                 <div id="heartTotal" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
-                <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
+                <div class="text-xs md:text-sm text-gray-500 mt-1">總分</div>
               </div>
             </div>
           </div>
@@ -435,7 +435,7 @@
                 ` : !hasScore && isAuthenticated() ? `
                   <button 
                     onclick="startScoring(${matchNumber})"
-                    class="bg-reflected-breeze/80 hover:bg-reflected-breeze/90 text-white font-semibold py-3 px-8 rounded-lg transition text-base border-4 border-double"
+                    class="bg-reflected-breeze/90 hover:bg-reflected-breeze text-white font-semibold py-3 px-8 rounded-lg transition text-base border-4 border-double"
                   >
                     GO!
                   </button>

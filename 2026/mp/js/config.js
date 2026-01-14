@@ -15,7 +15,7 @@ const CONFIG = {
   },
   
   // Google Apps Script Web App URL (待設定)
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxlSBtBMtcstWU5DqqFozqwAXDxFi45GIEEfwAUYDxM8C-S3ZLKh-SAlFgijB5w7jq6dQ/exec", // 稍後從 Google Apps Script 取得
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxuMiXH2ozbJcspZLARBxEybTURPZBx57GPl9jYobV-EmMfjDGE5gzgnEo_PwJ-DzTC4A/exec", // 稍後從 Google Apps Script 取得
   
   ADMIN_PASSWORD_HASH: "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
   

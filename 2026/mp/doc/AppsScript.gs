@@ -46,6 +46,9 @@ function doPost(e) {
       case 'saveTeams':
         result = saveTeams(payload);
         break;
+      case 'updateTeams':
+        result = updateTeams(payload);
+        break;
       case 'saveMatches':
         result = saveMatches(payload);
         break;
@@ -106,9 +109,10 @@ function updatePlayers(players) {
   if (players.length > 0) {
     const values = players.map(p => [
       p['name'] || p.name || '',
-      p['checked'] === true ? 'true' : 'false'
+      p['checked'] === true ? 'true' : 'false',
+      p['order'] || p.order || ''
     ]);
-    sheet.getRange(2, 1, values.length, 2).setValues(values);
+    sheet.getRange(2, 1, values.length, 3).setValues(values);
   }
   
   return { success: true, count: players.length };
@@ -158,6 +162,81 @@ function saveTeams(teams) {
   sheet.getRange(sheet.getLastRow() + 1, 1, values.length, 4).setValues(values);
   
   return { success: true, count: teams.length };
+}
+
+/**
+ * 更新分組（部分更新，不刪除其他人的分配）
+ * 用於多人同時編輯時，只更新自己修改的位置
+ */
+function updateTeams(teams) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.TEAMS);
+  
+  if (teams.length === 0) {
+    return { success: true, count: 0, message: 'No data to update' };
+  }
+  
+  const roundId = teams[0].roundId;
+  const data = sheet.getDataRange().getValues();
+  
+  // 建立位置索引 Map: "roundId-team-number" -> rowIndex
+  const positionMap = new Map();
+  for (let i = 1; i < data.length; i++) {
+    const key = `${data[i][0]}-${data[i][1]}-${data[i][2]}`;
+    positionMap.set(key, i + 1); // +1 因為 sheet 行號從 1 開始
+  }
+  
+  let updatedCount = 0;
+  let insertedCount = 0;
+  
+  // 處理每個更新的位置
+  teams.forEach(t => {
+    const key = `${t.roundId}-${t.team}-${t.number}`;
+    const rowIndex = positionMap.get(key);
+    
+    if (t.name === null || t.name === '') {
+      // 如果名字為空，表示要清除這個位置
+      if (rowIndex) {
+        sheet.deleteRow(rowIndex);
+        updatedCount++;
+        // 更新 map 中的行號（因為刪除後其他行會上移）
+        positionMap.forEach((value, mapKey) => {
+          if (value > rowIndex) {
+            positionMap.set(mapKey, value - 1);
+          }
+        });
+        positionMap.delete(key);
+      }
+    } else {
+      // 更新或插入資料
+      if (rowIndex) {
+        // 位置已存在，更新該行
+        sheet.getRange(rowIndex, 1, 1, 4).setValues([[
+          t.roundId,
+          t.team,
+          t.number,
+          t.name
+        ]]);
+        updatedCount++;
+      } else {
+        // 位置不存在，新增一行
+        sheet.appendRow([
+          t.roundId,
+          t.team,
+          t.number,
+          t.name
+        ]);
+        insertedCount++;
+      }
+    }
+  });
+  
+  return { 
+    success: true, 
+    updated: updatedCount,
+    inserted: insertedCount,
+    total: updatedCount + insertedCount
+  };
 }
 
 /**

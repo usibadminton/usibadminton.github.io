@@ -166,7 +166,7 @@
   <div class="max-w-6xl mx-auto p-4 md:p-8">
     
     <!-- Round Info -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-4">
       <div class="flex justify-between items-center">
         <div>
           <h2 id="roundTitle" class="text-2xl font-bold text-gray-800">Match</h2>
@@ -201,7 +201,7 @@
     <div id="assignmentForm" class="hidden">
       
       <!-- Tabs -->
-      <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+      <div id="teamTabs" class="bg-white rounded-lg shadow-lg p-4 mb-4">
         <div class="flex gap-2">
           <button 
             onclick="switchTab('teamA')"
@@ -227,7 +227,27 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-6 mb-6">
+      <!-- Duplicate Warning Banner -->
+      <div id="duplicateWarning" class="hidden bg-red-50 border-l-4 border-red-500 rounded-lg shadow-lg p-4 mb-4">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+          <div class="ml-3 flex-1">
+            <h3 class="text-lg font-bold text-red-800">發現重複分配</h3>
+            <div id="duplicateList" class="mt-2 text-sm text-red-700"></div>
+            <p class="mt-2 text-sm text-red-600">請修正重複分配的人員後再送出</p>
+          </div>
+          <button onclick="closeDuplicateWarning()" class="flex-shrink-0 ml-4 text-red-500 hover:text-red-700">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="teamGridContainer" class="grid grid-cols-1 gap-6 mb-4">
         
         <!-- TeamA -->
         <div id="spadeContainer" class="bg-white rounded-lg shadow-lg p-6">
@@ -260,7 +280,7 @@
 
       <!-- Mode 2: Player List View -->
       <div id="mode2Container" class="hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-4">
           <div class="mb-4">
             <h3 class="text-xl font-bold text-gray-800 mb-2">參賽者名單</h3>
             <p class="text-sm text-gray-600">點擊人員選擇隊伍和號碼</p>
@@ -303,19 +323,26 @@
 
   <!-- Action Buttons - Fixed at Bottom -->
   <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-2 border-gray-200 shadow-lg">
-    <div class="max-w-6xl mx-auto p-4">
+    <div class="max-w-6xl mx-auto p-2">
       <div class="flex gap-4">
         <button 
           onclick="clearAssignment()"
           class="flex-1 bg-gray-100 hover:bg-gray-500 border-2 border-gray-200 text-gray-500 font-bold py-4 rounded-lg transition"
         >
-          清空重選
+          全部清空
         </button>
         <button 
           onclick="confirmAssignment()"
           id="confirmBtn"
           disabled
           class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          更新名單
+        </button>
+        <button 
+          onclick="generateMatches()"
+          id="generateMatchesBtn"
+          class="hidden flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition"
         >
           確認分組
         </button>
@@ -389,6 +416,7 @@
     };
     let currentCardIndex = -1;
     let currentCardTeam = '';
+    let modifiedPositions = new Set(); // 追蹤用戶修改過的位置 (格式: 'teamA-0', 'teamB-3')
     
     // 初始化分組陣列
     function initAssignments() {
@@ -528,12 +556,102 @@
             }
           });
           
-          showToast('已載入現有分組資料', 'info');
+          // 載入後檢查重複
+          checkDuplicatesOnLoad();
+          
+          // 檢查是否分組完成，若完成則顯示確認分組按鈕
+          checkAssignmentCompletion();
+          
+          showToast('已載入分組資料', 'info');
         }
       } catch (error) {
         console.error('載入分組資料失敗:', error);
         // 不顯示錯誤訊息，允許繼續使用空白分組
       }
+    }
+    
+    // 載入時檢查重複
+    function checkDuplicatesOnLoad() {
+      console.log('=== 檢查重複分配 ===');
+      
+      // 統計每個人被分配的所有位置
+      const playerCount = {};
+      const duplicatePlayers = [];
+      
+      assignments.teamA.forEach((player, index) => {
+        if (player) {
+          if (!playerCount[player]) {
+            playerCount[player] = [];
+          }
+          playerCount[player].push({ team: 'Team A', position: index + 1 });
+        }
+      });
+      
+      assignments.teamB.forEach((player, index) => {
+        if (player) {
+          if (!playerCount[player]) {
+            playerCount[player] = [];
+          }
+          playerCount[player].push({ team: 'Team B', position: index + 1 });
+        }
+      });
+      
+      // 找出重複的人
+      Object.keys(playerCount).forEach(player => {
+        if (playerCount[player].length > 1) {
+          duplicatePlayers.push({
+            name: player,
+            positions: playerCount[player]
+          });
+        }
+      });
+      
+      if (duplicatePlayers.length > 0) {
+        console.warn('⚠️ 發現重複分配的人員：');
+        duplicatePlayers.forEach(dup => {
+          const positions = dup.positions.map(p => `${p.team}-位置${p.position}`).join(', ');
+          console.warn(`  - ${dup.name}: 出現在 ${positions}`);
+        });
+        
+        // 顯示警告橫幅
+        showDuplicateWarning(duplicatePlayers);
+        
+        // 高亮重複的卡片
+        highlightDuplicateCards(duplicatePlayers.map(d => d.name));
+      } else {
+        console.log('✅ 無重複：每個人只被分配一次');
+      }
+      
+      console.log('=== 檢查完成 ===');
+      
+      return {
+        hasDuplicates: duplicatePlayers.length > 0,
+        duplicatePlayers: duplicatePlayers
+      };
+    }
+    
+    // 顯示重複警告橫幅
+    function showDuplicateWarning(duplicatePlayers) {
+      const warning = document.getElementById('duplicateWarning');
+      const list = document.getElementById('duplicateList');
+      
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
+      
+      list.innerHTML = duplicatePlayers.map(dup => {
+        const positions = dup.positions.map(p => {
+          const teamName = p.team === 'Team A' ? teamAName : teamBName;
+          return `${teamName}-${p.position}`;
+        }).join('、');
+        return `<div class="mb-1">• <span class="font-bold">${dup.name}</span> 出現在 ${positions}</div>`;
+      }).join('');
+      
+      warning.classList.remove('hidden');
+    }
+    
+    // 關閉重複警告
+    function closeDuplicateWarning() {
+      document.getElementById('duplicateWarning').classList.add('hidden');
     }
     
     // 渲染下拉選單
@@ -930,11 +1048,24 @@
       }
       
       // 清除該玩家在其他位置的分配
-      assignments.teamA = assignments.teamA.map(p => p === player ? null : p);
-      assignments.teamB = assignments.teamB.map(p => p === player ? null : p);
+      assignments.teamA = assignments.teamA.map((p, i) => {
+        if (p === player) {
+          modifiedPositions.add(`teamA-${i}`); // 記錄修改
+          return null;
+        }
+        return p;
+      });
+      assignments.teamB = assignments.teamB.map((p, i) => {
+        if (p === player) {
+          modifiedPositions.add(`teamB-${i}`); // 記錄修改
+          return null;
+        }
+        return p;
+      });
       
       // 分配到新位置
       assignments[team][index] = player;
+      modifiedPositions.add(`${team}-${index}`); // 記錄修改
       
       // 更新顯示
       updateCount();
@@ -952,8 +1083,20 @@
     
     // 清除玩家位置
     function clearPlayerPosition(player) {
-      assignments.teamA = assignments.teamA.map(p => p === player ? null : p);
-      assignments.teamB = assignments.teamB.map(p => p === player ? null : p);
+      assignments.teamA = assignments.teamA.map((p, i) => {
+        if (p === player) {
+          modifiedPositions.add(`teamA-${i}`); // 記錄修改
+          return null;
+        }
+        return p;
+      });
+      assignments.teamB = assignments.teamB.map((p, i) => {
+        if (p === player) {
+          modifiedPositions.add(`teamB-${i}`); // 記錄修改
+          return null;
+        }
+        return p;
+      });
       
       updateCount();
       
@@ -1015,6 +1158,7 @@
     // 選擇參賽者
     function selectPlayer(playerName) {
       assignments[currentCardTeam][currentCardIndex] = playerName;
+      modifiedPositions.add(`${currentCardTeam}-${currentCardIndex}`); // 記錄修改
       closePlayerModal();
       renderCards();
       updateCount();
@@ -1028,6 +1172,7 @@
     // 清除參賽者選擇
     function clearPlayerSelection() {
       assignments[currentCardTeam][currentCardIndex] = null;
+      modifiedPositions.add(`${currentCardTeam}-${currentCardIndex}`); // 記錄修改
       closePlayerModal();
       renderCards();
       updateCount();
@@ -1099,8 +1244,8 @@
         modeToggleBtn.title = '切換到人員選位';
         
         // 顯示模式1，隱藏模式2
-        document.querySelectorAll('#assignmentForm > div')[0].classList.remove('hidden'); // Tabs
-        document.querySelectorAll('#assignmentForm > div')[1].classList.remove('hidden'); // Grid container
+        showElement('teamTabs');
+        showElement('teamGridContainer');
         hideElement('mode2Container');
       } else {
         // 模式2：人員選位 - 顯示人員圖示
@@ -1111,8 +1256,8 @@
         modeToggleBtn.title = '切換到卡片選人';
         
         // 顯示模式2，隱藏模式1
-        document.querySelectorAll('#assignmentForm > div')[0].classList.add('hidden'); // Tabs
-        document.querySelectorAll('#assignmentForm > div')[1].classList.add('hidden'); // Grid container
+        hideElement('teamTabs');
+        hideElement('teamGridContainer');
         showElement('mode2Container');
         renderMode2PlayerList();
       }
@@ -1179,7 +1324,85 @@
       }
     }
     
-    // 確認分組
+    // 檢查分組是否完成（所有人都已分配）
+    function checkAssignmentCompletion() {
+      const assignedPlayers = new Set();
+      
+      // 統計已分配的人員
+      assignments.teamA.forEach(player => {
+        if (player) assignedPlayers.add(player);
+      });
+      assignments.teamB.forEach(player => {
+        if (player) assignedPlayers.add(player);
+      });
+      
+      const assignedCount = assignedPlayers.size;
+      const totalPlayers = players.length;
+      
+      console.log(`分組檢查：已分配 ${assignedCount} 人，總人數 ${totalPlayers} 人`);
+      
+      // 如果所有人都已分配，顯示「確認分組」按鈕
+      if (assignedCount === totalPlayers && totalPlayers > 0) {
+        showElement('generateMatchesBtn');
+        console.log('✅ 分組已完成，顯示確認分組按鈕');
+      } else {
+        hideElement('generateMatchesBtn');
+      }
+    }
+    
+    // 生成賽程表
+    async function generateMatches() {
+      const confirmed = await confirmAction('確定分組嗎？送出後將自動生成賽程表。');
+      if (!confirmed) return;
+      
+      showElement('loadingOverlay');
+      
+      try {
+        showToast('正在生成賽程表...', 'info');
+        
+        // 準備賽程資料：6場雙打
+        const matches = [];
+        const teamAMembers = assignments.teamA.filter(p => p); // 過濾掉 null
+        const teamBMembers = assignments.teamB.filter(p => p);
+        
+        for (let i = 0; i < 6; i++) {
+          const idx1 = i * 2;
+          const idx2 = i * 2 + 1;
+          
+          matches.push({
+            roundId: roundId,
+            matchNumber: i + 1,
+            spade1: teamAMembers[idx1] || '',
+            spade2: teamAMembers[idx2] || '',
+            heart1: teamBMembers[idx1] || '',
+            heart2: teamBMembers[idx2] || ''
+          });
+        }
+        
+        console.log('生成賽程:', matches);
+        
+        // 寫入 Matches 表
+        if (CONFIG.SCRIPT_URL) {
+          await writeToSheet('saveMatches', matches);
+          showToast('賽程表已生成', 'success');
+          
+          // 跳轉到比賽頁面（不需要 new=true 因為已經生成）
+          setTimeout(() => {
+            window.location.href = `matches.html?round=${roundId}`;
+          }, 1000);
+        } else {
+          console.warn('Apps Script 尚未設定，賽程資料未寫入');
+          showToast('⚠️ Apps Script 尚未設定，資料未同步', 'warning', 3000);
+          hideElement('loadingOverlay');
+        }
+      } catch (error) {
+        console.error('生成賽程表失敗:', error);
+        showToast('生成賽程表失敗', 'error');
+        hideElement('loadingOverlay');
+      }
+    }
+    
+    // 更新名單
     async function confirmAssignment() {
       const spadeAssignedCount = assignments.teamA.filter(p => p).length;
       const heartAssignedCount = assignments.teamB.filter(p => p).length;
@@ -1191,7 +1414,13 @@
         return;
       }
       
-      const confirmed = await confirmAction('確定要送出分組嗎？送出後將自動生成賽程表。');
+      // 檢查是否有修改（如果沒有修改過任何位置）
+      if (modifiedPositions.size === 0) {
+        showToast('沒有任何變更', 'info');
+        return;
+      }
+      
+      const confirmed = await confirmAction('確定更新分組？');
       if (!confirmed) {
         return;
       }
@@ -1203,11 +1432,121 @@
       const teamAName = getTeamName('teamA');
       const teamBName = getTeamName('teamB');
       
-      // 準備資料
+      // 準備資料 - 只保存修改過的位置
+      const teamsData = [];
+      
+      modifiedPositions.forEach(posKey => {
+        const [team, indexStr] = posKey.split('-');
+        const index = parseInt(indexStr);
+        const player = assignments[team][index];
+        
+        // 包含有參賽者的位置，以及被清空的位置（讓後端知道要刪除）
+        teamsData.push({
+          roundId: roundId,
+          team: team === 'teamA' ? teamAName : teamBName,
+          number: index + 1,
+          name: player || ''  // 如果是 null，傳送空字串給後端
+        });
+      });
+      
+      console.log('儲存修改的位置:', Array.from(modifiedPositions));
+      console.log('儲存的資料:', teamsData);
+      
+      try {
+        if (CONFIG.SCRIPT_URL) {
+          // 使用新的 'saveTeams' 動作，只更新指定位置
+          await writeToSheet('saveTeams', teamsData);
+          showToast('分組已儲存', 'success');
+          
+          // 保存後檢查是否有重複人員
+          setTimeout(async () => {
+            await checkAndHighlightDuplicates();
+          }, 1000);
+        } else {
+          console.warn('Apps Script 尚未設定，分組資料未寫入');
+          showToast('⚠️ Apps Script 尚未設定，資料未同步', 'warning', 5000);
+        }
+        
+        // 清空修改記錄
+        modifiedPositions.clear();
+        
+        // 重新載入此頁面
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        
+      } catch (error) {
+        console.error('儲存分組失敗:', error);
+        hideElement('loadingOverlay');
+        showToast('儲存失敗', 'error');
+      }
+    }
+    
+    // 檢查並標示重複人員
+    async function checkAndHighlightDuplicates() {
+      try {
+        // 重新載入最新資料
+        const teamsData = await fetchCSV(CSV_URLS.TEAMS);
+        const roundTeams = teamsData.filter(t => t['matchID'] === roundId);
+        
+        // 統計每個人出現的次數
+        const playerCount = {};
+        roundTeams.forEach(member => {
+          const name = member['name'];
+          if (name) {
+            playerCount[name] = (playerCount[name] || 0) + 1;
+          }
+        });
+        
+        // 找出重複的人
+        const duplicates = Object.keys(playerCount).filter(name => playerCount[name] > 1);
+        
+        if (duplicates.length > 0) {
+          hideElement('loadingOverlay');
+          const duplicateList = duplicates.map(name => `• ${name} (${playerCount[name]}次)`).join('\n');
+          showToast(
+            `⚠️ 發現重複分配：\n${duplicateList}\n\n請修正重複的人員！`, 
+            'warning', 
+            10000
+          );
+          
+          // 高亮顯示重複的卡片
+          highlightDuplicateCards(duplicates);
+          
+          return false;
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('檢查重複失敗:', error);
+        return true; // 檢查失敗時不阻止
+      }
+    }
+    
+    // 高亮顯示重複的卡片
+    function highlightDuplicateCards(duplicateNames) {
+      // 為重複的人員添加紅色邊框
+      const cards = document.querySelectorAll('.poker-card');
+      cards.forEach(card => {
+        const nameElement = card.querySelector('.text-gray-700, .text-white');
+        if (nameElement) {
+          const name = nameElement.textContent.trim();
+          if (duplicateNames.includes(name)) {
+            card.style.border = '3px solid #ef4444';
+            card.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+          }
+        }
+      });
+    }
+    
+    // 原本準備完整資料的函數（保留作為備用）
+    function prepareFullTeamsData() {
+      const teamAName = getTeamName('teamA');
+      const teamBName = getTeamName('teamB');
       const teamsData = [];
       
       assignments.teamA.forEach((player, index) => {
-        if (player) {  // 只添加有參賽者的位置
+        if (player) {
           teamsData.push({
             roundId: roundId,
             team: teamAName,
@@ -1218,7 +1557,7 @@
       });
       
       assignments.teamB.forEach((player, index) => {
-        if (player) {  // 只添加有參賽者的位置
+        if (player) {
           teamsData.push({
             roundId: roundId,
             team: teamBName,
@@ -1228,25 +1567,7 @@
         }
       });
       
-      try {
-        if (CONFIG.SCRIPT_URL) {
-          await writeToSheet('saveTeams', teamsData);
-          showToast('分組已儲存', 'success');
-        } else {
-          console.warn('Apps Script 尚未設定，分組資料未寫入');
-          showToast('⚠️ Apps Script 尚未設定，資料未同步', 'warning', 5000);
-        }
-        
-        // 跳轉到賽程頁面
-        setTimeout(() => {
-          window.location.href = `matches.html?round=${roundId}&new=true`;
-        }, 1500);
-        
-      } catch (error) {
-        console.error('儲存分組失敗:', error);
-        hideElement('loadingOverlay');
-        showToast('儲存失敗', 'error');
-      }
+      return teamsData;
     }
     
     // 刪除場次
