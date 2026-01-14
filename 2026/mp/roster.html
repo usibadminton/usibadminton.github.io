@@ -461,7 +461,7 @@
           // 未登入：顯示簽到狀態（不可點擊）
           if (currentMode === 'checked') {
             actionButtons = `
-              <div class="${checkedIn ? 'bg-green-500' : 'bg-gray-400'} text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+              <div class="${checkedIn ? 'bg-green-500' : 'bg-gray-300'} text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                 </svg>
@@ -469,7 +469,7 @@
             `;
           } else {
             actionButtons = `
-              <div class="${checkedIn ? 'bg-green-500' : 'bg-gray-400'} text-white w-10 h-10 rounded-full flex items-center justify-center">
+              <div class="${checkedIn ? 'bg-green-500' : 'bg-gray-300'} text-white w-10 h-10 rounded-full flex items-center justify-center">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                 </svg>
