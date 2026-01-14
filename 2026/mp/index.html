@@ -59,7 +59,7 @@
     </div>
     
     <!-- Action Buttons -->
-    <div class="grid grid-cols-2 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto">
+    <div id="actionButtonsContainer" class="grid grid-cols-1 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto">
       
       <!-- 參賽名單 (所有人可見) -->
       <button 
@@ -213,6 +213,7 @@
     function updateAuthStatus() {
       const authStatus = document.getElementById('authStatus');
       const createMatchBtn = document.getElementById('createMatchBtn');
+      const actionButtonsContainer = document.getElementById('actionButtonsContainer');
       
       if (isAuthenticated()) {
         const remaining = getRemainingAuthTime();
@@ -243,6 +244,8 @@
         `;
         // 顯示建立比賽按鈕（僅限管理員）
         createMatchBtn.style.display = 'block';
+        // 改為兩列佈局
+        actionButtonsContainer.className = 'grid grid-cols-2 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto';
       } else {
         // 隱藏設定按鈕
         document.getElementById('settingsBtn').style.display = 'none';
@@ -254,6 +257,8 @@
         `;
         // 隱藏建立比賽按鈕（非管理員）
         createMatchBtn.style.display = 'none';
+        // 改為單列佈局
+        actionButtonsContainer.className = 'grid grid-cols-1 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto';
       }
     }
     
