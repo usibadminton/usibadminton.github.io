@@ -100,6 +100,17 @@
     <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-reflected-breeze/20">
       <div class="flex justify-between items-center mb-4">
         <span id="roundCount" class="text-sm text-gray-600 font-light"></span>
+        <button 
+          id="createRoundBtn"
+          onclick="createNewRound()"
+          class="bg-reflected-breeze hover:bg-reflected-breeze/90 text-white px-4 py-2 rounded-lg transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg font-medium text-sm flex items-center gap-2"
+          style="display: none;"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="font-semibold">建立比賽</span>
+        </button>
       </div>
       
       <!-- Loading -->
@@ -130,6 +141,7 @@
     // 顯示登入狀態
     function updateAuthStatus() {
       const authStatus = document.getElementById('authStatus');
+      const createRoundBtn = document.getElementById('createRoundBtn');
       
       if (isAuthenticated()) {
         const remaining = getRemainingAuthTime();
@@ -143,12 +155,20 @@
             </div>
           </div>
         `;
+        // 顯示建立比賽按鈕
+        if (createRoundBtn) {
+          createRoundBtn.style.display = 'flex';
+        }
       } else {
         authStatus.innerHTML = `
           <a href="login.html" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium inline-block">
             登入
           </a>
         `;
+        // 隱藏建立比賽按鈕
+        if (createRoundBtn) {
+          createRoundBtn.style.display = 'none';
+        }
       }
     }
     
@@ -179,23 +199,68 @@
           // 載入統計資料
           await loadStatistics(rounds);
           
+          // 載入比分資料以顯示每場統計
+          const scoresData = await fetchCSV(CSV_URLS.SCORES);
+          
+          // 建立比分查詢表
+          const scoresMap = {};
+          scoresData.forEach(score => {
+            const matchId = score['matchID'];
+            if (!scoresMap[matchId]) {
+              scoresMap[matchId] = { teamAWins: 0, teamBWins: 0, teamAScore: 0, teamBScore: 0 };
+            }
+            
+            const teamAScore = parseInt(score['teamA_score'] || score['spadeScore']) || 0;
+            const teamBScore = parseInt(score['teamB_score'] || score['heartScore']) || 0;
+            
+            scoresMap[matchId].teamAScore += teamAScore;
+            scoresMap[matchId].teamBScore += teamBScore;
+            
+            if (teamAScore > teamBScore) {
+              scoresMap[matchId].teamAWins++;
+            } else if (teamBScore > teamAScore) {
+              scoresMap[matchId].teamBWins++;
+            }
+          });
+          
           const roundsList = document.getElementById('roundsList');
           roundsList.innerHTML = rounds.reverse().map(round => {
             const roundId = round['matchID'];
             const date = round['time'];
             const note = round['note'] || round['备注'] || '';
             
+            // 取得該場統計
+            const stats = scoresMap[roundId];
+            let statsHtml = '';
+            
+            if (stats) {
+              // 判斷是否已完賽（勝點加總為6）
+              const isCompleted = (stats.teamAWins + stats.teamBWins) === 6;
+              const textColor = isCompleted ? 'text-scuba-plunge' : 'text-orange-500';
+              const subtextColor = isCompleted ? 'text-scuba-plunge' : 'text-orange-500';
+              
+              statsHtml = `
+                <div class="text-center text-md w-16">
+                  <div class="font-bold ${textColor}">${stats.teamAWins} : ${stats.teamBWins}</div>
+                  <div class="${subtextColor} text-xs mt-0.5">( ${stats.teamAScore} : ${stats.teamBScore} )</div>
+                </div>
+              `;
+            }
+            
             return `
               <div class="bg-white/60 hover:bg-reflected-breeze/20 border border-reflected-breeze/30 hover:border-alaskan-blue/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" onclick="viewRound('${roundId}')">
-                <div class="flex justify-between items-center">
-                  <div>
+                <div class="flex justify-between items-center gap-4">
+                  <div class="flex-1">
                     <div class="font-medium text-lg text-gray-700 tracking-tight">${roundId} ${note}</div>
                     <div class="text-sm text-gray-500 mt-1 font-light">${date}</div>
                   </div>
-                  <div class="text-alaskan-blue font-medium text-sm flex items-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
+                  <div class="flex items-center gap-3">
+                    ${statsHtml}
+                    <div class="text-alaskan-blue font-medium text-sm flex items-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -292,6 +357,31 @@
         console.error('檢查賽程失敗:', error);
         // 發生錯誤時直接前往比賽詳情頁
         window.location.href = `team-assign.html?round=${roundId}`;
+      }
+    }
+    
+    // 建立新場次（需要登入）
+    async function createNewRound() {
+      if (!isAuthenticated()) {
+        showToast('請先登入', 'warning');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+        return;
+      }
+      
+      // 取得當前場次數量
+      try {
+        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
+        const nextNumber = rounds.length + 1;
+        const roundId = generateRoundId(nextNumber);
+        
+        // 跳轉到分組頁面
+        window.location.href = `team-assign.html?round=${roundId}&new=true`;
+      } catch (error) {
+        console.error('建立場次失敗:', error);
+        // 如果讀取失敗，假設是第一場
+        window.location.href = 'team-assign.html?round=Match-001&new=true';
       }
     }
     

@@ -75,21 +75,6 @@
         <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">-</div>
       </button>
       
-      <!-- 建立比賽 (僅登入者可見) -->
-      <button 
-        id="createMatchBtn"
-        onclick="createNewRound()"
-        class="bg-white/70 hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-4 px-4 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg backdrop-blur-sm"
-        style="display: none;"
-      >
-        <div class="mb-2 flex justify-center">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-        </div>
-        <div class="text-base md:text-lg font-bold tracking-wide">建立比賽</div>
-        <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">抽牌分組</div>
-      </button>
     </div>
     
     <!-- Announcement Section -->
@@ -130,8 +115,6 @@
     // 顯示登入狀態
     function updateAuthStatus() {
       const authStatus = document.getElementById('authStatus');
-      const createMatchBtn = document.getElementById('createMatchBtn');
-      const actionButtonsContainer = document.getElementById('actionButtonsContainer');
       
       if (isAuthenticated()) {
         const remaining = getRemainingAuthTime();
@@ -160,10 +143,6 @@
             </div>
           </div>
         `;
-        // 顯示建立比賽按鈕（僅限管理員）
-        createMatchBtn.style.display = 'block';
-        // 手機 2x2，桌面 1x4
-        actionButtonsContainer.className = 'grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 max-w-4xl md:max-w-5xl mx-auto';
       } else {
         // 隱藏設定按鈕
         document.getElementById('settingsBtn').style.display = 'none';
@@ -173,10 +152,6 @@
             登入
           </a>
         `;
-        // 隱藏建立比賽按鈕（非管理員）
-        createMatchBtn.style.display = 'none';
-        // 手機和桌面都是 1x3
-        actionButtonsContainer.className = 'grid grid-cols-3 gap-3 md:gap-4 mb-8 max-w-3xl mx-auto';
       }
     }
     
