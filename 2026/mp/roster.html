@@ -35,21 +35,50 @@
   <div class="max-w-4xl mx-auto p-4 md:p-8 h-[calc(100vh-4rem)] flex flex-col">
     <!-- 固定區域 -->
     <div class="flex-shrink-0">
-      <!-- Player Count & Mode Toggle -->
-      <div class="bg-white rounded-lg shadow-lg p-2 mb-4">
-        <div class="flex flex-col gap-4">
-          <!-- Stats (Center) -->
-          <div class="flex gap-6 items-center justify-center">
-            <div class="text-center">
-              <div class="text-sm text-gray-600">已簽到</div>
-              <div id="checkedInCount" class="text-3xl font-bold text-green-600">0</div>
-            </div>
-            <div class="text-center">
-              <div class="text-sm text-gray-600">總人數</div>
-              <div id="playerCount" class="text-3xl font-bold text-blue-600">0</div>
+      <!-- Filter & Stats Combined -->
+      <div class="bg-white rounded-lg shadow-lg p-4 mb-4">
+        <div class="flex gap-6 md:gap-4 items-center justify-between">
+          <!-- Filter Tabs (Left) - Only visible in checked mode -->
+          <div id="filterTabs" class="flex-none w-32 md:flex-1 hidden">
+            <div class="flex gap-2">
+              <button 
+                id="allPlayersTab"
+                onclick="switchFilter('all')"
+                class="flex-1 py-2 px-2 rounded-lg font-semibold transition bg-alaskan-blue text-white shadow flex flex-col items-center justify-center gap-1 text-xs"
+              >
+                <span>全部</span>
+                <span id="allCount" class="bg-white text-alaskan-blue px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+              </button>
+              <button 
+                id="uncheckedTab"
+                onclick="switchFilter('unchecked')"
+                class="flex-1 py-2 px-2 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-xs"
+              >
+                <span>未到</span>
+                <span id="uncheckedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+              </button>
+              <button 
+                id="checkedTab"
+                onclick="switchFilter('checked')"
+                class="hidden flex-1 py-2 px-2 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-xs"
+              >
+                <span>已到</span>
+                <span id="checkedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+              </button>
             </div>
           </div>
-          
+
+          <!-- Stats (Right) -->
+          <div class="flex gap-4 md:gap-6 items-center justify-center" id="statsSection">
+            <div class="text-center">
+              <div class="text-xs md:text-sm text-gray-600">已簽到</div>
+              <div id="checkedInCount" class="text-2xl md:text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xs md:text-sm text-gray-600">總人數</div>
+              <div id="playerCount" class="text-2xl md:text-3xl font-bold text-blue-600">0</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -82,36 +111,6 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Filter Tabs (Only visible in checked mode) -->
-    <div id="filterTabs" class="bg-white rounded-lg shadow-lg p-4 mb-4 hidden">
-      <div class="flex gap-2">
-        <button 
-          id="allPlayersTab"
-          onclick="switchFilter('all')"
-          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-alaskan-blue text-white shadow flex flex-col items-center justify-center gap-1 text-sm"
-        >
-          <span>全部</span>
-          <span id="allCount" class="bg-white text-alaskan-blue px-2 py-0.5 rounded-full text-xs font-bold">0</span>
-        </button>
-        <button 
-          id="uncheckedTab"
-          onclick="switchFilter('unchecked')"
-          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-sm"
-        >
-          <span>未到</span>
-          <span id="uncheckedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
-        </button>
-        <button 
-          id="checkedTab"
-          onclick="switchFilter('checked')"
-          class="flex-1 py-2 px-3 rounded-lg font-semibold transition bg-gray-100 text-gray-600 flex flex-col items-center justify-center gap-1 text-sm"
-        >
-          <span>已到</span>
-          <span id="checkedCount" class="bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
         </button>
       </div>
     </div>

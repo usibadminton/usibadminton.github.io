@@ -70,6 +70,9 @@ function doPost(e) {
       case 'saveSettings':
         result = saveSettings(payload);
         break;
+      case 'updateOrderPickup':
+        result = updateOrderPickup(data.name, data.pickedUp);
+        break;
       default:
         result = { success: false, message: 'Unknown action' };
     }
@@ -492,4 +495,67 @@ function saveSettings(settings) {
     success: true, 
     message: '設定已儲存' 
   };
+}
+
+/**
+ * 更新訂餐取餐狀態
+ * @param {string} name - 訂餐者姓名
+ * @param {boolean} pickedUp - 取餐狀態
+ */
+function updateOrderPickup(name, pickedUp) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('Orders');
+    
+    if (!sheet) {
+      return {
+        success: false,
+        message: '找不到 Orders 工作表'
+      };
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // 找到 name 和 picked_up 欄位的索引
+    const nameColIndex = headers.indexOf('name');
+    const pickedUpColIndex = headers.indexOf('picked_up');
+    
+    if (nameColIndex === -1 || pickedUpColIndex === -1) {
+      return {
+        success: false,
+        message: '找不到必要的欄位 (name 或 picked_up)'
+      };
+    }
+    
+    let updateCount = 0;
+    const statusValue = pickedUp ? 'true' : 'false';
+    
+    // 更新該姓名的所有訂單記錄
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][nameColIndex] === name) {
+        sheet.getRange(i + 1, pickedUpColIndex + 1).setValue(statusValue);
+        updateCount++;
+      }
+    }
+    
+    if (updateCount === 0) {
+      return {
+        success: false,
+        message: `找不到姓名為 ${name} 的訂單`
+      };
+    }
+    
+    return {
+      success: true,
+      message: `已更新 ${name} 的取餐狀態 (${updateCount} 筆記錄)`,
+      updateCount: updateCount
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: `更新失敗: ${error.toString()}`
+    };
+  }
 }

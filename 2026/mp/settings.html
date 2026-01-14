@@ -26,7 +26,16 @@
 
   <div class="max-w-4xl mx-auto px-4 py-8">
     
+    <!-- Loading -->
+    <div id="loadingView" class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 mb-6 border border-reflected-breeze/20">
+      <div class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-scuba-plunge mb-4"></div>
+        <div class="text-gray-600 text-lg">載入設定中...</div>
+      </div>
+    </div>
+    
     <!-- 隊伍設定 -->
+    <div id="settingsContent" class="hidden">
     <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-6 border border-reflected-breeze/20">
       <div class="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-200">
         <svg class="w-7 h-7 text-scuba-plunge" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,11 +103,13 @@
       </div>
     </div>
 
+    </div>
+
     <!-- 操作按鈕 -->
-    <div class="flex gap-4">
+    <div id="saveButtonContainer" class="hidden">
       <button 
         onclick="saveSettings()"
-        class="flex-1 bg-gradient-to-r from-scuba-plunge to-alaskan-blue hover:from-alaskan-blue hover:to-scuba-plunge text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+        class="w-full bg-gradient-to-r from-scuba-plunge to-alaskan-blue hover:from-alaskan-blue hover:to-scuba-plunge text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
       >
         <div class="flex items-center justify-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,12 +117,6 @@
           </svg>
           儲存設定
         </div>
-      </button>
-      <button 
-        onclick="resetSettings()"
-        class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-      >
-        重置
       </button>
     </div>
 
@@ -151,6 +156,11 @@
     
     // 載入設定（優先使用 CSV）
     async function loadSettings() {
+      // 顯示 loading
+      document.getElementById('loadingView').classList.remove('hidden');
+      document.getElementById('settingsContent').classList.add('hidden');
+      document.getElementById('saveButtonContainer').classList.add('hidden');
+      
       try {
         // 方法 1: 從 CSV 讀取（無 CORS 問題）
         try {
@@ -163,6 +173,11 @@
             document.getElementById('teamBName').value = settings.teamBName || '';
             
             console.log('✅ 從 CSV 載入設定成功');
+            
+            // 隱藏 loading，顯示內容
+            document.getElementById('loadingView').classList.add('hidden');
+            document.getElementById('settingsContent').classList.remove('hidden');
+            document.getElementById('saveButtonContainer').classList.remove('hidden');
             return;
           }
         } catch (csvError) {
@@ -185,6 +200,11 @@
           document.getElementById('teamAName').value = settings.teamAName || '';
           document.getElementById('teamBName').value = settings.teamBName || '';
           console.log('✅ 從 Apps Script 載入設定成功');
+          
+          // 隱藏 loading，顯示內容
+          document.getElementById('loadingView').classList.add('hidden');
+          document.getElementById('settingsContent').classList.remove('hidden');
+          document.getElementById('saveButtonContainer').classList.remove('hidden');
         } else {
           throw new Error(result.message);
         }
@@ -195,6 +215,11 @@
         // 方法 3: 最後備用 - 從 localStorage 讀取
         document.getElementById('teamAName').value = localStorage.getItem('teamAName') || '';
         document.getElementById('teamBName').value = localStorage.getItem('teamBName') || '';
+        
+        // 隱藏 loading，顯示內容
+        document.getElementById('loadingView').classList.add('hidden');
+        document.getElementById('settingsContent').classList.remove('hidden');
+        document.getElementById('saveButtonContainer').classList.remove('hidden');
       }
     }
     
@@ -203,13 +228,19 @@
       const teamAName = document.getElementById('teamAName').value.trim();
       const teamBName = document.getElementById('teamBName').value.trim();
       
+      // 驗證兩個隊名都必須有值
+      if (!teamAName || !teamBName) {
+        showToast('請輸入兩個隊伍的名稱', 'warning');
+        return;
+      }
+      
       try {
         console.log('開始儲存設定...');
         console.log('Apps Script URL:', CONFIG.SCRIPT_URL);
         console.log('資料:', { teamAName, teamBName });
         
-        // 儲存到 Google Sheets
-        const response = await fetch(CONFIG.SCRIPT_URL, {
+        // 儲存到 Google Sheets (使用 no-cors 模式)
+        await fetch(CONFIG.SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
@@ -222,49 +253,28 @@
           })
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
+        // no-cors 模式無法讀取 response，但請求已發送
+        // 同時儲存到 localStorage（作為快取）
+        localStorage.setItem('teamAName', teamAName);
+        localStorage.setItem('teamBName', teamBName);
         
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        console.log('✅ 儲存請求已發送');
+        showToast('設定已儲存', 'success');
         
-        const result = await response.json();
-        console.log('Response data:', result);
-        
-        if (result.success) {
-          // 同時儲存到 localStorage（作為快取）
-          localStorage.setItem('teamAName', teamAName);
-          localStorage.setItem('teamBName', teamBName);
-          
-          showToast('✅ 設定已儲存到雲端，所有用戶都會看到更新', 'success', 3000);
-          
-          // 簡單確認訊息
-          setTimeout(() => {
-            showToast('隊伍名稱設定完成！', 'info');
-          }, 1500);
-        } else {
-          throw new Error(result.message || '儲存失敗');
-        }
       } catch (error) {
         console.error('儲存設定失敗:', error);
-        
-        if (error.message.includes('Failed to fetch')) {
-          showToast('❌ 無法連接到 Google Apps Script\n\n可能原因：\n1. Apps Script 尚未部署\n2. 部署 URL 已過期\n3. 權限設定錯誤\n\n請檢查 doc/AppsScript.gs 的部署狀態', 'error', 8000);
-        } else {
-          showToast('❌ 儲存失敗：' + error.message, 'error', 5000);
-        }
+        showToast('儲存失敗：' + error.message, 'error');
       }
     }
     
     // 重置設定
     async function resetSettings() {
-      const confirmed = await confirmAction('確定要清空隊伍名稱嗎？');
-      if (confirmed) {
+      if (confirm('確定要清空隊伍名稱嗎？')) {
         try {
-          // 清空 Google Sheets 的設定
-          const response = await fetch(CONFIG.SCRIPT_URL, {
+          // 清空 Google Sheets 的設定 (使用 no-cors 模式)
+          await fetch(CONFIG.SCRIPT_URL, {
             method: 'POST',
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'saveSettings',
@@ -275,21 +285,18 @@
             })
           });
           
-          const result = await response.json();
+          // no-cors 模式無法讀取 response，但請求已發送
+          // 清除 localStorage
+          localStorage.removeItem('teamAName');
+          localStorage.removeItem('teamBName');
           
-          if (result.success) {
-            // 清除 localStorage
-            localStorage.removeItem('teamAName');
-            localStorage.removeItem('teamBName');
-            
-            // 重置表單
-            document.getElementById('teamAName').value = '';
-            document.getElementById('teamBName').value = '';
-            
-            showToast('隊伍名稱已清空', 'success');
-          } else {
-            throw new Error(result.message);
-          }
+          // 重置表單
+          document.getElementById('teamAName').value = '';
+          document.getElementById('teamBName').value = '';
+          
+          console.log('✅ 重置請求已發送');
+          showToast('隊伍名稱已清空', 'success');
+          
         } catch (error) {
           console.error('重置失敗:', error);
           showToast('重置失敗：' + error.message, 'error');

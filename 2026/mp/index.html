@@ -30,36 +30,8 @@
 
   <div class="max-w-6xl mx-auto px-4 py-8">
     
-    <!-- Announcement Section -->
-    <div id="announcementSection" class="bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 border-l-4 md:border-2 md:border-l-0 border-scuba-plunge md:border-scuba-plunge/80 rounded-xl md:rounded-2xl shadow-md md:shadow-lg p-4 md:p-6 mb-8">
-      <div class="flex items-center justify-between gap-3 md:gap-4 mb-2 md:mb-3 pb-2 border-b-2 border-cyan-500">
-        <div class="flex items-center gap-3 md:gap-4">
-          <div class="flex-shrink-0">
-            <svg class="w-6 h-6 md:w-8 md:h-8 text-scuba-plunge" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
-            </svg>
-          </div>
-          <h2 class="text-lg md:text-xl font-bold text-gray-800">
-            公告
-          </h2>
-        </div>
-        <button onclick="toggleAnnouncement()" id="announcementToggle" class="text-scuba-plunge hover:text-cyan-700 transition p-1">
-          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
-        </button>
-      </div>
-      <div id="announcementContent" class="text-base md:text-lg text-gray-700 pl-2" style="display: none;">
-        <!-- 載入中 -->
-        <div class="text-center py-4">
-          <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-scuba-plunge"></div>
-          <p class="text-sm text-gray-600 mt-2">載入公告中...</p>
-        </div>
-      </div>
-    </div>
-    
     <!-- Action Buttons -->
-    <div id="actionButtonsContainer" class="grid grid-cols-1 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto">
+    <div id="actionButtonsContainer" class="grid grid-cols-3 gap-3 md:gap-4 mb-8 max-w-3xl mx-auto">
       
       <!-- 參賽名單 (所有人可見) -->
       <button 
@@ -72,7 +44,35 @@
           </svg>
         </div>
         <div class="text-base md:text-lg font-bold tracking-wide">參賽名單</div>
-        <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">查看名單/簽到</div>
+        <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">查看/簽到</div>
+      </button>
+      
+      <!-- 比賽列表 (所有人可見) -->
+      <button 
+        onclick="navigateToMatchList()"
+        class="bg-white/70 hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-4 px-4 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg backdrop-blur-sm"
+      >
+        <div class="mb-2 flex justify-center">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+        </div>
+        <div class="text-base md:text-lg font-bold tracking-wide">比賽列表</div>
+        <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">場次/統計</div>
+      </button>
+      
+      <!-- 訂餐資訊 (所有人可見) -->
+      <button 
+        onclick="navigateToOrder()"
+        class="bg-white/70 hover:bg-scuba-plunge/10 border-2 border-scuba-plunge/60 text-scuba-plunge/60 hover:text-scuba-plunge font-medium py-4 px-4 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg backdrop-blur-sm"
+      >
+        <div class="mb-2 flex justify-center">
+          <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 640 640">
+            <path d="M127.9 78.4C127.1 70.2 120.2 64 112 64C103.8 64 96.9 70.2 96 78.3L81.9 213.7C80.6 219.7 80 225.8 80 231.9C80 277.8 115.1 315.5 160 319.6L160 544C160 561.7 174.3 576 192 576C209.7 576 224 561.7 224 544L224 319.6C268.9 315.5 304 277.8 304 231.9C304 225.8 303.4 219.7 302.1 213.7L287.9 78.3C287.1 70.2 280.2 64 272 64C263.8 64 256.9 70.2 256.1 78.4L242.5 213.9C241.9 219.6 237.1 224 231.4 224C225.6 224 220.8 219.6 220.2 213.8L207.9 78.6C207.2 70.3 200.3 64 192 64C183.7 64 176.8 70.3 176.1 78.6L163.8 213.8C163.3 219.6 158.4 224 152.6 224C146.8 224 142 219.6 141.5 213.9L127.9 78.4zM512 64C496 64 384 96 384 240L384 352C384 387.3 412.7 416 448 416L480 416L480 544C480 561.7 494.3 576 512 576C529.7 576 544 561.7 544 544L544 96C544 78.3 529.7 64 512 64z"/>
+          </svg>
+        </div>
+        <div class="text-base md:text-lg font-bold tracking-wide">訂餐資訊</div>
+        <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">-</div>
       </button>
       
       <!-- 建立比賽 (僅登入者可見) -->
@@ -91,117 +91,35 @@
         <div class="text-xs md:text-sm text-gray-600 mt-1 font-light">抽牌分組</div>
       </button>
     </div>
-
-    <!-- Statistics Card -->
-    <div id="statsCard" class="bg-gradient-to-br from-white/80 to-reflected-breeze/10 backdrop-blur-sm rounded-2xl shadow-lg p-4 md:p-6 mb-8 border border-alaskan-blue/20 hidden">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl md:text-2xl font-semibold text-gray-700 tracking-tight">統計概覽</h2>
-        <div class="text-xs md:text-sm text-gray-600 font-light">
-          累計 <span id="totalRounds" class="font-bold text-alaskan-blue">-</span> 場
-        </div>
-      </div>
-      
-      <div class="flex gap-3 md:gap-4 justify-center">
-        <!-- TeamA 統計 -->
-        <div class="text-center px-4 py-3 md:px-8 md:py-4 bg-gray-50 rounded-lg border border-gray-300 flex-1 md:flex-none md:min-w-[200px]">
-          <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
-            <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L8.5 8.5C7 10 4 12 4 15C4 17.5 6 19 8 19C9 19 10 18.5 10.5 17.5C11 16.5 11 15 11 14H13C13 15 13 16.5 13.5 17.5C14 18.5 15 19 16 19C18 19 20 17.5 20 15C20 12 17 10 15.5 8.5L12 2Z"/>
-              <path d="M9 19C9 20.5 9.5 22 12 22C14.5 22 15 20.5 15 19H9Z"/>
+    
+    <!-- Announcement Section -->
+    <div id="announcementSection" class="bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/60 border-l-4 md:border-2 md:border-l-0 border-slate-300 md:border-slate-300/60 rounded-xl md:rounded-2xl shadow-md md:shadow-xl p-4 md:p-6 mb-8 backdrop-blur-sm">
+      <div class="flex items-center justify-between gap-3 md:gap-4 mb-2 md:mb-3 pb-2 border-b border-slate-200">
+        <div class="flex items-center gap-3 md:gap-4">
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6 md:w-8 md:h-8 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
             </svg>
-            <span id="teamALabelStats">Team A</span>
           </div>
-          <div class="flex items-center justify-center gap-4 md:gap-6">
-            <div class="text-center">
-              <div id="totalTeamAWins" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
-              <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
-            </div>
-            <div class="text-gray-300 font-bold text-xl md:text-3xl">|</div>
-            <div class="text-center">
-              <div id="totalTeamAScore" class="text-2xl md:text-4xl font-bold text-gray-700">0</div>
-              <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
-            </div>
-          </div>
+          <h2 class="text-lg md:text-xl font-bold text-slate-700">
+            公告
+          </h2>
         </div>
-        
-        <!-- TeamB 統計 -->
-        <div class="text-center px-4 py-3 md:px-8 md:py-4 bg-red-50 rounded-lg border border-red-200 flex-1 md:flex-none md:min-w-[200px]">
-          <div class="text-xs md:text-sm text-gray-600 flex items-center justify-center gap-1 mb-2 md:mb-3">
-            <svg class="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-            <span id="teamBLabelStats">Team B</span>
-          </div>
-          <div class="flex items-center justify-center gap-4 md:gap-6">
-            <div class="text-center">
-              <div id="totalTeamBWins" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
-              <div class="text-xs md:text-sm text-gray-500 mt-1">勝</div>
-            </div>
-            <div class="text-red-200 font-bold text-xl md:text-3xl">|</div>
-            <div class="text-center">
-              <div id="totalTeamBScore" class="text-2xl md:text-4xl font-bold text-red-600">0</div>
-              <div class="text-xs md:text-sm text-gray-500 mt-1">分</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Round History -->
-    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-reflected-breeze/20">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold text-gray-700 tracking-tight">比賽列表</h2>
-        <span id="roundCount" class="text-sm text-gray-600 font-light"></span>
-      </div>
-      
-      <!-- Loading -->
-      <div id="loading" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
-        <div class="text-gray-600 font-light">載入場次資料...</div>
-      </div>
-      
-      <!-- Rounds List -->
-      <div id="roundsList" class="space-y-3 hidden">
-        <!-- 場次列表將動態插入 -->
-      </div>
-      
-      <!-- Empty State -->
-      <div id="emptyState" class="text-center py-6 hidden">
-        <p class="text-gray-700 text-lg mb-2 font-medium">尚無比賽</p>
-        <p class="text-gray-500 text-sm mb-6 font-light">點擊上方「建立比賽」按鈕</p>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Team Assignment Modal -->
-  <div id="teamAssignModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
-      <div class="text-center mb-6">
-        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-          <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        <button onclick="toggleAnnouncement()" id="announcementToggle" class="text-slate-500 hover:text-slate-700 transition p-1">
+          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
           </svg>
-        </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">尚未分配隊伍</h3>
-        <p class="text-gray-600">此場次尚未分配隊伍，是否前往分配頁面？</p>
+        </button>
       </div>
-      
-      <div class="flex gap-3">
-        <button 
-          onclick="closeTeamAssignModal()"
-          class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 rounded-lg transition"
-        >
-          取消
-        </button>
-        <button 
-          onclick="confirmTeamAssign()"
-          class="flex-1 bg-alaskan-blue hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition"
-        >
-          前往分配
-        </button>
+      <div id="announcementContent" class="text-base md:text-lg text-slate-700 pl-2" style="display: block;">
+        <!-- 載入中 -->
+        <div class="text-center py-4">
+          <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400"></div>
+          <p class="text-sm text-slate-500 mt-2">載入公告中...</p>
+        </div>
       </div>
     </div>
+
   </div>
 
   <script src="js/config.js"></script>
@@ -244,8 +162,8 @@
         `;
         // 顯示建立比賽按鈕（僅限管理員）
         createMatchBtn.style.display = 'block';
-        // 改為兩列佈局
-        actionButtonsContainer.className = 'grid grid-cols-2 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto';
+        // 手機 2x2，桌面 1x4
+        actionButtonsContainer.className = 'grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 max-w-4xl md:max-w-5xl mx-auto';
       } else {
         // 隱藏設定按鈕
         document.getElementById('settingsBtn').style.display = 'none';
@@ -257,8 +175,8 @@
         `;
         // 隱藏建立比賽按鈕（非管理員）
         createMatchBtn.style.display = 'none';
-        // 改為單列佈局
-        actionButtonsContainer.className = 'grid grid-cols-1 gap-3 md:gap-4 mb-8 max-w-2xl mx-auto';
+        // 手機和桌面都是 1x3
+        actionButtonsContainer.className = 'grid grid-cols-3 gap-3 md:gap-4 mb-8 max-w-3xl mx-auto';
       }
     }
     
@@ -275,6 +193,16 @@
     // 導航到名單管理（所有人可見）
     function navigateToRoster() {
       window.location.href = 'roster.html';
+    }
+    
+    // 導航到比賽列表（所有人可見）
+    function navigateToMatchList() {
+      window.location.href = 'matchlist.html';
+    }
+    
+    // 導航到訂餐資訊（所有人可見）
+    function navigateToOrder() {
+      window.location.href = 'order.html';
     }
     
     // Toggle 公告顯示/隱藏
@@ -415,168 +343,10 @@
       }
     }
     
-    // 載入場次列表
-    async function loadRounds() {
-      try {
-        const rounds = await fetchCSV(CSV_URLS.ROUNDS);
-        
-        hideElement('loading');
-        
-        if (rounds.length === 0) {
-          showElement('emptyState');
-          document.getElementById('roundCount').textContent = '';
-        } else {
-          showElement('roundsList');
-          document.getElementById('roundCount').textContent = `共 ${rounds.length} 場`;
-          
-          // 載入統計資料
-          await loadStatistics(rounds);
-          
-          const roundsList = document.getElementById('roundsList');
-          roundsList.innerHTML = rounds.reverse().map(round => {
-            const roundId = round['matchID'];
-            const date = round['time'];
-            const note = round['note'] || round['备注'] || '';
-            
-            return `
-              <div class="bg-white/60 hover:bg-reflected-breeze/20 border border-reflected-breeze/30 hover:border-alaskan-blue/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" onclick="viewRound('${roundId}')">
-                <div class="flex justify-between items-center">
-                  <div>
-                    <div class="font-medium text-lg text-gray-700 tracking-tight">${roundId} ${note}</div>
-                    <div class="text-sm text-gray-500 mt-1 font-light">${date}</div>
-                  </div>
-                  <div class="text-alaskan-blue font-medium text-sm flex items-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      } catch (error) {
-        console.error('載入場次失敗:', error);
-        hideElement('loading');
-        showElement('emptyState');
-        document.getElementById('roundCount').textContent = '載入失敗';
-        showToast('載入場次資料失敗', 'error');
-      }
-    }
-    
-    // 載入統計資料
-    async function loadStatistics(rounds) {
-      try {
-        // 載入隊伍名稱
-        await loadTeamNames();
-        const teamAName = getTeamName('teamA');
-        const teamBName = getTeamName('teamB');
-        
-        // 更新隊名顯示
-        document.getElementById('teamALabelStats').textContent = teamAName;
-        document.getElementById('teamBLabelStats').textContent = teamBName;
-        
-        // 並行載入所需資料
-        const scoresData = await fetchCSV(CSV_URLS.SCORES);
-        
-        // 已完成比賽數（有比分的比賽）
-        const completedMatches = scoresData.length;
-        document.getElementById('totalRounds').textContent = completedMatches;
-        
-        // 統計兩隊累計勝場和總分
-        let teamAWins = 0;
-        let teamBWins = 0;
-        let teamATotal = 0;
-        let teamBTotal = 0;
-        
-        scoresData.forEach(score => {
-          const teamAScore = parseInt(score['teamA_score'] || score['spadeScore']) || 0;
-          const teamBScore = parseInt(score['teamB_score'] || score['heartScore']) || 0;
-          
-          teamATotal += teamAScore;
-          teamBTotal += teamBScore;
-          
-          if (teamAScore > teamBScore) {
-            teamAWins++;
-          } else if (teamBScore > teamAScore) {
-            teamBWins++;
-          }
-        });
-        
-        // 更新顯示
-        document.getElementById('totalTeamAWins').textContent = teamAWins;
-        document.getElementById('totalTeamBWins').textContent = teamBWins;
-        document.getElementById('totalTeamAScore').textContent = teamATotal;
-        document.getElementById('totalTeamBScore').textContent = teamBTotal;
-        
-        // 顯示統計卡片
-        showElement('statsCard');
-      } catch (error) {
-        console.error('載入統計資料失敗:', error);
-        // 如果載入失敗，就不顯示統計卡片
-      }
-    }
-    
-    // 查看統計
-    function viewStatistics() {
-      window.location.href = 'statistics.html';
-    }
-    
-    let pendingRoundId = ''; // 儲存待處理的場次ID
-    
-    // 顯示分配隊伍提示 Modal
-    function showTeamAssignModal(roundId) {
-      pendingRoundId = roundId;
-      document.getElementById('teamAssignModal').classList.remove('hidden');
-    }
-    
-    // 關閉 Modal
-    function closeTeamAssignModal() {
-      document.getElementById('teamAssignModal').classList.add('hidden');
-      pendingRoundId = '';
-    }
-    
-    // 確認前往分配頁面
-    function confirmTeamAssign() {
-      if (pendingRoundId) {
-        window.location.href = `team-assign.html?round=${pendingRoundId}`;
-      }
-    }
-    
-    // 查看場次詳情
-    async function viewRound(roundId) {
-      try {
-        // 檢查是否已生成賽程 - 從 MATCHES 表檢查
-        const matchesData = await fetchCSV(CSV_URLS.MATCHES);
-        const roundMatches = matchesData.filter(m => m['matchID'] === roundId);
-        
-        if (roundMatches.length > 0) {
-          // 已有賽程，直接前往比賽詳情頁
-          console.log(`場次 ${roundId}: 已有 ${roundMatches.length} 場比賽`);
-          window.location.href = `matches.html?round=${roundId}`;
-        } else {
-          // 沒有賽程，還未確認分組
-          console.log(`場次 ${roundId}: 尚未確認隊伍`);
-          window.location.href = `team-assign.html?round=${roundId}`;
-        }
-      } catch (error) {
-        console.error('檢查賽程失敗:', error);
-        // 發生錯誤時直接前往比賽詳情頁
-        window.location.href = `team-assign.html?round=${roundId}`;
-      }
-    }
-    
-    // 點擊背景關閉 Modal
-    document.getElementById('teamAssignModal').addEventListener('click', (e) => {
-      if (e.target.id === 'teamAssignModal') {
-        closeTeamAssignModal();
-      }
-    });
-    
     // 初始化
     updateAuthStatus();
+    //setAnnouncementInitialState();
     loadAnnouncements();
-    loadRounds();
   </script>
 
 </body>

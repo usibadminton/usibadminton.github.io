@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訂餐資訊 - USI Badminton 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+</head>
+<body class="bg-gradient-to-br from-white via-cloud-dancer/50 to-reflected-breeze/20 min-h-screen">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <a href="index.html" class="text-white hover:text-cloud-dancer font-semibold text-lg flex items-center gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </a>
+      <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white absolute left-1/2 transform -translate-x-1/2">
+        訂餐資訊
+      </h1>
+      <div id="authStatus" class="text-right text-xs">
+        <!-- 登入狀態將動態顯示 -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Spacer for fixed header -->
+  <div class="h-16"></div>
+
+  <!-- Page Loading View -->
+  <div id="pageLoading" class="max-w-6xl mx-auto px-4 py-8">
+    <div class="text-center py-16">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-alaskan-blue mb-4"></div>
+      <div class="text-gray-600 font-light text-lg">載入中...</div>
+    </div>
+  </div>
+
+  <!-- Main Content (hidden initially) -->
+  <div id="mainContent" class="max-w-6xl mx-auto px-4 py-4 md:py-8 hidden">
+
+    <!-- Order List -->
+    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-4 md:p-6 border border-reflected-breeze/20 h-[calc(100vh-112px)] md:h-auto flex flex-col">
+      <div class="flex justify-between items-center mb-6 flex-shrink-0">
+        <h2 class="text-xl font-semibold text-gray-700 tracking-tight">訂餐名單</h2>
+        <span id="orderCount" class="text-sm text-gray-600 font-light"></span>
+      </div>
+      
+      <!-- Loading -->
+      <div id="loading" class="text-center py-8 hidden">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
+        <div class="text-gray-600 font-light">載入訂餐資料...</div>
+      </div>
+      
+      <!-- Order List Container -->
+      <div id="orderList" class="flex-1 overflow-hidden">
+        <!-- 訂餐列表將動態插入 -->
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-6 hidden">
+        <p class="text-gray-700 text-lg mb-2 font-medium">尚無訂餐資料</p>
+        <p class="text-gray-500 text-sm font-light">訂餐功能即將開放</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- End Main Content -->
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <script>
+    // 顯示登入狀態
+    function updateAuthStatus() {
+      const authStatus = document.getElementById('authStatus');
+      
+      if (isAuthenticated()) {
+        const remaining = getRemainingAuthTime();
+        authStatus.innerHTML = `
+          <div class="flex flex-col md:gap-1 items-end justify-center">
+            <button onclick="handleLogout()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-3xl transition font-medium">
+              登出
+            </button>
+            <div class="hidden md:block text-xs text-cloud-dancer/80 font-light">
+            ${remaining}
+            </div>
+          </div>
+        `;
+      } else {
+        authStatus.innerHTML = `
+          <a href="login.html" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium inline-block">
+            登入
+          </a>
+        `;
+      }
+    }
+    
+    // 登出
+    async function handleLogout() {
+      const confirmed = await confirmAction('確定要登出嗎？');
+      if (confirmed) {
+        logout();
+        showToast('已登出', 'success');
+        updateAuthStatus();
+      }
+    }
+    
+    // 載入訂餐資訊（已移除，無需此函數）
+    
+    // 載入訂餐名單
+    async function loadOrderList() {
+      try {
+        showElement('loading');
+        hideElement('emptyState');
+        
+        // 從 Google Sheets 載入訂餐資料
+        const orders = await fetchCSV(CSV_URLS.ORDERS);
+        
+        // Debug: 檢查原始資料
+        console.log('載入的訂單資料:', orders);
+        if (orders.length > 0) {
+          console.log('第一筆資料:', orders[0]);
+          console.log('picked_up 欄位值:', orders[0].picked_up);
+        }
+        
+        hideElement('loading');
+        
+        if (orders.length === 0) {
+          showElement('emptyState');
+          document.getElementById('orderCount').textContent = '';
+          return;
+        }
+        
+        // 根據姓名合併訂單資料
+        const mergedOrders = {};
+        const mealTypes = new Set();
+        
+        orders.forEach(row => {
+          const name = row.name || '';
+          const mealType = row.meal_type || '';
+          const quantity = parseInt(row.quantity) || 0;
+          const orderTime = row.order_time || '';
+          const notes = row.notes || '';
+          const pickedUp = (row.picked_up || '').toLowerCase() === 'true' || row.picked_up === '1';
+          
+          // Debug: 顯示 picked_up 處理
+          if (pickedUp) {
+            console.log(`${name} 的 picked_up 狀態: ${row.picked_up} -> ${pickedUp}`);
+          }
+          
+          // 收集所有餐點類型
+          if (mealType) {
+            mealTypes.add(mealType);
+          }
+          
+          // 如果該姓名還沒有記錄，初始化
+          if (!mergedOrders[name]) {
+            mergedOrders[name] = {
+              name: name,
+              meals: {},
+              notes: notes,
+              pickedUp: pickedUp,
+              total: 0
+            };
+          } else {
+            // 如果已有記錄，更新 pickedUp 狀態（任一筆為 true 則為 true）
+            mergedOrders[name].pickedUp = mergedOrders[name].pickedUp || pickedUp;
+          }
+          
+          // 累加該餐點類型的數量
+          if (!mergedOrders[name].meals[mealType]) {
+            mergedOrders[name].meals[mealType] = 0;
+          }
+          mergedOrders[name].meals[mealType] += quantity;
+          mergedOrders[name].total += quantity;
+        });
+        
+        // 轉換成陣列並按姓名排序
+        const sortedMealTypes = Array.from(mealTypes).sort();
+        const orderArray = Object.values(mergedOrders).sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Debug: 顯示合併後的 pickedUp 狀態
+        console.log('合併後的訂單狀態:');
+        orderArray.forEach(order => {
+          if (order.pickedUp) {
+            console.log(`${order.name}: pickedUp = ${order.pickedUp}`);
+          }
+        });
+        
+        // 計算總計
+        const totals = { total: 0 };
+        sortedMealTypes.forEach(mealType => {
+          totals[mealType] = 0;
+        });
+        
+        orderArray.forEach(order => {
+          sortedMealTypes.forEach(mealType => {
+            const qty = order.meals[mealType] || 0;
+            totals[mealType] += qty;
+            totals.total += qty;
+          });
+        });
+        
+        // 顯示訂單數量
+        document.getElementById('orderCount').textContent = `${orderArray.length} 人訂餐，總計 ${totals.total} 份`;
+        
+        const orderListDiv = document.getElementById('orderList');
+        
+        // === 手機版：極簡一行式 ===
+        let mobileCards = '<div class="md:hidden h-full overflow-y-auto space-y-1.5">';
+        
+        orderArray.forEach((order, index) => {
+          // 組合餐點資訊
+          let mealsText = '';
+          sortedMealTypes.forEach(mealType => {
+            const qty = order.meals[mealType] || 0;
+            if (qty > 0) {
+              mealsText += `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-sm font-medium">${mealType}×${qty}</span> `;
+            }
+          });
+          
+          const isPicked = order.pickedUp;
+          mobileCards += `
+            <div class="bg-white border border-slate-300 rounded-lg px-3 py-3 shadow-sm flex items-center justify-between gap-2 ${isPicked ? 'opacity-50' : ''}" data-order-index="${index}" data-order-name="${order.name}">
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <span class="text-xs font-semibold text-gray-400 flex-shrink-0">#${index + 1}</span>
+                <span class="font-medium text-gray-900 flex-shrink-0 w-20 text-left">${order.name}</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${mealsText}
+                </div>
+              </div>
+              <button 
+                onclick="togglePickup('${order.name}', this)" 
+                class="pickup-btn text-sm font-bold ${isPicked ? 'text-gray-400 line-through' : 'text-alaskan-blue hover:bg-alaskan-blue/10'} flex-shrink-0 px-2 py-1 rounded transition cursor-pointer"
+                data-picked="${isPicked}"
+              >
+                ${order.total} 個
+              </button>
+            </div>
+          `;
+        });
+        
+        // 手機版總計（一行式）
+        let totalMealsText = '';
+        sortedMealTypes.forEach(mealType => {
+          totalMealsText += `<span class="px-1.5 py-0.5 bg-white text-slate-700 rounded text-sm font-medium">${mealType}×${totals[mealType]}</span> `;
+        });
+        
+        mobileCards += `
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-slate-300 rounded-lg px-3 py-2 shadow-sm flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 flex-1">
+              <span class="font-bold text-sm text-slate-700 flex-shrink-0">總計</span>
+              <div class="flex items-center gap-1.5 text-sm flex-wrap">
+                ${totalMealsText}
+              </div>
+            </div>
+            <span class="text-sm font-bold text-alaskan-blue flex-shrink-0">${totals.total} 個</span>
+          </div>
+        </div>`;
+        
+        // === 桌面版：表格顯示 ===
+        let desktopTable = `
+          <div class="hidden md:block overflow-y-auto md:max-h-[calc(100vh-280px)]">
+            <table class="min-w-full">
+              <thead class="bg-gradient-to-r from-slate-50 to-blue-50 border-b-2 border-slate-300 sticky top-0 z-10">
+                <tr>
+                  <th class="px-4 py-3 text-center text-sm font-semibold text-slate-700 tracking-wider w-16 bg-slate-50">#</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700 tracking-wider bg-slate-50">姓名</th>
+        `;
+        
+        // 動態生成餐點類型欄位
+        sortedMealTypes.forEach(mealType => {
+          desktopTable += `<th class="px-4 py-3 text-center text-sm font-semibold text-slate-700 tracking-wider bg-blue-50">${mealType}</th>`;
+        });
+        
+        desktopTable += `
+                  <th class="px-4 py-3 text-center text-sm font-semibold text-slate-700 tracking-wider bg-blue-50">小計</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700 tracking-wider bg-slate-50">備註</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+        `;
+        
+        // 生成每一行訂單
+        orderArray.forEach((order, index) => {
+          const isPicked = order.pickedUp;
+          desktopTable += `
+            <tr class="hover:bg-slate-50 transition ${isPicked ? 'opacity-50' : ''}" data-order-index="${index}" data-order-name="${order.name}">
+              <td class="px-4 py-3 text-center text-sm font-semibold text-gray-400">${index + 1}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-base font-medium text-gray-900">${order.name}</td>
+          `;
+          
+          // 動態生成各餐點數量
+          sortedMealTypes.forEach(mealType => {
+            const qty = order.meals[mealType] || 0;
+            desktopTable += `<td class="px-4 py-3 text-center text-base ${qty > 0 ? 'text-gray-900 font-medium' : 'text-gray-400'}">${qty > 0 ? qty : '-'}</td>`;
+          });
+          
+          desktopTable += `
+              <td class="px-4 py-3 text-center">
+                <button 
+                  onclick="togglePickup('${order.name}', this)" 
+                  class="pickup-btn text-base font-semibold ${isPicked ? 'text-gray-400 line-through' : 'text-alaskan-blue hover:bg-alaskan-blue/10'} px-2 py-1 rounded transition cursor-pointer"
+                  data-picked="${isPicked}"
+                >
+                  ${order.total} 個
+                </button>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-500">${order.notes || '-'}</td>
+            </tr>
+          `;
+        });
+        
+        // 生成總計行
+        desktopTable += `
+              </tbody>
+              <tfoot class="bg-gradient-to-r from-blue-50 to-indigo-50 border-t-2 border-slate-300">
+                <tr class="font-bold">
+                  <td class="px-4 py-3 text-center text-sm text-slate-500"></td>
+                  <td class="px-4 py-3 text-base text-slate-700">總計</td>
+        `;
+        
+        sortedMealTypes.forEach(mealType => {
+          desktopTable += `<td class="px-4 py-3 text-center text-base text-slate-700">${totals[mealType]}</td>`;
+        });
+        
+        desktopTable += `
+                  <td class="px-4 py-3 text-center text-base text-alaskan-blue font-bold">${totals.total}</td>
+                  <td class="px-4 py-3"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        `;
+        
+        // 合併手機版和桌面版
+        orderListDiv.innerHTML = mobileCards + desktopTable;
+        
+      } catch (error) {
+        console.error('載入訂餐名單失敗:', error);
+        hideElement('loading');
+        showElement('emptyState');
+        showToast('載入訂餐資料失敗', 'error');
+      }
+    }
+    
+    // 切換取餐狀態
+    async function togglePickup(name, button) {
+      const isPicked = button.dataset.picked === 'true';
+      const row = button.closest('[data-order-index]');
+      const newStatus = !isPicked;
+      
+      // 先更新 UI（樂觀更新）
+      if (newStatus) {
+        // 標記為已取餐
+        button.dataset.picked = 'true';
+        button.classList.remove('text-alaskan-blue', 'hover:bg-alaskan-blue/10');
+        button.classList.add('text-gray-400', 'line-through');
+        if (row) row.classList.add('opacity-50');
+      } else {
+        // 取消標記
+        button.dataset.picked = 'false';
+        button.classList.remove('text-gray-400', 'line-through');
+        button.classList.add('text-alaskan-blue', 'hover:bg-alaskan-blue/10');
+        if (row) row.classList.remove('opacity-50');
+      }
+      
+      // 調用 Apps Script 更新後端
+      try {
+        await fetch(CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'updateOrderPickup',
+            name: name,
+            pickedUp: newStatus
+          })
+        });
+        
+        console.log(`已更新 ${name} 的取餐狀態: ${newStatus}`);
+      } catch (error) {
+        console.error('更新取餐狀態失敗:', error);
+        showToast('更新狀態失敗', 'error');
+        
+        // 失敗時回滾 UI
+        if (newStatus) {
+          button.dataset.picked = 'false';
+          button.classList.remove('text-gray-400', 'line-through');
+          button.classList.add('text-alaskan-blue', 'hover:bg-alaskan-blue/10');
+          if (row) row.classList.remove('opacity-50');
+        } else {
+          button.dataset.picked = 'true';
+          button.classList.remove('text-alaskan-blue', 'hover:bg-alaskan-blue/10');
+          button.classList.add('text-gray-400', 'line-through');
+          if (row) row.classList.add('opacity-50');
+        }
+      }
+    }
+    
+    // 初始化頁面
+    async function initPage() {
+      try {
+        await loadOrderList();
+        
+        // 所有資料載入完成，顯示主內容
+        hideElement('pageLoading');
+        showElement('mainContent');
+      } catch (error) {
+        console.error('初始化失敗:', error);
+        // 即使失敗也顯示主內容
+        hideElement('pageLoading');
+        showElement('mainContent');
+      }
+    }
+    
+    // 頁面載入時執行
+    updateAuthStatus();
+    initPage();
+  </script>
+
+</body>
+</html>
