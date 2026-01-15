@@ -194,13 +194,29 @@
           document.getElementById('roundCount').textContent = '';
         } else {
           showElement('roundsList');
-          document.getElementById('roundCount').textContent = `共 ${rounds.length} 場`;
+          
+          // 過濾重複的 matchID，只保留第一次出現的項目
+          const uniqueRounds = [];
+          const seenMatchIds = new Set();
+          
+          for (const round of rounds) {
+            const matchId = round['matchID'];
+            if (matchId && !seenMatchIds.has(matchId)) {
+              seenMatchIds.add(matchId);
+              uniqueRounds.push(round);
+            }
+          }
+          
+          document.getElementById('roundCount').textContent = `共 ${uniqueRounds.length} 場`;
           
           // 載入統計資料
-          await loadStatistics(rounds);
+          await loadStatistics(uniqueRounds);
           
           // 載入比分資料以顯示每場統計
           const scoresData = await fetchCSV(CSV_URLS.SCORES);
+          
+          // 載入賽程表資料以檢查是否已產生賽程
+          const matchesData = await fetchCSV(CSV_URLS.MATCHES);
           
           // 建立比分查詢表
           const scoresMap = {};
@@ -223,11 +239,17 @@
             }
           });
           
+          // 檢查登入狀態
+          const userIsAuthenticated = isAuthenticated();
+          
           const roundsList = document.getElementById('roundsList');
-          roundsList.innerHTML = rounds.reverse().map(round => {
+          roundsList.innerHTML = uniqueRounds.reverse().map(round => {
             const roundId = round['matchID'];
             const date = round['time'];
             const note = round['note'] || round['备注'] || '';
+            
+            // 檢查該場次是否已產生賽程
+            const hasMatches = matchesData.some(m => m['matchID'] === roundId);
             
             // 取得該場統計
             const stats = scoresMap[roundId];
@@ -245,10 +267,24 @@
                   <div class="${subtextColor} text-xs mt-0.5">( ${stats.teamAScore} : ${stats.teamBScore} )</div>
                 </div>
               `;
+            } else if (!hasMatches && !userIsAuthenticated) {
+              // 未登入且沒有賽程，顯示「（分組中）」
+              statsHtml = `
+                <div class="text-center text-md w-20">
+                  <div class="font-medium text-gray-400 text-sm">（分組中）</div>
+                </div>
+              `;
             }
             
+            // 如果未登入且沒有賽程，則不可點擊
+            const isClickable = userIsAuthenticated || hasMatches;
+            const clickHandler = isClickable ? `onclick="viewRound('${roundId}')"` : '';
+            const cursorClass = isClickable ? 'cursor-pointer' : 'cursor-not-allowed';
+            const hoverClass = isClickable ? 'hover:bg-reflected-breeze/20 hover:border-alaskan-blue/50 hover:shadow-md' : '';
+            const opacityClass = isClickable ? '' : 'opacity-60';
+            
             return `
-              <div class="bg-white/60 hover:bg-reflected-breeze/20 border border-reflected-breeze/30 hover:border-alaskan-blue/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" onclick="viewRound('${roundId}')">
+              <div class="bg-white/60 ${hoverClass} border border-reflected-breeze/30 rounded-xl p-4 transition-all duration-200 ${cursorClass} shadow-sm ${opacityClass}" ${clickHandler}>
                 <div class="flex justify-between items-center gap-4">
                   <div class="flex-1">
                     <div class="font-medium text-lg text-gray-700 tracking-tight">${roundId} ${note}</div>
@@ -256,11 +292,13 @@
                   </div>
                   <div class="flex items-center gap-3">
                     ${statsHtml}
+                    ${isClickable ? `
                     <div class="text-alaskan-blue font-medium text-sm flex items-center">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                       </svg>
                     </div>
+                    ` : ''}
                   </div>
                 </div>
               </div>

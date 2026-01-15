@@ -616,6 +616,13 @@
         showToast('選手已新增', 'success');
       }
       
+      // 編輯或新增後重新排序，確保送出的資料是排序過的
+      players.sort((a, b) => {
+        const nameA = (a['name'] || '').toString().trim();
+        const nameB = (b['name'] || '').toString().trim();
+        return nameA.localeCompare(nameB, 'zh-Hant');
+      });
+      
       closePlayerModal();
       renderPlayers(); // 立即更新畫面
       savePlayersToSheet();
