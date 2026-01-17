@@ -23,12 +23,10 @@
   </header>
   <div class="h-14 md:h-16"></div>
   <div class="max-w-7xl mx-auto px-2 md:px-4 py-3 md:py-8 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-8rem)] flex flex-col">
-    <div class="bg-transparent md:bg-white/70 md:backdrop-blur-sm md:rounded-2xl md:shadow-lg md:border md:border-reflected-breeze/20 flex flex-col h-full">
-      <!-- 固定的標題和按鈕區域 -->
-      <div class="px-2 py-2 flex-shrink-0 mb-4 border-b border-gray-200">
-
-        <!-- 公告/備註區 -->
-        <div id="announcementSection" class="mb-2 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
+    <div class="bg-transparent md:bg-white/70 md:backdrop-blur-sm md:rounded-2xl md:shadow-lg md:border md:border-reflected-breeze/20 flex flex-col h-full overflow-y-auto" id="mainContainer">
+      <!-- 公告區（可滾動出視窗） -->
+      <div id="announcementSection" class="flex-shrink-0 px-2 py-2 mb-2 border-b border-gray-200">
+        <div class="mb-2 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center">
               <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +44,10 @@
             <div class="text-blue-600">載入中...</div>
           </div>
         </div>
+      </div>
 
+      <!-- 固定的Filter和搜尋區域 -->
+      <div class="sticky top-0 z-20 bg-white md:bg-transparent px-2 py-2 flex-shrink-0 border-b border-gray-200 shadow-sm md:shadow-none">
         <div class="mb-2 flex items-center gap-3">
           <!-- 狀態篩選按鈕 -->
           <div class="flex gap-2">
@@ -71,8 +72,8 @@
         </div>
       </div>
       
-      <!-- 可滾動的表格區域 -->
-      <div class="flex-1 overflow-hidden px-3 md:px-6 pb-3 md:pb-6">
+      <!-- 可滾動的訂單列表區域 -->
+      <div class="flex-1 px-3 md:px-6 pb-3 md:pb-6">
         <div id="loading" class="flex items-center justify-center h-full">
           <div class="text-center">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
@@ -80,7 +81,7 @@
           </div>
         </div>
         <!-- 桌面版表格 -->
-        <div id="orderList" style="display: none;" class="h-full overflow-auto rounded-lg hidden md:block">
+        <div id="orderList" style="display: none;" class="h-full overflow-y-auto rounded-lg hidden md:block">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-reflected-breeze sticky top-0 z-10 shadow-sm">
               <tr>
@@ -101,7 +102,7 @@
           </table>
         </div>
         <!-- 手機版卡片列表 -->
-        <div id="orderCardList" style="display: none;" class="h-full overflow-auto block md:hidden">
+        <div id="orderCardList" style="display: none;" class="h-full overflow-y-auto block md:hidden">
           <!-- 卡片將動態插入 -->
         </div>
       </div>
