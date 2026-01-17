@@ -56,7 +56,8 @@ function updateOrder(orderSheet, statusSheet, data) {
   }
   
   const status = data.status || 'confirmed';
-  updateStatusSheet(statusSheet, data.id, status, data.paymentMethod, data.bankCode, data.product1, data.product2, data.pickup, undefined);
+  const confirmAt = (status === 'confirmed') ? new Date() : undefined;
+  updateStatusSheet(statusSheet, data.id, status, data.paymentMethod, data.bankCode, data.product1, data.product2, data.pickup, undefined, confirmAt);
   
   return createResponse(true, '訂單已更新');
 }
@@ -85,7 +86,8 @@ function addOrder(orderSheet, statusSheet, data) {
   orderSheet.appendRow(newRow);
   
   const status = data.status || 'confirmed';
-  updateStatusSheet(statusSheet, newId, status, null, null, data.product1, data.product2, null, undefined);
+  const confirmAt = (status === 'confirmed') ? new Date() : undefined;
+  updateStatusSheet(statusSheet, newId, status, null, null, data.product1, data.product2, null, undefined, confirmAt);
 
   return createResponse(true, '新增成功', { newId: newId });
 }
@@ -93,33 +95,33 @@ function addOrder(orderSheet, statusSheet, data) {
 // 登記付款
 function registerPayment(statusSheet, data) {
   const status = data.status || 'paid';
-  updateStatusSheet(statusSheet, data.id, status, data.paymentMethod, data.bankCode, undefined, undefined, data.pickup, data.note);
+  updateStatusSheet(statusSheet, data.id, status, data.paymentMethod, data.bankCode, undefined, undefined, data.pickup, data.note, undefined);
   
   return createResponse(true, '付款資訊已登記');
 }
 
 // 確認付款（管理員功能）
 function confirmPayment(statusSheet, data) {
-  updateStatusSheet(statusSheet, data.id, 'checked', undefined, undefined, undefined, undefined, undefined, undefined);
+  updateStatusSheet(statusSheet, data.id, 'checked', undefined, undefined, undefined, undefined, undefined, undefined, undefined);
   
   return createResponse(true, '已確認付款');
 }
 
 // 確認交貨
 function confirmDelivery(statusSheet, data) {
-  updateStatusSheet(statusSheet, data.id, 'completed', undefined, undefined, undefined, undefined, undefined, undefined);
+  updateStatusSheet(statusSheet, data.id, 'completed', undefined, undefined, undefined, undefined, undefined, undefined, undefined);
   
   return createResponse(true, '已確認交貨');
 }
 
 // 更新或新增狀態記錄到 order_status sheet
-function updateStatusSheet(statusSheet, orderId, status, paymentMethod, bankCode, product1, product2, pickup, note) {
+function updateStatusSheet(statusSheet, orderId, status, paymentMethod, bankCode, product1, product2, pickup, note, confirmAt) {
   const statusData = statusSheet.getDataRange().getValues();
   
   // 如果是空的 sheet，先建立標題
   if (statusData.length === 0 || !statusData[0][0]) {
-    statusSheet.appendRow(['Id', 'Status', 'Product1', 'Product2', 'Pickup', 'PaymentMethod', 'BankCode', 'Note', 'UpdatedAt']);
-    statusSheet.appendRow([orderId, status, product1 || '', product2 || '', pickup || '', paymentMethod || '', bankCode || '', note || '', new Date()]);
+    statusSheet.appendRow(['Id', 'Status', 'Product1', 'Product2', 'Pickup', 'PaymentMethod', 'BankCode', 'Note', 'ConfirmAt', 'UpdatedAt']);
+    statusSheet.appendRow([orderId, status, product1 || '', product2 || '', pickup || '', paymentMethod || '', bankCode || '', note || '', confirmAt || '', new Date()]);
     return;
   }
   
@@ -132,12 +134,19 @@ function updateStatusSheet(statusSheet, orderId, status, paymentMethod, bankCode
   const paymentMethodCol = headers.indexOf('PaymentMethod');
   const bankCodeCol = headers.indexOf('BankCode');
   let noteCol = headers.indexOf('Note');
+  let confirmAtCol = headers.indexOf('ConfirmAt');
   const updatedAtCol = headers.indexOf('UpdatedAt');
   
   // 如果沒有 Note 欄位，自動添加
   if (noteCol === -1) {
     noteCol = headers.length;
     statusSheet.getRange(1, noteCol + 1).setValue('Note');
+  }
+  
+  // 如果沒有 ConfirmAt 欄位，自動添加
+  if (confirmAtCol === -1) {
+    confirmAtCol = headers.length;
+    statusSheet.getRange(1, confirmAtCol + 1).setValue('ConfirmAt');
   }
   
   // 找到對應的行
@@ -158,10 +167,11 @@ function updateStatusSheet(statusSheet, orderId, status, paymentMethod, bankCode
     if (paymentMethodCol >= 0 && paymentMethod) statusSheet.getRange(rowIndex, paymentMethodCol + 1).setValue(paymentMethod);
     if (bankCodeCol >= 0 && bankCode) statusSheet.getRange(rowIndex, bankCodeCol + 1).setValue(bankCode);
     if (noteCol >= 0 && note !== undefined) statusSheet.getRange(rowIndex, noteCol + 1).setValue(note);
+    if (confirmAtCol >= 0 && confirmAt !== undefined) statusSheet.getRange(rowIndex, confirmAtCol + 1).setValue(confirmAt);
     if (updatedAtCol >= 0) statusSheet.getRange(rowIndex, updatedAtCol + 1).setValue(new Date());
   } else {
     // 新增記錄
-    statusSheet.appendRow([orderId, status, product1 || '', product2 || '', pickup || '', paymentMethod || '', bankCode || '', note || '', new Date()]);
+    statusSheet.appendRow([orderId, status, product1 || '', product2 || '', pickup || '', paymentMethod || '', bankCode || '', note || '', confirmAt || '', new Date()]);
   }
 }
 
