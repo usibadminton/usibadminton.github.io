@@ -1117,10 +1117,10 @@
                   const note = row['Note'] || row['備註'] || '';
                   if (note) {
                     return `
-                    <div class="bg-yellow-50 rounded-lg px-3 py-1.5 border border-yellow-200">
-                      <div class="text-sm">
-                        <span class="text-gray-600 block mb-0.5">📝 備註</span>
-                        <span class="text-gray-800">${note}</span>
+                    <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                      <div class="text-sm flex items-start gap-2">
+                        <span class="text-gray-600 whitespace-nowrap">備註</span>
+                        <span class="text-gray-800 flex-1 text-right break-words">${note}</span>
                       </div>
                     </div>`;
                   }
@@ -1174,10 +1174,10 @@
                   const note = row['Note'] || row['備註'] || '';
                   if (note) {
                     return `
-                    <div class="bg-yellow-50 rounded-lg px-3 py-1.5 border border-yellow-200">
-                      <div class="text-sm">
-                        <span class="text-gray-600 block mb-0.5">📝 備註</span>
-                        <span class="text-gray-800">${note}</span>
+                    <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                      <div class="text-sm flex items-start gap-2">
+                        <span class="text-gray-600 whitespace-nowrap">備註</span>
+                        <span class="text-gray-800 flex-1 text-right break-words">${note}</span>
                       </div>
                     </div>`;
                   }
@@ -2383,6 +2383,7 @@
             Pickup: status.Pickup || status['取貨地點'] || '',
             PaymentMethod: status.PaymentMethod || status['付款方式'] || '',
             BankCode: status.BankCode || status['帳號末五碼'] || '',
+            Note: status.Note || status['備註'] || '',
             UpdatedAt: status.UpdatedAt || ''
           };
         });
