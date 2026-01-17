@@ -3,64 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>羽球訂購數量確認</title>
+  <title>USI-羽球團購</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="../mp/js/tailwind-config.js"></script>
 </head>
-<body class="bg-gradient-to-br from-white via-cloud-dancer/50 to-reflected-breeze/20 min-h-screen">
+<body class="bg-white min-h-screen">
   <!-- Header -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+    <div class="max-w-6xl mx-auto px-2 md:px-4 h-14 md:h-16 flex items-center justify-between relative">
       <div class="text-center flex-1">
-        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">羽球訂購數量確認</h1>
+        <h1 class="text-lg md:text-2xl font-bold tracking-tight text-white">USI-羽球團購</h1>
       </div>
       <div id="authStatus" class="text-right text-xs">
         <!-- 登入狀態將動態顯示 -->
       </div>
     </div>
   </header>
-  <div class="h-16"></div>
-  <div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-reflected-breeze/20">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold text-gray-700 tracking-tight">訂購列表</h2>
-        <button id="addOrderBtn" onclick="openAddModal()" class="bg-reflected-breeze hover:bg-cosmic-sky text-white px-4 py-2 rounded-lg transition font-medium" style="display: none;">
-          + 新增訂單
-        </button>
-      </div>
-      <div class="mb-4 flex items-center gap-3">
-        <div class="flex gap-2">
-          <button onclick="filterByStatus('all')" id="filterAll" class="px-3 py-1.5 text-sm rounded-full border-2 border-gray-400 bg-gray-100 text-gray-700 font-medium transition hover:shadow-md">全部</button>
-          <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-3 py-1.5 text-sm rounded-full border-2 border-red-300 bg-red-50 text-red-700 font-medium transition hover:shadow-md">待確認</button>
-          <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-3 py-1.5 text-sm rounded-full border-2 border-orange-300 bg-orange-50 text-orange-700 font-medium transition hover:shadow-md">已確認</button>
-          <button onclick="filterByStatus('paid')" id="filterPaid" class="px-3 py-1.5 text-sm rounded-full border-2 border-blue-300 bg-blue-50 text-blue-700 font-medium transition hover:shadow-md">已付款</button>
-          <button onclick="filterByStatus('completed')" id="filterCompleted" class="px-3 py-1.5 text-sm rounded-full border-2 border-green-300 bg-green-50 text-green-700 font-medium transition hover:shadow-md">已取貨</button>
+  <div class="h-14 md:h-16"></div>
+  <div class="max-w-7xl mx-auto px-2 md:px-4 py-3 md:py-8 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-8rem)] flex flex-col">
+    <div class="bg-transparent md:bg-white/70 md:backdrop-blur-sm md:rounded-2xl md:shadow-lg md:border md:border-reflected-breeze/20 flex flex-col h-full">
+      <!-- 固定的標題和按鈕區域 -->
+      <div class="px-2 py-2 flex-shrink-0">
+        <div class="flex justify-between items-center">
+          <button id="addOrderBtn" onclick="openAddModal()" class="mb-2 bg-reflected-breeze hover:bg-cosmic-sky text-white px-4 py-2 rounded-lg transition font-medium">
+            + 新增訂單
+          </button>
+        </div>
+
+        <!-- 公告/備註區 -->
+        <div id="announcementSection" class="mb-2 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <h3 class="text-lg font-semibold text-blue-800">公告</h3>
+            </div>
+            <button onclick="toggleAnnouncement()" id="announcementToggle" class="text-blue-600 hover:text-blue-800 transition p-1">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="announcementContent" class="text-sm">
+            <div class="text-blue-600">載入中...</div>
+          </div>
+        </div>
+
+        <div class="mb-2 flex items-center gap-3">
+          <!-- 狀態篩選按鈕 -->
+          <div class="flex gap-2">
+            <button onclick="filterByStatus('all')" id="filterAll" class="px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
+            <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
+            <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
+          </div>
+          
+          <!-- 搜尋框 -->
+          <div class="relative flex-1 max-w-xs ml-auto">
+            <input 
+              type="text" 
+              id="searchInput" 
+              placeholder="搜尋訂單（姓名、電話、編號）" 
+              oninput="handleSearch()" 
+              class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-reflected-breeze focus:border-transparent"
+            >
+            <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
         </div>
       </div>
-      <div id="loading" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
-        <div class="text-gray-600 font-light">載入訂購資料...</div>
-      </div>
-      <div id="orderList" class="hidden overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-reflected-breeze/40">
-            <tr>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">編號</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">姓名</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">原始數量</th>
-              <th id="product1Header" class="px-4 py-2 text-left text-sm font-bold text-gray-700">產品1</th>
-              <th id="product2Header" class="px-4 py-2 text-left text-sm font-bold text-gray-700">產品2</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">取貨地點</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">聯絡電話</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">狀態</th>
-              <th class="px-4 py-2 text-left text-sm font-bold text-gray-700">操作</th>
-            </tr>
-          </thead>
-          <tbody id="orderTableBody" class="bg-white/80 divide-y divide-gray-100">
-            <!-- 資料將動態插入 -->
-          </tbody>
-        </table>
+      
+      <!-- 可滾動的表格區域 -->
+      <div class="flex-1 overflow-hidden px-3 md:px-6 pb-3 md:pb-6">
+        <div id="loading" class="flex items-center justify-center h-full">
+          <div class="text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-alaskan-blue mb-2"></div>
+            <div class="text-gray-600 font-light text-sm md:text-base">載入訂購資料...</div>
+          </div>
+        </div>
+        <!-- 桌面版表格 -->
+        <div id="orderList" style="display: none;" class="h-full overflow-auto rounded-lg hidden md:block">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-reflected-breeze sticky top-0 z-10 shadow-sm">
+              <tr>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-16">編號</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-24">姓名</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-32 whitespace-normal">聯絡電話</th>
+                <th id="product1Header" class="px-4 py-2 text-center text-base font-bold text-white w-20 whitespace-normal">產品1</th>
+                <th id="product2Header" class="px-4 py-2 text-center text-base font-bold text-white w-20 whitespace-normal">產品2</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-24 whitespace-normal">總金額</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-40 whitespace-normal">取貨地點</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-40 whitespace-normal">付款/交貨狀態</th>
+                <th class="px-4 py-2 text-center text-base font-bold text-white w-24">操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderTableBody" class="bg-white/80 divide-y divide-gray-100">
+              <!-- 資料將動態插入 -->
+            </tbody>
+          </table>
+        </div>
+        <!-- 手機版卡片列表 -->
+        <div id="orderCardList" style="display: none;" class="h-full overflow-auto block md:hidden">
+          <!-- 卡片將動態插入 -->
+        </div>
       </div>
     </div>
   </div>
@@ -68,43 +115,43 @@
   <!-- Edit Modal -->
   <div id="editModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">編輯訂購資料</h3>
-      <form id="editForm" class="space-y-4">
+      <h3 class="text-2xl font-bold text-gray-800 mb-3">確認訂購資料</h3>
+      <form id="editForm" class="space-y-2">
         <input type="hidden" id="editRowId">
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-          <input type="text" id="editName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          <label class="block text-base font-medium text-gray-700 mb-1">姓名</label>
+          <input type="text" id="editName" readonly class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg bg-gray-50">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">原始訂購數量</label>
-          <input type="number" id="editQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0">
+          <label class="block text-base font-medium text-gray-700 mb-1">原訂購數量 (參考用，可以調整最後數量）</label>
+          <input type="number" id="editQuantity" readonly class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg bg-gray-50" min="0">
         </div>
 
         <div>
-          <label id="editProduct1Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
-          <input type="number" id="editProduct1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0">
+          <label id="editProduct1Label" class="block text-base font-medium text-gray-700 mb-1"></label>
+          <input type="number" id="editProduct1" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0" oninput="updateEditModalTotal()">
         </div>
 
         <div>
-          <label id="editProduct2Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
-          <input type="number" id="editProduct2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0">
+          <label id="editProduct2Label" class="block text-base font-medium text-gray-700 mb-1"></label>
+          <input type="number" id="editProduct2" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0" oninput="updateEditModalTotal()">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">取貨地點時間</label>
-          <select id="editPickup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
-            <option value="">請選擇</option>
-            <option value="a">選項 A</option>
-            <option value="b">選項 B</option>
-            <option value="c">選項 C</option>
-          </select>
+          <label class="block text-base font-medium text-gray-700 mb-1">總金額</label>
+          <div class="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-xl font-semibold text-gray-800">
+            $<span id="editTotalAmount">0</span>
+          </div>
         </div>
+        
+        <input type="hidden" id="editPickup">
 
-        <div class="flex gap-3 pt-4">
-          <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition">送出</button>
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+          <button type="button" onclick="handleCancelOrder()" class="flex-1 px-4 py-2.5 text-base bg-red-400 text-white rounded-lg hover:bg-red-500 transition font-medium">取消訂購</button>
+          <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">送出</button>
         </div>
       </form>
     </div>
@@ -113,26 +160,46 @@
   <!-- Add Order Modal -->
   <div id="addModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">新增訂單</h3>
-      <form id="addForm" class="space-y-4">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 flex-1">新增訂單</h3>
+      </div>
+      
+      <form id="addForm" class="space-y-2">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
-          <input type="text" id="addName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
+          <label class="block text-base font-medium text-gray-700 mb-1">姓名 *</label>
+          <input type="text" id="addName" required class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話 *</label>
-          <input type="tel" id="addPhone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
+          <label class="block text-base font-medium text-gray-700 mb-1">聯絡電話 *</label>
+          <input type="tel" id="addPhone" required class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">訂購數量</label>
-          <input type="number" id="addQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0" value="0">
+          <label id="addProduct1Label" class="block text-base font-medium text-gray-700 mb-1"></label>
+          <input type="number" id="addProduct1" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0" value="0" oninput="updateAddModalTotal()">
         </div>
 
-        <div class="flex gap-3 pt-4">
-          <button type="button" onclick="closeAddModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition">新增</button>
+        <div>
+          <label id="addProduct2Label" class="block text-base font-medium text-gray-700 mb-1"></label>
+          <input type="number" id="addProduct2" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" min="0" value="0" oninput="updateAddModalTotal()">
+        </div>
+
+        <div>
+          <label class="block text-base font-medium text-gray-700 mb-1">總金額</label>
+          <div class="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-xl font-semibold text-gray-800">
+            $<span id="addTotalAmount">0</span>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="closeAddModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+          <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">新增</button>
         </div>
       </form>
     </div>
@@ -140,33 +207,129 @@
 
   <!-- Payment Modal -->
   <div id="paymentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+      <div class="p-6 pb-4 flex-shrink-0">
+        <h3 class="text-2xl font-bold text-gray-800">付款資訊</h3>
+      </div>
+      <div class="px-6 pb-6 overflow-y-auto flex-1">
+        <form id="paymentForm" class="space-y-3">
+          <input type="hidden" id="paymentOrderId">
+          
+          <div>
+            <label class="block text-base font-medium text-gray-700 mb-1">姓名</label>
+            <input type="text" id="paymentName" readonly class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg bg-gray-50">
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-700 mb-1">總金額</label>
+            <div class="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-xl font-semibold text-gray-800">
+              $<span id="paymentTotalAmount">0</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-700 mb-1">付款方式 *</label>
+            <select id="paymentMethod" required class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" onchange="toggleBankCode()">
+              <option value="">請選擇</option>
+            </select>
+          </div>
+
+          <div id="bankCodeField" class="hidden">
+            <label class="block text-base font-medium text-gray-700 mb-1">帳號末五碼 *</label>
+            <input type="text" id="bankCode" maxlength="5" pattern="[0-9]{5}" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" placeholder="請輸入5位數字">
+          </div>
+
+          <!-- 匯款資訊區塊 -->
+          <div id="bankInfoField" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-2 mb-2">
+              <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div class="flex-1">
+                <h4 class="text-base font-semibold text-blue-900 mb-2">請匯款至以下帳戶</h4>
+                <div class="space-y-1 text-sm">
+                  <div class="flex">
+                    <span class="text-blue-700 w-16">銀行：</span>
+                    <span class="text-blue-900 font-medium" id="displayBankName"></span>
+                  </div>
+                  <div class="flex">
+                    <span class="text-blue-700 w-16">戶名：</span>
+                    <span class="text-blue-900 font-medium" id="displayAccountName"></span>
+                  </div>
+                  <div class="flex">
+                    <span class="text-blue-700 w-16">帳號：</span>
+                    <span class="text-blue-900 font-mono font-semibold" id="displayAccountNumber"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-blue-700 mt-2">💡 匯款後請填寫帳號末五碼以便核對</p>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-700 mb-1">取貨地點時間 *</label>
+            <select id="paymentPickup" required class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze">
+              <option value="">請選擇</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-700 mb-1">備註（選填）</label>
+            <textarea id="paymentNote" rows="3" maxlength="200" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze resize-none" placeholder="如有其他需求或說明可在此填寫"></textarea>
+          </div>
+
+          <div class="flex gap-3 pt-3">
+            <button type="button" id="paymentCancelBtn" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+            <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">確認</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Payment Modal -->
+  <div id="confirmPaymentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">付款資訊</h3>
-      <form id="paymentForm" class="space-y-4">
-        <input type="hidden" id="paymentOrderId">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">確認付款</h3>
+      <form id="confirmPaymentForm" class="space-y-4">
+        <input type="hidden" id="confirmPaymentOrderId">
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-          <input type="text" id="paymentName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          <input type="text" id="confirmPaymentName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">付款方式 *</label>
-          <select id="paymentMethod" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" onchange="toggleBankCode()">
-            <option value="">請選擇</option>
-            <option value="cash">現金</option>
-            <option value="transfer">轉帳</option>
-          </select>
+          <label class="block text-sm font-medium text-gray-700 mb-1">總金額</label>
+          <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-lg font-semibold text-gray-800">
+            $<span id="confirmPaymentTotalAmount">0</span>
+          </div>
         </div>
 
-        <div id="bankCodeField" class="hidden">
-          <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼 *</label>
-          <input type="text" id="bankCode" maxlength="5" pattern="[0-9]{5}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze" placeholder="請輸入5位數字">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
+          <input type="text" id="confirmPaymentMethod" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+        </div>
+
+        <div id="confirmPaymentBankCodeField" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼</label>
+          <input type="text" id="confirmPaymentBankCode" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="flex-1">
+              <p class="text-sm text-blue-900">確認已收到款項後，訂單狀態將更改為「付款完成」</p>
+            </div>
+          </div>
         </div>
 
         <div class="flex gap-3 pt-4">
-          <button type="button" onclick="closePaymentModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition">確認</button>
+          <button type="button" onclick="closeConfirmPaymentModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">確認收款</button>
         </div>
       </form>
     </div>
@@ -185,7 +348,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">原始訂購數量</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">原始訂購數量(可調整總量）</label>
           <input type="number" id="deliveryQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" min="0">
         </div>
 
@@ -203,9 +366,6 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">取貨地點時間</label>
           <select id="deliveryPickup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
             <option value="">請選擇</option>
-            <option value="a">選項 A</option>
-            <option value="b">選項 B</option>
-            <option value="c">選項 C</option>
           </select>
         </div>
 
@@ -213,8 +373,6 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
           <select id="deliveryPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" onchange="toggleDeliveryBankCode()">
             <option value="">請選擇</option>
-            <option value="cash">現金</option>
-            <option value="transfer">轉帳</option>
           </select>
         </div>
 
@@ -233,32 +391,113 @@
 
   <!-- Manage Modal (Admin Only) -->
   <div id="manageModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
       <h3 class="text-xl font-bold text-gray-800 mb-4">管理訂單</h3>
-      <div id="manageContent" class="space-y-3">
-        <!-- Content will be populated by JavaScript -->
-      </div>
-      <div class="mt-6">
-        <button onclick="closeManageModal()" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-      </div>
+      <form id="manageForm" class="space-y-4">
+        <input type="hidden" id="manageOrderId">
+        
+        <!-- 基本資訊 -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-700 mb-3">訂單資訊</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+              <input type="text" id="manageName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
+              <input type="tel" id="managePhone" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- 產品數量 -->
+        <div class="bg-orange-50 rounded-lg p-4">
+          <h4 class="font-semibold text-orange-700 mb-3">產品數量</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label id="manageProduct1Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
+              <input type="number" id="manageProduct1" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" min="0" oninput="updateManageTotalAmount()">
+            </div>
+            <div>
+              <label id="manageProduct2Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
+              <input type="number" id="manageProduct2" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" min="0" oninput="updateManageTotalAmount()">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">總金額</label>
+            <div class="w-full px-3 py-2 border border-orange-300 rounded-lg bg-white text-lg font-semibold text-gray-800">
+              $<span id="manageTotalAmount">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 付款資訊 -->
+        <div class="bg-blue-50 rounded-lg p-4">
+          <h4 class="font-semibold text-blue-700 mb-3">付款資訊</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
+              <select id="managePaymentMethod" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="toggleManageBankCode()">
+                <option value="">請選擇</option>
+              </select>
+            </div>
+            <div id="manageBankCodeField" class="hidden">
+              <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼</label>
+              <input type="text" id="manageBankCode" maxlength="5" pattern="[0-9]{5}" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="5位數字">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">取貨地點時間</label>
+            <select id="managePickup" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">請選擇</option>
+            </select>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
+            <select id="managePaymentStatus" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">未付款</option>
+              <option value="paid">已付款</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 交貨狀態 -->
+        <div class="bg-green-50 rounded-lg p-4">
+          <h4 class="font-semibold text-green-700 mb-3">交貨狀態</h4>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">交貨狀態</label>
+            <select id="manageDeliveryStatus" class="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500">
+              <option value="">未交貨</option>
+              <option value="delivered">已交貨</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div class="grid grid-cols-2 gap-3 pt-4">
+          <button type="button" onclick="closeManageModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
+          <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">更新資料</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <!-- Phone Verification Modal -->
   <div id="verifyModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
       <h3 class="text-xl font-bold text-gray-800 mb-2">身份驗證</h3>
-      <p class="text-sm text-gray-600 mb-4">請輸入您的手機號碼末三碼以確認身份</p>
+      <p class="text-sm text-gray-600 mb-4">請輸入您的聯絡號碼末三碼以確認身份</p>
       
       <!-- 訂購人資訊 -->
       <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
         <div class="text-sm">
           <div class="flex items-center mb-1">
-            <span class="text-gray-500 w-16">姓名：</span>
+            <span class="text-gray-500 w-20">姓名：</span>
             <span id="verifyName" class="text-gray-800 font-medium"></span>
           </div>
           <div class="flex items-center">
-            <span class="text-gray-500 w-16">聯絡電話：</span>
+            <span class="text-gray-500 w-20">聯絡電話：</span>
             <span id="verifyPhoneDisplay" class="text-gray-800 font-medium"></span>
           </div>
         </div>
@@ -272,9 +511,109 @@
         </div>
         <div class="flex gap-3">
           <button type="button" onclick="closeVerifyModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">確認</button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">確認</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (通用確認對話框) -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 flex-1" id="confirmModalTitle">確認操作</h3>
+      </div>
+      <p class="text-gray-600 mb-6" id="confirmModalMessage">您確定要執行此操作嗎？</p>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeConfirmModal(false)" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+        <button type="button" onclick="closeConfirmModal(true)" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div id="alertModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 flex-1" id="alertModalTitle">提示</h3>
+      </div>
+      <p class="text-gray-600 mb-6 whitespace-pre-line" id="alertModalMessage"></p>
+      <div>
+        <button type="button" onclick="closeAlertModal()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Confirmation Preview Modal -->
+  <div id="orderConfirmPreviewModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 flex-1">確認訂單資料</h3>
+      </div>
+      
+      <div class="bg-gray-50 rounded-lg p-4 space-y-3 mb-6">
+        <div class="flex justify-between items-center">
+          <span class="text-gray-600 font-medium">姓名</span>
+          <span class="text-gray-800 font-semibold" id="previewName">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-600 font-medium" id="previewProduct1Label">產品1</span>
+          <span class="text-blue-700 font-bold text-lg" id="previewProduct1">0</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-600 font-medium" id="previewProduct2Label">產品2</span>
+          <span class="text-purple-700 font-bold text-lg" id="previewProduct2">0</span>
+        </div>
+        <div class="border-t border-gray-300 pt-3 flex justify-between items-center">
+          <span class="text-gray-700 font-semibold text-lg">總金額</span>
+          <span class="text-green-600 font-bold text-2xl">$<span id="previewTotal">0</span></span>
+        </div>
+      </div>
+      
+      <p class="text-sm text-gray-600 mb-6 text-center">請確認以上資料無誤後送出</p>
+      
+      <div class="flex gap-3">
+        <button type="button" onclick="closeOrderConfirmPreview(false)" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">返回修改</button>
+        <button type="button" onclick="closeOrderConfirmPreview(true)" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">確認送出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Loading Overlay -->
+  <div id="globalLoading" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center min-w-[280px]">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-reflected-breeze border-t-transparent mb-4"></div>
+      <div class="text-gray-800 font-medium text-lg">處理中...</div>
+      <div class="text-gray-500 text-sm mt-2">請稍候</div>
+    </div>
+  </div>
+
+  <!-- Completion View -->
+  <div id="completionView" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center min-w-[280px] max-w-sm">
+      <div id="completionIcon" class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <div id="completionTitle" class="text-gray-800 font-bold text-xl mb-2">完成！</div>
+      <div id="completionMessage" class="text-gray-600 text-center text-sm mb-6">付款資訊已登記</div>
+      <button onclick="hideCompletionView()" class="px-6 py-2 bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition">確定</button>
     </div>
   </div>
 
@@ -283,35 +622,180 @@
   <script>
     // Google Sheet CSV 連結
     const SHEET_ID = '15u-afHAZzSFtccX4o8Nge02qPjDbE0-VoIVMWmlMPQs';
-    const GID = '0';
-    const SHEET_NAME = 'order';
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+    const ORDER_GID = '0';  // order sheet 的 GID
+    const STATUS_GID = '1989846685';  // order_status sheet 的 GID（請確認正確的 GID）
+    const ANNOUNCEMENT_GID = '257816351';  // announcement sheet 的 GID（請修改為實際的 GID）
+    const ORDER_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${ORDER_GID}`;
+    const STATUS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${STATUS_GID}`;
+    const ANNOUNCEMENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${ANNOUNCEMENT_GID}`;
     
     // Apps Script Web App URL（部署後請在此填入）
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwedHJPx2M0sGVhKfmgFClkEFW_eZwWq_ZUfq3yjlKNc1zyj4_U9fVXonqC8fiVwPlJyA/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv9lXz6gxhMHKO3JnXVWI8I1Fnu_5ZkST0Fo7kEoiCOoYdC1tT_RZYcgibh-MEBXy5nw/exec';
 
     // 配置：是否需要手機驗證（設為 false 可關閉驗證）
-    const REQUIRE_PHONE_VERIFICATION = true;
+    const REQUIRE_PHONE_VERIFICATION = false;
 
-    // 配置：產品名稱（可自訂）
-    const PRODUCT1_NAME = '橫空5號';
-    const PRODUCT2_NAME = '羽捷銀';
+    // 配置：產品資訊（可自訂名稱和價格）
+    const PRODUCT1 = {
+      name: '橫空5號',
+      price: 470
+    };
+    const PRODUCT2 = {
+      name: '羽捷銀',
+      price: 470
+    };
+
+    // 配置：取貨地點選項（可自訂）
+    const PICKUP_OPTIONS = [
+      { value: 'tt-wd', text: '草屯羽球場 - 週二/週五晚上', color: 'orange' },
+      { value: 'tt-we', text: '草屯羽球場 - 週末', color: 'orange' },
+      { value: 'nk-wd', text: '南崗廠5F - 平日', color: 'orange' }
+    ];
+
+    // 配置：付款方式選項（可自訂）
+    const PAYMENT_OPTIONS = [
+      { value: 'cash', text: '現金' },
+      { value: 'transfer', text: '轉帳' }
+    ];
+
+    // 配置：匯款資訊（可自訂）
+    const BANK_INFO = {
+      bankName: '台灣銀行(004)',
+      accountName: '張O瑋',
+      accountNumber: '249004239709'
+    };
 
     function showElement(id) {
-      document.getElementById(id).classList.remove('hidden');
+      const el = document.getElementById(id);
+      el.style.display = '';
+      // 只對 modal 移除 hidden class，orderList/orderCardList 靠 CSS 控制響應式
+      if (id !== 'orderList' && id !== 'orderCardList') {
+        el.classList.remove('hidden');
+      }
     }
     function hideElement(id) {
-      document.getElementById(id).classList.add('hidden');
+      const el = document.getElementById(id);
+      el.style.display = 'none';
+      // 只對 modal 添加 hidden class
+      if (id !== 'orderList' && id !== 'orderCardList') {
+        el.classList.add('hidden');
+      }
+    }
+    
+    function toggleAnnouncement() {
+      const content = document.getElementById('announcementContent');
+      const toggle = document.getElementById('announcementToggle');
+      const svg = toggle.querySelector('svg');
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+      } else {
+        content.style.display = 'none';
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>';
+      }
+    }
+    
+    function showGlobalLoading() {
+      document.getElementById('globalLoading').classList.remove('hidden');
+    }
+    function hideGlobalLoading() {
+      document.getElementById('globalLoading').classList.add('hidden');
+    }
+    function showCompletionView(title = '完成！', message = '付款資訊已登記', iconType = 'success') {
+      document.getElementById('completionTitle').textContent = title;
+      document.getElementById('completionMessage').textContent = message;
+      
+      const iconDiv = document.getElementById('completionIcon');
+      if (iconType === 'cancelled') {
+        // 取消訂單的圖示（紅色）
+        iconDiv.className = 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4';
+        iconDiv.innerHTML = '<svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+      } else {
+        // 成功的圖示（綠色）
+        iconDiv.className = 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4';
+        iconDiv.innerHTML = '<svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+      }
+      
+      document.getElementById('completionView').classList.remove('hidden');
+    }
+    function hideCompletionView() {
+      document.getElementById('completionView').classList.add('hidden');
+      loadOrderList();
     }
 
     let orderData = [];
     let allOrderData = [];
-    let currentStatusFilter = 'all'; // 'all', 'unconfirmed', 'confirmed', 'paid', 'completed'
+    let currentStatusFilter = 'unconfirmed';
+    let currentSearchTerm = ''; // 'all', 'unconfirmed', 'confirmed', 'paid', 'completed'
+    let confirmModalResolve = null; // 用於 Promise
+    let orderConfirmPreviewResolve = null; // 用於訂單確認預覽
+
+    // 通用確認 Modal 函數
+    function showConfirmModal(message, title = '確認操作') {
+      return new Promise((resolve) => {
+        confirmModalResolve = resolve;
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+        showElement('confirmModal');
+      });
+    }
+
+    function closeConfirmModal(result) {
+      hideElement('confirmModal');
+      if (confirmModalResolve) {
+        confirmModalResolve(result);
+        confirmModalResolve = null;
+      }
+    }
+
+    function showAlertModal(message, title = '提示') {
+      document.getElementById('alertModalTitle').textContent = title;
+      document.getElementById('alertModalMessage').textContent = message;
+      showElement('alertModal');
+    }
+
+    function closeAlertModal() {
+      hideElement('alertModal');
+    }
+
+    // 訂單確認預覽 Modal 函數
+    function showOrderConfirmPreview(name, product1, product2, product1Label, product2Label) {
+      return new Promise((resolve) => {
+        orderConfirmPreviewResolve = resolve;
+        
+        // 填充預覽資料
+        document.getElementById('previewName').textContent = name;
+        document.getElementById('previewProduct1Label').textContent = product1Label;
+        document.getElementById('previewProduct2Label').textContent = product2Label;
+        document.getElementById('previewProduct1').textContent = product1;
+        document.getElementById('previewProduct2').textContent = product2;
+        
+        // 計算總金額
+        const p1Qty = parseInt(product1) || 0;
+        const p2Qty = parseInt(product2) || 0;
+        const total = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+        document.getElementById('previewTotal').textContent = total;
+        
+        showElement('orderConfirmPreviewModal');
+      });
+    }
+
+    function closeOrderConfirmPreview(result) {
+      hideElement('orderConfirmPreviewModal');
+      if (orderConfirmPreviewResolve) {
+        orderConfirmPreviewResolve(result);
+        orderConfirmPreviewResolve = null;
+      }
+    }
 
     // 更新登入狀態顯示
     function updateAuthStatus() {
       const authStatus = document.getElementById('authStatus');
       const addOrderBtn = document.getElementById('addOrderBtn');
+      
+      // 無論登入與否都顯示新增按鈕
+      if (addOrderBtn) addOrderBtn.style.display = 'block';
       
       if (isAuthenticated()) {
         const remaining = getRemainingAuthTime();
@@ -325,22 +809,19 @@
             </div>
           </div>
         `;
-        // 顯示新增按鈕
-        if (addOrderBtn) addOrderBtn.style.display = 'block';
       } else {
         authStatus.innerHTML = `
           <a href="../mp/login.html?redirect=/2026/bdorder/orderlist.html" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium inline-block">
             登入
           </a>
         `;
-        // 隱藏新增按鈕
-        if (addOrderBtn) addOrderBtn.style.display = 'none';
       }
     }
 
     // 登出
     async function handleLogout() {
-      if (confirm('確定要登出嗎？')) {
+      const confirmed = await showConfirmModal('確定要登出嗎？', '登出確認');
+      if (confirmed) {
         logout();
         updateAuthStatus();
         // 重新渲染列表（隱藏操作按鈕）
@@ -350,94 +831,344 @@
 
     function renderOrderList(data) {
       const tbody = document.getElementById('orderTableBody');
+      const cardList = document.getElementById('orderCardList');
       tbody.innerHTML = '';
-      // 過濾掉完全空白的行
-      const validData = data.filter(row => row['Id'] || row['Name'] || row['No'] || row['Phone']);
+      cardList.innerHTML = '';
+      // 過濾掉完全空白的行（但保留已取消的訂單）
+      const validData = data.filter(row => {
+        if (!(row['Id'] || row['Name'] || row['No'] || row['Phone'])) return false;
+        return true; // 不再過濾 cancelled 狀態
+      });
       
-      // 儲存完整資料
-      allOrderData = validData;
+      // 只在初始載入時儲存完整資料
+      if (!allOrderData || allOrderData.length === 0 || data.length > 0) {
+        allOrderData = validData;
+      }
       
       // 根據狀態篩選器過濾資料
-      const displayData = validData.filter(row => {
+      let displayData = validData.filter(row => {
         const status = row['Status'] || 'unconfirmed';
         if (currentStatusFilter === 'all') {
-          return true; // 顯示全部
-        } else {
-          return status === currentStatusFilter; // 顯示特定狀態
+          return true; // 全部：顯示所有訂單
+        } else if (currentStatusFilter === 'unconfirmed') {
+          return status === 'unconfirmed'; // 待確認：只顯示未確認的
+        } else if (currentStatusFilter === 'confirmed') {
+          return status !== 'unconfirmed'; // 已確認：顯示全部減去未確認的
         }
+        return false;
       });
+      
+      // 根據搜尋關鍵字過濾資料
+      if (currentSearchTerm) {
+        displayData = displayData.filter(row => {
+          const id = (row['Id'] || '').toString().toLowerCase();
+          const name = (row['Name'] || '').toLowerCase();
+          const phone = (row['Phone'] || '').toLowerCase();
+          
+          return id.includes(currentSearchTerm) || 
+                 name.includes(currentSearchTerm) || 
+                 phone.includes(currentSearchTerm);
+        });
+      }
       
       displayData.forEach((row, index) => {
         const id = row['Id'] || '';
         const name = row['Name'] || '';
-        const qty = row['Quantity'] || row['No'] || '';
-        const product1 = row['Product1'] || row['p1_Quantity'] || '';
-        const product2 = row['Product2'] || row['p2_Quantity'] || '';
-        const pickup = row['Pickup'] || row['取貨地點'] || '';
+        const originalQty = row['Quantity'] || row['No'] || ''; // 原始數量（從 order sheet）
+        const product1 = row['Product1'] || row['p1_Quantity'] || ''; // 來自 order_status
+        const product2 = row['Product2'] || row['p2_Quantity'] || ''; // 來自 order_status
+        const pickupValue = row['Pickup'] || row['取貨地點'] || '';
         const status = row['Status'] || 'unconfirmed';
-        const paymentMethod = row['PaymentMethod'] || row['付款方式'] || '';
+        const paymentMethodValue = row['PaymentMethod'] || row['付款方式'] || '';
         const bankCode = row['BankCode'] || row['帳號末五碼'] || '';
         let contact = row['Phone'] || '';
+        
+        // 轉換取貨地點 value 為顯示文字並設定顏色
+        const pickupOption = PICKUP_OPTIONS.find(opt => opt.value === pickupValue);
+        const pickup = pickupOption ? pickupOption.text : pickupValue;
+        
+        // 根據取貨地點設定顏色標籤（從配置讀取顏色）
+        let pickupDisplay = '';
+        if (pickupOption && pickupOption.color) {
+          const color = pickupOption.color;
+          pickupDisplay = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-${color}-100 text-${color}-800">${pickup}</span>`;
+        } else {
+          pickupDisplay = `<span class="text-gray-700">${pickup}</span>`;
+        }
+        
+        // 轉換付款方式 value 為顯示文字
+        const paymentOption = PAYMENT_OPTIONS.find(opt => opt.value === paymentMethodValue);
+        const paymentMethod = paymentOption ? paymentOption.text : paymentMethodValue;
         
         // 如果是09開頭的手機號碼，屏蔽後三碼
         if (contact.startsWith('09') && contact.length >= 10) {
           contact = contact.slice(0, -3) + '***';
         }
         
-        // 進度顯示（合併狀態和付款）
-        let progressText = '';
-        let progressClass = '';
-        if (status === 'completed') {
-          progressText = '已取貨';
-          progressClass = 'text-green-600';
-        } else if (status === 'paid') {
-          const paymentInfo = paymentMethod === 'cash' ? '現金' : `轉帳 ${bankCode}`;
-          progressText = `已付款 (${paymentInfo})`;
-          progressClass = 'text-blue-600';
-        } else if (status === 'confirmed') {
-          if (paymentMethod) {
-            const paymentInfo = paymentMethod === 'cash' ? '現金' : '轉帳';
-            progressText = `已確認（未付款，${paymentInfo}）`;
-          } else {
-            progressText = '已確認（未付款）';
-          }
-          progressClass = 'text-orange-600';
+        // 如果是取消狀態，僅顯示簡化內容
+        if (status === 'cancelled') {
+          tbody.innerHTML += `<tr class="bg-gray-100/50">
+            <td class="px-4 py-2 whitespace-nowrap text-center text-gray-600 text-base">${id}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-center text-gray-800 text-base">${name}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-center text-gray-700 text-base">${contact}</td>
+            <td colspan="6" class="px-4 py-2 text-center text-red-600 font-medium text-base">訂單已取消</td>
+          </tr>`;
+          
+          cardList.innerHTML += `
+            <div class="bg-gray-100/50 border border-gray-300 rounded-lg overflow-hidden mb-3">
+              <div class="bg-gray-400 px-3 py-2 flex justify-between items-center">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-white/80">#${id}</span>
+                    <span class="text-lg font-bold text-white">${name}</span>
+                    <span class="text-sm text-white/70">${contact}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 text-center">
+                <span class="text-red-600 font-medium text-base">訂單已取消</span>
+              </div>
+            </div>
+          `;
+          return; // forEach 中使用 return 跳過當前迭代
+        }
+        
+        // 訂單狀態
+        let orderStatusText = '';
+        let orderStatusClass = '';
+        if (status === 'unconfirmed') {
+          orderStatusText = '未確認';
+          orderStatusClass = 'text-red-600';
         } else {
-          progressText = '待確認';
-          progressClass = 'text-red-600';
+          orderStatusText = '已確認';
+          orderStatusClass = 'text-green-600';
+        }
+        
+        // 付款狀態
+        let paymentStatusText = '';
+        let paymentStatusClass = '';
+        if (status === 'unconfirmed') {
+          // 未確認訂單，付款狀態顯示為未填寫
+          paymentStatusText = '-';
+          paymentStatusClass = 'text-gray-400';
+        } else if (status === 'confirmed') {
+          // 已確認訂單但還沒填寫付款資訊
+          paymentStatusText = '未付款';
+          paymentStatusClass = 'text-gray-500';
+        } else if (status === 'paid') {
+          if (paymentMethodValue === 'transfer') {
+            paymentStatusText = `已轉帳，待確認(${bankCode})`;
+            paymentStatusClass = 'text-blue-600';
+          } else if (paymentMethodValue === 'cash') {
+            paymentStatusText = '現金面交';
+            paymentStatusClass = 'text-orange-600';
+          } else {
+            // 異常狀況：paid狀態但付款方式不明
+            paymentStatusText = '異常';
+            paymentStatusClass = 'text-red-600';
+          }
+        } else if (status === 'checked') {
+          paymentStatusText = '已付款';
+          paymentStatusClass = 'text-blue-600';
+        } else if (status === 'completed') {
+          paymentStatusText = '已交貨';
+          paymentStatusClass = 'text-gray-600';
         }
         
         // 操作按鈕（根據進度和登入狀態）
         let actionButtons = '';
         const isAdmin = isAuthenticated();
         
-        if (status === 'completed') {
-          actionButtons = '<span class="text-gray-400 text-sm">已完成</span>';
-        } else if (isAdmin) {
+        if (isAdmin) {
           // 管理員：顯示「管理」按鈕
-          actionButtons = `<button onclick="openManageModal('${id}')" class="px-4 py-1.5 text-sm rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium transition">管理</button>`;
+          actionButtons = `<button onclick="openManageModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium transition active:scale-95">管理</button>`;
         } else {
-          // 非管理員：只在待確認時顯示「確認」
+          // 非管理員：可以操作到已付款前
           if (status === 'unconfirmed') {
-            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-1.5 text-sm rounded-full bg-red-100 text-red-700 hover:bg-red-200 font-medium transition">確認</button>`;
+            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-red-100 text-red-700 hover:bg-red-200 font-medium transition active:scale-95">確認</button>`;
+          } else if (status === 'confirmed') {
+            // 檢查是否已有付款資料
+            const hasPaymentInfo = paymentMethodValue || bankCode;
+            const buttonText = hasPaymentInfo ? '更新' : '付款';
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 font-medium transition active:scale-95">${buttonText}</button>`;
+          } else if (status === 'paid') {
+            // 已付款狀態也可以更新資料（修改取貨地點或付款資訊）
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium transition active:scale-95">更新</button>`;
+          } else if (status === 'checked') {
+            // 付款完成狀態也可以更新資料
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-green-100 text-green-700 hover:bg-green-200 font-medium transition active:scale-95">更新</button>`;
           } else {
+            // 已完成，不顯示操作
             actionButtons = '<span class="text-gray-400 text-sm">-</span>';
           }
         }
         
-        const rowClass = status === 'completed' ? 'bg-gray-100/30' : status === 'paid' ? 'bg-blue-50/30' : status === 'confirmed' ? 'bg-green-50/30' : '';
+        const rowClass = status === 'completed' ? 'bg-gray-100/30' : status === 'checked' ? 'bg-green-50/30' : status === 'paid' ? 'bg-blue-50/30' : status === 'confirmed' ? 'bg-green-50/30' : '';
+        
+        // Product card 顯示 order_status 的數量（product1, product2）
+        // 若沒資料則顯示問號
+        const displayProduct1 = (product1 === '' || product1 === null || product1 === undefined) ? '?' : product1;
+        const displayProduct2 = (product2 === '' || product2 === null || product2 === undefined) ? '?' : product2;
+        
+        // 計算總金額（僅在已確認、已付款、付款完成、已取貨狀態顯示）
+        let totalAmount = '';
+        if (status === 'confirmed' || status === 'paid' || status === 'checked' || status === 'completed') {
+          const p1Qty = parseInt(product1) || 0;
+          const p2Qty = parseInt(product2) || 0;
+          const total = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+          totalAmount = `<span class="font-semibold text-gray-800">$${total}</span>`;
+        } else {
+          totalAmount = '<span class="text-red-600 text-sm">未確認</span>';
+        }
         
         tbody.innerHTML += `<tr class="${rowClass}">
-          <td class="px-4 py-2 whitespace-nowrap text-gray-600">${id}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-800">${name}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700">${qty}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700">${product1}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700">${product2}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700">${pickup}</td>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700">${contact}</td>
-          <td class="px-4 py-2 whitespace-nowrap ${progressClass} text-sm">${progressText}</td>
-          <td class="px-4 py-2 whitespace-nowrap">${actionButtons}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-gray-600 text-base">${id}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-gray-800 text-base">${name}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-gray-700 text-base">${contact}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-gray-700 text-base">${displayProduct1}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-gray-700 text-base">${displayProduct2}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center text-base">${totalAmount}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center">${pickupDisplay}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center ${paymentStatusClass} text-base">${paymentStatusText}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-center">${actionButtons}</td>
         </tr>`;
+        
+        // 產生手機版卡片
+        const cardClass = status === 'completed' ? 'bg-gray-100/50' : status === 'checked' ? 'bg-green-50/50' : status === 'paid' ? 'bg-blue-50/50' : status === 'confirmed' ? 'bg-green-50/50' : 'bg-white';
+        
+        cardList.innerHTML += `
+          <div class="${cardClass} border border-gray-500 rounded-lg overflow-hidden mb-3">
+            <!-- 頂部：姓名電話 + 操作按鈕 -->
+            <div class="bg-reflected-breeze px-3 py-2 flex justify-between items-center border-b border-reflected-breeze">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-semibold text-white/80">#${id}</span>
+                  <span class="text-lg font-bold text-white">${name}</span>
+                  <span class="text-sm text-white/70">${contact}</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                ${actionButtons}
+              </div>
+            </div>
+            
+            <!-- 底部：根據狀態調整排版 -->
+            ${status === 'unconfirmed' ? `
+            <!-- 未確認：左右分欄 -->
+            <div class="p-2 flex gap-3">
+              <!-- 左側：產品 + 金額 -->
+              <div class="flex flex-col gap-1.5 min-w-[120px]">
+                <div class="bg-gray-100 border-gray-200 rounded-lg px-3 py-1.5 border">
+                  <div class="text-sm text-gray-700 font-medium flex justify-between items-center">
+                    <span>${PRODUCT1.name}</span>
+                    <span>x ${displayProduct1}</span>
+                  </div>
+                </div>
+                <div class="bg-gray-100 border-gray-200 rounded-lg px-3 py-1.5 border">
+                  <div class="text-sm text-gray-700 font-medium flex justify-between items-center">
+                    <span>${PRODUCT2.name}</span>
+                    <span>x ${displayProduct2}</span>
+                  </div>
+                </div>
+                
+                <!-- 金額 -->
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">金額</span>
+                    <span class="font-semibold text-gray-800">${totalAmount}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 右側：取貨 + 狀態 -->
+              <div class="flex flex-col gap-1.5 flex-1">
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">取貨地點</span>
+                    <span class="text-gray-800">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
+                  </div>
+                </div>
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">訂單狀態</span>
+                    <span class="${paymentStatusClass} font-medium">${paymentStatusText}</span>
+                  </div>
+                </div>
+                ${(() => {
+                  const note = row['Note'] || row['備註'] || '';
+                  if (note) {
+                    return `
+                    <div class="bg-yellow-50 rounded-lg px-3 py-1.5 border border-yellow-200">
+                      <div class="text-sm">
+                        <span class="text-gray-600 block mb-0.5">📝 備註</span>
+                        <span class="text-gray-800">${note}</span>
+                      </div>
+                    </div>`;
+                  }
+                  return '';
+                })()}
+              </div>
+            </div>
+            ` : `
+            <!-- 已確認：左右分欄 -->
+            <div class="p-2 flex gap-3">
+              <!-- 左側：產品 + 金額 -->
+              <div class="flex flex-col gap-1.5 min-w-[120px]">
+                <!-- 產品卡片 -->
+                <div class="bg-blue-100 border-blue-100 rounded-lg px-3 py-1.5 border">
+                  <div class="text-sm text-blue-700 font-medium flex justify-between items-center">
+                    <span>${PRODUCT1.name}</span>
+                    <span>x ${displayProduct1}</span>
+                  </div>
+                </div>
+                <div class="bg-purple-100 border-purple-200 rounded-lg px-3 py-1.5 border">
+                  <div class="text-sm text-purple-800 font-medium flex justify-between items-center">
+                    <span>${PRODUCT2.name}</span>
+                    <span>x ${displayProduct2}</span>
+                  </div>
+                </div>
+                
+                <!-- 金額 -->
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">金額</span>
+                    <span class="font-semibold text-gray-800">${totalAmount}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 右側：取貨 + 狀態 -->
+              <div class="flex flex-col gap-1.5 flex-1">
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">取貨地點</span>
+                    <span class="text-gray-800">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
+                  </div>
+                </div>
+                <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
+                  <div class="text-sm flex justify-between items-center">
+                    <span class="text-gray-600">訂單狀態</span>
+                    <span class="${paymentStatusClass} font-medium">${paymentStatusText}</span>
+                  </div>
+                </div>
+                ${(() => {
+                  const note = row['Note'] || row['備註'] || '';
+                  if (note) {
+                    return `
+                    <div class="bg-yellow-50 rounded-lg px-3 py-1.5 border border-yellow-200">
+                      <div class="text-sm">
+                        <span class="text-gray-600 block mb-0.5">📝 備註</span>
+                        <span class="text-gray-800">${note}</span>
+                      </div>
+                    </div>`;
+                  }
+                  return '';
+                })()}
+              </div>
+            </div>
+            `}
+          </div>
+        `;
       });
       
       // Store data globally for editing
@@ -447,37 +1178,29 @@
     function filterByStatus(status) {
       currentStatusFilter = status;
       
-      // 更新按鈕樣式
-      const buttonStyles = {
-        'all': 'px-3 py-1.5 text-sm rounded-full border-2 border-gray-400 bg-gray-100 text-gray-700 font-medium transition hover:shadow-md',
-        'unconfirmed': 'px-3 py-1.5 text-sm rounded-full border-2 border-red-300 bg-red-50 text-red-700 font-medium transition hover:shadow-md',
-        'confirmed': 'px-3 py-1.5 text-sm rounded-full border-2 border-orange-300 bg-orange-50 text-orange-700 font-medium transition hover:shadow-md',
-        'paid': 'px-3 py-1.5 text-sm rounded-full border-2 border-blue-300 bg-blue-50 text-blue-700 font-medium transition hover:shadow-md',
-        'completed': 'px-3 py-1.5 text-sm rounded-full border-2 border-green-300 bg-green-50 text-green-700 font-medium transition hover:shadow-md'
+      // 更新按鈕樣式：選中的用對應顏色，未選中的統一灰色
+      const activeStyles = {
+        'all': 'px-3 py-1.5 text-sm rounded-full bg-blue-600 text-white font-medium transition hover:bg-blue-700',
+        'unconfirmed': 'px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700',
+        'confirmed': 'px-3 py-1.5 text-sm rounded-full bg-orange-600 text-white font-medium transition hover:bg-orange-700'
       };
       
-      const inactiveStyles = {
-        'all': 'px-3 py-1.5 text-sm rounded-full border-2 border-gray-300 bg-white text-gray-500 transition hover:border-gray-400',
-        'unconfirmed': 'px-3 py-1.5 text-sm rounded-full border-2 border-red-200 bg-white text-red-600 transition hover:border-red-300',
-        'confirmed': 'px-3 py-1.5 text-sm rounded-full border-2 border-orange-200 bg-white text-orange-600 transition hover:border-orange-300',
-        'paid': 'px-3 py-1.5 text-sm rounded-full border-2 border-blue-200 bg-white text-blue-600 transition hover:border-blue-300',
-        'completed': 'px-3 py-1.5 text-sm rounded-full border-2 border-green-200 bg-white text-green-600 transition hover:border-green-300'
-      };
+      const inactiveStyle = 'px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300';
       
       const buttons = {
         'all': document.getElementById('filterAll'),
         'unconfirmed': document.getElementById('filterUnconfirmed'),
-        'confirmed': document.getElementById('filterConfirmed'),
-        'paid': document.getElementById('filterPaid'),
-        'completed': document.getElementById('filterCompleted')
+        'confirmed': document.getElementById('filterConfirmed')
       };
       
       // 設定所有按鈕樣式
       Object.keys(buttons).forEach(key => {
-        if (key === status) {
-          buttons[key].className = buttonStyles[key];
-        } else {
-          buttons[key].className = inactiveStyles[key];
+        if (buttons[key]) {
+          if (key === status) {
+            buttons[key].className = activeStyles[key];
+          } else {
+            buttons[key].className = inactiveStyle;
+          }
         }
       });
       
@@ -485,19 +1208,17 @@
       renderOrderList(allOrderData);
     }
 
+    function handleSearch() {
+      currentSearchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+      renderOrderList(allOrderData);
+    }
+
     function openEditModal(id) {
-      const row = allOrderData.find(r => r['Id'] == id);
-      if (!row) return;
-      
-      // 檢查進度
-      const status = row['Status'] || 'unconfirmed';
-      if (status !== 'unconfirmed') {
-        alert('此訂單已確認，無法再編輯！');
-        return;
-      }
-      
-      // 如果需要驗證，先開啟驗證 Modal
-      if (REQUIRE_PHONE_VERIFICATION) {
+      // 未登入且需要驗證時，先進行身份驗證
+      if (REQUIRE_PHONE_VERIFICATION && !isAuthenticated()) {
+        const row = allOrderData.find(r => r['Id'] == id);
+        if (!row) return;
+        
         document.getElementById('verifyOrderId').value = id;
         document.getElementById('verifyPhone').value = '';
         
@@ -513,27 +1234,181 @@
         document.getElementById('verifyPhoneDisplay').textContent = maskedPhone;
         
         showElement('verifyModal');
-      } else {
-        // 不需要驗證，直接開啟編輯 Modal
-        openEditModalDirectly(id);
+        return;
       }
+      
+      const row = allOrderData.find(r => r['Id'] == id);
+      if (!row) return;
+      
+      // 檢查進度
+      const status = row['Status'] || 'unconfirmed';
+      if (status !== 'unconfirmed') {
+        alert('此訂單已確認，無法再編輯！');
+        return;
+      }
+      
+      // 直接開啟編輯 Modal
+      openEditModalDirectly(id);
     }
 
     function openEditModalDirectly(id) {
       const row = allOrderData.find(r => r['Id'] == id);
       if (!row) return;
       
+      const originalQuantity = row['Quantity'] || row['No'] || '';
+      
       document.getElementById('editRowId').value = id;
       document.getElementById('editName').value = row['Name'] || '';
-      document.getElementById('editQuantity').value = row['Quantity'] || row['No'] || '';
-      document.getElementById('editProduct1').value = row['Product1'] || row['p1_Quantity'] || '';
-      document.getElementById('editProduct2').value = row['Product2'] || row['p2_Quantity'] || '';
-      document.getElementById('editPickup').value = row['Pickup'] || row['取貨地點'] || '';
+      document.getElementById('editQuantity').value = originalQuantity;
+      
+      // product1 和 product2 預設為 0（如果已有值則使用已有值）
+      const existingProduct1 = row['Product1'] || row['p1_Quantity'] || '';
+      const existingProduct2 = row['Product2'] || row['p2_Quantity'] || '';
+      document.getElementById('editProduct1').value = existingProduct1 !== '' ? existingProduct1 : '0';
+      document.getElementById('editProduct2').value = existingProduct2 !== '' ? existingProduct2 : '0';
+      
+      // 取貨地點保存在隱藏欄位（保持原值，不預設）
+      const existingPickup = row['Pickup'] || row['取貨地點'] || '';
+      document.getElementById('editPickup').value = existingPickup;
+      
+      // 計算並顯示總金額
+      updateEditModalTotal();
+      
       showElement('editModal');
+    }
+
+    function updateEditModalTotal() {
+      const p1Qty = parseInt(document.getElementById('editProduct1').value) || 0;
+      const p2Qty = parseInt(document.getElementById('editProduct2').value) || 0;
+      const total = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      document.getElementById('editTotalAmount').textContent = total;
+    }
+
+    function updateAddModalTotal() {
+      const p1Qty = parseInt(document.getElementById('addProduct1').value) || 0;
+      const p2Qty = parseInt(document.getElementById('addProduct2').value) || 0;
+      const total = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      document.getElementById('addTotalAmount').textContent = total;
     }
 
     function closeEditModal() {
       hideElement('editModal');
+    }
+
+    async function handleCancelOrder() {
+      const id = document.getElementById('editRowId').value;
+      const name = document.getElementById('editName').value;
+      
+      // 二次確認
+      const confirmed = await showConfirmModal(
+        `確定要取消「${name}」的訂單嗎？。`,
+        '取消訂購確認'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+      
+      // 顯示全屏 loading
+      showGlobalLoading();
+      
+      const cancelData = {
+        action: 'update',
+        id: id,
+        status: 'cancelled'
+      };
+      
+      console.log('取消訂單資料:', cancelData);
+      console.log('SCRIPT_URL:', SCRIPT_URL);
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cancelData)
+        });
+        
+        console.log('取消訂單請求已發送');
+        
+        // 延遲讓 Apps Script 有時間處理（增加到 3 秒）
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // 關閉 modal
+        closeEditModal();
+        
+        // 重新載入資料
+        console.log('開始重新載入訂單列表...');
+        await loadOrderList();
+        console.log('訂單列表載入完成');
+        
+        // 隱藏 loading 並顯示完成訊息
+        hideGlobalLoading();
+        showCompletionView('訂單已取消', '此訂單已從列表中移除', 'cancelled');
+        
+      } catch (error) {
+        console.error('Error:', error);
+        hideGlobalLoading();
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
+      }
+    }
+
+    async function handleCancelOrder() {
+      const id = document.getElementById('editRowId').value;
+      const name = document.getElementById('editName').value;
+      
+      // 二次確認
+      const confirmed = await showConfirmModal(
+        `確定要取消「${name}」的訂單嗎？\n取消後此訂單將不會顯示在列表中。`,
+        '取消訂購確認'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+      
+      // 顯示全屏 loading
+      showGlobalLoading();
+      
+      const cancelData = {
+        action: 'update',
+        id: id,
+        status: 'cancelled'
+      };
+      
+      console.log('取消訂單資料:', cancelData);
+      console.log('SCRIPT_URL:', SCRIPT_URL);
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cancelData)
+        });
+        
+        console.log('取消訂單請求已發送');
+        
+        // 延遲讓 Apps Script 有時間處理（增加到 3 秒）
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // 關閉 modal
+        closeEditModal();
+        
+        // 重新載入資料
+        console.log('開始重新載入訂單列表...');
+        await loadOrderList();
+        console.log('訂單列表載入完成');
+        
+        // 隱藏 loading 並顯示完成訊息
+        hideGlobalLoading();
+        showCompletionView('訂單已取消', '此訂單已從列表中移除', 'cancelled');
+        
+      } catch (error) {
+        console.error('Error:', error);
+        hideGlobalLoading();
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
+      }
     }
 
     function closeVerifyModal() {
@@ -543,6 +1418,11 @@
 
     function openAddModal() {
       document.getElementById('addForm').reset();
+      document.getElementById('addProduct1Label').textContent = `${PRODUCT1.name} ($${PRODUCT1.price})`;
+      document.getElementById('addProduct2Label').textContent = `${PRODUCT2.name} ($${PRODUCT2.price})`;
+      document.getElementById('addProduct1').value = '0';
+      document.getElementById('addProduct2').value = '0';
+      updateAddModalTotal();
       showElement('addModal');
     }
 
@@ -550,15 +1430,84 @@
       hideElement('addModal');
     }
 
-    function openPaymentModal(id) {
+    function openPaymentModal(id, skipVerification = false, confirmedData = null, fromConfirmFlow = false) {
+      // 未登入且需要驗證時，先進行身份驗證（除非 skipVerification 為 true）
+      if (!skipVerification && REQUIRE_PHONE_VERIFICATION && !isAuthenticated()) {
+        const row = allOrderData.find(r => r['Id'] == id);
+        if (!row) return;
+        
+        document.getElementById('verifyOrderId').value = id;
+        document.getElementById('verifyPhone').value = '';
+        
+        // 顯示訂購人資訊
+        const name = row['Name'] || '';
+        const phone = row['Phone'] || '';
+        let maskedPhone = phone;
+        if (phone.startsWith('09') && phone.length >= 10) {
+          maskedPhone = phone.slice(0, -3) + '***';
+        }
+        
+        document.getElementById('verifyName').textContent = name;
+        document.getElementById('verifyPhoneDisplay').textContent = maskedPhone;
+        
+        showElement('verifyModal');
+        return;
+      }
+      
       const row = allOrderData.find(r => r['Id'] == id);
       if (!row) return;
       
       document.getElementById('paymentOrderId').value = id;
       document.getElementById('paymentName').value = row['Name'] || '';
-      document.getElementById('paymentMethod').value = '';
-      document.getElementById('bankCode').value = '';
-      document.getElementById('bankCodeField').classList.add('hidden');
+      
+      // 載入現有的付款資料
+      const existingPaymentMethod = row['PaymentMethod'] || row['付款方式'] || '';
+      const existingBankCode = row['BankCode'] || row['帳號末五碼'] || '';
+      document.getElementById('paymentMethod').value = existingPaymentMethod;
+      document.getElementById('bankCode').value = existingBankCode;
+      
+      // 根據付款方式顯示/隱藏帳號末五碼欄位和匯款資訊
+      toggleBankCode();
+      
+      // 設置取消按鈕文字
+      const cancelBtn = document.getElementById('paymentCancelBtn');
+      if (fromConfirmFlow) {
+        cancelBtn.textContent = '稍後填寫';
+      } else {
+        cancelBtn.textContent = '取消';
+      }
+      
+      // 計算並顯示總金額
+      let product1, product2;
+      
+      // 如果有傳入剛確認的數據，優先使用（避免等待 CSV 更新）
+      if (confirmedData) {
+        product1 = confirmedData.product1;
+        product2 = confirmedData.product2;
+        console.log('付款 Modal - 使用剛確認的數據:', { product1, product2 });
+      } else {
+        product1 = row['Product1'] || row['p1_Quantity'] || '';
+        product2 = row['Product2'] || row['p2_Quantity'] || '';
+        console.log('付款 Modal - 使用 allOrderData:', { product1, product2 });
+      }
+      
+      console.log('付款 Modal - Product1:', product1, 'Product2:', product2);
+      console.log('付款 Modal - 完整 row 資料:', row);
+      const p1Qty = parseInt(product1) || 0;
+      const p2Qty = parseInt(product2) || 0;
+      console.log('付款 Modal - p1Qty:', p1Qty, 'p2Qty:', p2Qty);
+      const totalAmount = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      console.log('付款 Modal - 總金額:', totalAmount);
+      document.getElementById('paymentTotalAmount').textContent = totalAmount;
+      
+      // 設定取貨地點（保留原有值，不設預設值）
+      const existingPickup = row['Pickup'] || row['取貨地點'] || '';
+      document.getElementById('paymentPickup').value = existingPickup;
+      
+      // 設定備註（保留原有值或清空）
+      const existingNote = row['Note'] || row['備註'] || '';
+      document.getElementById('paymentNote').value = existingNote;
+      
       showElement('paymentModal');
     }
 
@@ -596,52 +1545,69 @@
     }
 
     function openManageModal(id) {
+      // 管理功能需要登入
+      if (!isAuthenticated()) {
+        alert('請先登入以使用管理功能');
+        return;
+      }
+      
       const row = allOrderData.find(r => r['Id'] == id);
       if (!row) return;
       
-      const status = row['Status'] || 'unconfirmed';
-      const name = row['Name'] || '';
-      const content = document.getElementById('manageContent');
+      // 設定訂單 ID
+      document.getElementById('manageOrderId').value = id;
       
-      // 根據狀態顯示不同的管理選項
-      let buttons = `<p class="text-gray-600 mb-4">訂單：<span class="font-medium">${name}</span></p>`;
+      // 基本資訊
+      document.getElementById('manageName').value = row['Name'] || '';
+      document.getElementById('managePhone').value = row['Phone'] || '';
       
-      if (status === 'unconfirmed') {
-        buttons += `
-          <button onclick="closeManageModal(); openEditModal('${id}')" class="w-full mb-2 px-4 py-3 bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition text-left">
-            <span class="font-medium">編輯並確認訂單</span>
-            <p class="text-sm text-white/80 mt-1">修改訂單資料並確認</p>
-          </button>
-          <button onclick="closeManageModal(); openDeliveryModal('${id}')" class="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-left">
-            <span class="font-medium">直接確認交貨</span>
-            <p class="text-sm text-white/80 mt-1">跳過流程，直接標記為已取貨</p>
-          </button>
-        `;
-      } else if (status === 'confirmed') {
-        buttons += `
-          <button onclick="closeManageModal(); openPaymentModal('${id}')" class="w-full mb-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-left">
-            <span class="font-medium">登記付款資訊</span>
-            <p class="text-sm text-white/80 mt-1">記錄付款方式和銀行帳號</p>
-          </button>
-          <button onclick="closeManageModal(); openDeliveryModal('${id}')" class="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-left">
-            <span class="font-medium">確認交貨</span>
-            <p class="text-sm text-white/80 mt-1">標記為已取貨並完成所有資料</p>
-          </button>
-        `;
+      // 產品數量
+      document.getElementById('manageProduct1Label').textContent = PRODUCT1.name;
+      document.getElementById('manageProduct2Label').textContent = PRODUCT2.name;
+      document.getElementById('manageProduct1').value = row['Product1'] || row['p1_Quantity'] || 0;
+      document.getElementById('manageProduct2').value = row['Product2'] || row['p2_Quantity'] || 0;
+      updateManageTotalAmount();
+      
+      // 付款資訊
+      const paymentMethodSelect = document.getElementById('managePaymentMethod');
+      paymentMethodSelect.innerHTML = '<option value="">請選擇</option>';
+      PAYMENT_OPTIONS.forEach(opt => {
+        paymentMethodSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
+      });
+      
+      const existingPaymentMethod = row['PaymentMethod'] || row['付款方式'] || '';
+      document.getElementById('managePaymentMethod').value = existingPaymentMethod;
+      document.getElementById('manageBankCode').value = row['BankCode'] || row['帳號末五碼'] || '';
+      toggleManageBankCode();
+      
+      // 取貨地點
+      const pickupSelect = document.getElementById('managePickup');
+      pickupSelect.innerHTML = '<option value="">請選擇</option>';
+      PICKUP_OPTIONS.forEach(opt => {
+        pickupSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
+      });
+      document.getElementById('managePickup').value = row['Pickup'] || row['取貨地點'] || '';
+      
+      // 付款狀態和交貨狀態
+      const status = row['Status'] || row['狀態'] || '';
+      const paymentStatusSelect = document.getElementById('managePaymentStatus');
+      const deliveryStatusSelect = document.getElementById('manageDeliveryStatus');
+      
+      // 根據狀態設定選項
+      if (status === 'completed') {
+        paymentStatusSelect.value = 'paid';
+        deliveryStatusSelect.value = 'delivered';
+      } else if (status === 'checked') {
+        paymentStatusSelect.value = 'paid';
+        deliveryStatusSelect.value = '';
       } else if (status === 'paid') {
-        buttons += `
-          <button onclick="closeManageModal(); openPaymentModal('${id}')" class="w-full mb-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-left">
-            <span class="font-medium">修改付款資訊</span>
-            <p class="text-sm text-white/80 mt-1">更新付款方式或銀行帳號</p>
-          </button>
-          <button onclick="closeManageModal(); openDeliveryModal('${id}')" class="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-left">
-            <span class="font-medium">確認交貨</span>
-            <p class="text-sm text-white/80 mt-1">標記為已取貨並完成所有資料</p>
-          </button>
-        `;
+        paymentStatusSelect.value = '';
+        deliveryStatusSelect.value = '';
+      } else {
+        paymentStatusSelect.value = '';
+        deliveryStatusSelect.value = '';
       }
       
-      content.innerHTML = buttons;
       showElement('manageModal');
     }
 
@@ -665,6 +1631,31 @@
       const method = document.getElementById('paymentMethod').value;
       const bankCodeField = document.getElementById('bankCodeField');
       const bankCodeInput = document.getElementById('bankCode');
+      const bankInfoField = document.getElementById('bankInfoField');
+      
+      if (method === 'transfer') {
+        bankCodeField.classList.remove('hidden');
+        bankCodeInput.required = true;
+        
+        // 顯示匯款資訊
+        bankInfoField.classList.remove('hidden');
+        document.getElementById('displayBankName').textContent = BANK_INFO.bankName;
+        document.getElementById('displayAccountName').textContent = BANK_INFO.accountName;
+        document.getElementById('displayAccountNumber').textContent = BANK_INFO.accountNumber;
+      } else {
+        bankCodeField.classList.add('hidden');
+        bankCodeInput.required = false;
+        bankCodeInput.value = '';
+        
+        // 隱藏匯款資訊
+        bankInfoField.classList.add('hidden');
+      }
+    }
+
+    function toggleManageBankCode() {
+      const method = document.getElementById('managePaymentMethod').value;
+      const bankCodeField = document.getElementById('manageBankCodeField');
+      const bankCodeInput = document.getElementById('manageBankCode');
       
       if (method === 'transfer') {
         bankCodeField.classList.remove('hidden');
@@ -676,8 +1667,16 @@
       }
     }
 
-    function markAsCompleted(id) {
-      if (confirm('確定要確認已交貨嗎？')) {
+    function updateManageTotalAmount() {
+      const p1 = parseInt(document.getElementById('manageProduct1').value) || 0;
+      const p2 = parseInt(document.getElementById('manageProduct2').value) || 0;
+      const total = (p1 * PRODUCT1.price) + (p2 * PRODUCT2.price);
+      document.getElementById('manageTotalAmount').textContent = total;
+    }
+
+    async function markAsCompleted(id) {
+      const confirmed = await showConfirmModal('確定要確認已交貨嗎？', '確認交貨');
+      if (confirmed) {
         const completeData = {
           action: 'complete',
           id: id,
@@ -692,8 +1691,9 @@
       }
     }
 
-    function confirmDelivery(id) {
-      if (confirm('確定已交貨給客戶嗎？')) {
+    async function confirmDelivery(id) {
+      const confirmed = await showConfirmModal('確定已交貨給客戶嗎？', '確認交貨');
+      if (confirmed) {
         const deliveryData = {
           action: 'delivery',
           id: id,
@@ -705,6 +1705,80 @@
         alert('已確認交貨！\n注意：需要設定 Apps Script 連接後才能實際更新。');
         // 重新載入資料
         // loadOrderList();
+      }
+    }
+
+    function openConfirmPaymentModal(id) {
+      const row = allOrderData.find(r => r['Id'] == id);
+      if (!row) return;
+      
+      const name = row['Name'] || '';
+      const p1Qty = parseInt(row['Product1Confirmed'] || row['Product1'] || 0);
+      const p2Qty = parseInt(row['Product2Confirmed'] || row['Product2'] || 0);
+      const totalAmount = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      const paymentMethod = row['PaymentMethod'] || row['付款方式'] || '';
+      const bankCode = row['BankCode'] || row['帳號末五碼'] || '';
+      
+      document.getElementById('confirmPaymentOrderId').value = id;
+      document.getElementById('confirmPaymentName').value = name;
+      document.getElementById('confirmPaymentTotalAmount').textContent = totalAmount;
+      
+      // 顯示付款方式
+      let methodText = '';
+      if (paymentMethod === 'cash') {
+        methodText = '現金面交';
+      } else if (paymentMethod === 'transfer') {
+        methodText = '銀行轉帳';
+      }
+      document.getElementById('confirmPaymentMethod').value = methodText;
+      
+      // 顯示帳號末五碼（如果是轉帳）
+      if (paymentMethod === 'transfer' && bankCode) {
+        document.getElementById('confirmPaymentBankCodeField').classList.remove('hidden');
+        document.getElementById('confirmPaymentBankCode').value = bankCode;
+      } else {
+        document.getElementById('confirmPaymentBankCodeField').classList.add('hidden');
+      }
+      
+      closeManageModal();
+      document.getElementById('confirmPaymentModal').classList.remove('hidden');
+    }
+    
+    function closeConfirmPaymentModal() {
+      document.getElementById('confirmPaymentModal').classList.add('hidden');
+    }
+    
+    async function submitConfirmPayment() {
+      const id = document.getElementById('confirmPaymentOrderId').value;
+      
+      closeConfirmPaymentModal();
+      showGlobalLoading();
+      
+      const paymentData = {
+        action: 'confirmPayment',
+        id: id,
+        status: 'checked'
+      };
+      
+      console.log('確認付款:', paymentData);
+      
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(paymentData)
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        hideGlobalLoading();
+        showCompletionView();
+        
+      } catch (error) {
+        console.error('Error:', error);
+        hideGlobalLoading();
+        alert('連線錯誤，請稍後再試');
       }
     }
 
@@ -727,11 +1801,45 @@
       const lastThree = fullPhone.slice(-3);
       
       if (inputPhone === lastThree) {
-        // 驗證成功，關閉驗證 Modal 並開啟編輯 Modal
+        // 驗證成功，關閉驗證 Modal 並根據狀態開啟相應的 Modal
         closeVerifyModal();
-        openEditModalDirectly(id);
+        
+        // 根據訂單狀態決定下一步操作
+        const status = row['Status'] || 'unconfirmed';
+        if (status === 'unconfirmed') {
+          // 待確認狀態：開啟編輯確認Modal
+          openEditModalDirectly(id);
+        } else if (status === 'confirmed' || status === 'paid' || status === 'checked') {
+          // 已確認或已付款狀態：開啟付款Modal（可更新付款資訊和取貨地點）
+          const row = allOrderData.find(r => r['Id'] == id);
+          if (row) {
+            document.getElementById('paymentOrderId').value = id;
+            document.getElementById('paymentName').value = row['Name'] || '';
+            
+            // 填入現有的付款資料
+            const existingPaymentMethod = row['PaymentMethod'] || row['付款方式'] || '';
+            const existingBankCode = row['BankCode'] || row['帳號末五碼'] || '';
+            document.getElementById('paymentMethod').value = existingPaymentMethod;
+            document.getElementById('bankCode').value = existingBankCode;
+            
+            // 根據付款方式顯示/隱藏帳號末五碼欄位
+            if (existingPaymentMethod === 'transfer') {
+              document.getElementById('bankCodeField').classList.remove('hidden');
+            } else {
+              document.getElementById('bankCodeField').classList.add('hidden');
+            }
+            
+            // 設定取貨地點
+            const existingPickup = row['Pickup'] || row['取貨地點'] || '';
+            document.getElementById('paymentPickup').value = existingPickup || (PICKUP_OPTIONS.length > 0 ? PICKUP_OPTIONS[0].value : '');
+            
+            showElement('paymentModal');
+          }
+        } else if (status === 'completed') {
+          alert('此訂單已完成，無法再修改！');
+        }
       } else {
-        alert('手機末三碼不正確，請重新輸入！');
+        alert('聯絡號碼末三碼不正確，請重新輸入！');
         document.getElementById('verifyPhone').value = '';
         document.getElementById('verifyPhone').focus();
       }
@@ -741,35 +1849,84 @@
       e.preventDefault();
       
       const id = document.getElementById('editRowId').value;
+      const product1 = document.getElementById('editProduct1').value;
+      const product2 = document.getElementById('editProduct2').value;
+      const pickup = document.getElementById('editPickup').value;
+      const name = document.getElementById('editName').value;
+      
+      // 驗證必填欄位：兩個欄位都必須有值
+      if (product1 === '' || product1 === null || product1 === undefined || 
+          product2 === '' || product2 === null || product2 === undefined) {
+        showAlertModal('請填寫完整資料：\n- ' + PRODUCT1.name + ' 數量\n- ' + PRODUCT2.name + ' 數量', '資料不完整');
+        return;
+      }
+      
+      // 驗證總金額不為 0
+      const p1Qty = parseInt(product1) || 0;
+      const p2Qty = parseInt(product2) || 0;
+      const totalAmount = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      
+      if (totalAmount === 0) {
+        showAlertModal('訂單金額不能為 $0\n請至少訂購一個產品', '金額錯誤');
+        return;
+      }
+      
+      // 顯示確認預覽 Modal
+      const confirmed = await showOrderConfirmPreview(
+        name,
+        product1,
+        product2,
+        PRODUCT1.name,
+        PRODUCT2.name
+      );
+      
+      if (!confirmed) {
+        // 用戶選擇返回修改
+        return;
+      }
+      
+      // 顯示全屏 loading
+      showGlobalLoading();
       
       const updateData = {
         action: 'update',
         id: id,
         quantity: document.getElementById('editQuantity').value,
-        product1: document.getElementById('editProduct1').value,
-        product2: document.getElementById('editProduct2').value,
-        pickup: document.getElementById('editPickup').value,
+        product1: product1,
+        product2: product2,
+        pickup: pickup,
         status: 'confirmed' // 送出後變成已確認狀態
       };
       
+      console.log('更新訂單資料:', updateData);
+      
       try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData)
         });
         
-        const result = await response.json();
+        // 延遲讓 Apps Script 有時間處理並更新 CSV（增加到 3 秒）
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
-        if (result.success) {
-          alert('訂單已確認！');
-          closeEditModal();
-          loadOrderList();
-        } else {
-          alert('更新失敗：' + (result.message || '未知錯誤'));
-        }
+        // 關閉確認modal
+        closeEditModal();
+        
+        // 重新載入資料（在背景執行）
+        loadOrderList();
+        
+        // 隱藏loading並直接打開付款modal，使用剛確認的數據
+        hideGlobalLoading();
+        openPaymentModal(id, true, {
+          product1: product1,
+          product2: product2
+        }, true); // 第四個參數為 true 表示從確認流程來的
+        
       } catch (error) {
         console.error('Error:', error);
+        hideGlobalLoading();
         alert('連線錯誤，請稍後再試');
       }
     });
@@ -777,32 +1934,116 @@
     document.getElementById('addForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
+      const name = document.getElementById('addName').value;
+      const phone = document.getElementById('addPhone').value;
+      const product1 = document.getElementById('addProduct1').value;
+      const product2 = document.getElementById('addProduct2').value;
+      
+      // 驗證必填欄位：兩個產品數量都必須有值
+      if (product1 === '' || product1 === null || product1 === undefined || 
+          product2 === '' || product2 === null || product2 === undefined) {
+        showAlertModal('請填寫完整資料：\n- ' + PRODUCT1.name + ' 數量\n- ' + PRODUCT2.name + ' 數量', '資料不完整');
+        return;
+      }
+      
+      // 驗證總金額不為 0
+      const p1Qty = parseInt(product1) || 0;
+      const p2Qty = parseInt(product2) || 0;
+      const totalAmount = (p1Qty * PRODUCT1.price) + (p2Qty * PRODUCT2.price);
+      
+      if (totalAmount === 0) {
+        showAlertModal('訂單金額不能為 $0\n請至少訂購一個產品', '訂單錯誤');
+        return;
+      }
+      
+      // 顯示確認預覽 Modal
+      const confirmed = await showOrderConfirmPreview(
+        name,
+        product1,
+        product2,
+        PRODUCT1.name,
+        PRODUCT2.name
+      );
+      
+      if (!confirmed) {
+        // 用戶選擇返回修改
+        return;
+      }
+      
+      // 顯示全屏 loading
+      showGlobalLoading();
+      
+      const totalQty = parseInt(product1 || 0) + parseInt(product2 || 0);
+      
       const addData = {
         action: 'add',
-        name: document.getElementById('addName').value,
-        phone: document.getElementById('addPhone').value,
-        quantity: document.getElementById('addQuantity').value,
-        status: 'unconfirmed' // 新增訂單預設為未確認
+        name: name,
+        phone: phone,
+        quantity: totalQty.toString(),
+        product1: product1,
+        product2: product2,
+        status: 'confirmed' // 新增訂單直接設為已確認狀態
       };
       
+      console.log('新增訂單資料:', addData);
+      console.log('Apps Script URL:', SCRIPT_URL);
+      
       try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(addData)
         });
         
-        const result = await response.json();
+        console.log('請求已發送，等待處理...');
         
-        if (result.success) {
-          alert('訂單已新增！');
-          closeAddModal();
-          loadOrderList();
-        } else {
-          alert('新增失敗：' + (result.message || '未知錯誤'));
+        // 延遲3秒讓 Apps Script 有時間處理並寫入 Sheet
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // 關閉新增modal
+        closeAddModal();
+        
+        // 重新載入資料
+        console.log('開始重新載入訂單資料...');
+        await loadOrderList();
+        console.log('訂單資料載入完成，allOrderData 長度:', allOrderData.length);
+        
+        // 找到最新的訂單（最大的 ID）
+        let maxId = 0;
+        let newOrder = null;
+        for (const row of allOrderData) {
+          const id = parseInt(row['Id']);
+          if (id > maxId) {
+            maxId = id;
+            newOrder = row;
+          }
         }
+        
+        console.log('找到最新訂單 ID:', maxId);
+        console.log('新訂單資料:', newOrder);
+        console.log('新訂單名字:', newOrder ? newOrder['Name'] : 'null');
+        console.log('輸入的名字:', name);
+        
+        // 隱藏loading並直接打開付款modal，使用剛確認的數據
+        hideGlobalLoading();
+        
+        if (newOrder && newOrder['Name'] === name) {
+          console.log('名字相符，打開付款 modal');
+          // 確認是剛新增的訂單（名字相符），打開付款 modal
+          openPaymentModal(maxId, true, {
+            product1: product1,
+            product2: product2
+          }, true); // 第四個參數為 true 表示從確認流程來的
+        } else {
+          console.log('名字不符或找不到訂單，顯示完成訊息');
+          // 如果找不到或不確定，顯示完成訊息
+          showCompletionView('訂單新增成功！', '訂單已新增並確認');
+        }
+        
       } catch (error) {
         console.error('Error:', error);
+        hideGlobalLoading();
         alert('連線錯誤，請稍後再試');
       }
     });
@@ -813,39 +2054,59 @@
       const id = document.getElementById('paymentOrderId').value;
       const method = document.getElementById('paymentMethod').value;
       const bankCode = method === 'transfer' ? document.getElementById('bankCode').value : '';
+      const pickup = document.getElementById('paymentPickup').value;
+      const note = document.getElementById('paymentNote').value.trim();
+      
+      // 顯示全屏 loading
+      showGlobalLoading();
       
       const paymentData = {
         action: 'payment',
         id: id,
         paymentMethod: method,
         bankCode: bankCode,
-        status: 'paid' // 付款後狀態變為已付款
+        pickup: pickup,
+        note: note,
+        status: 'paid' // 填寫付款資訊後變成已付款狀態
       };
       
+      console.log('登記付款資料:', paymentData);
+      
       try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(paymentData)
         });
         
-        const result = await response.json();
+        // 延遲一下讓 Apps Script 有時間處理
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        if (result.success) {
-          alert('付款資訊已登記！');
-          closePaymentModal();
-          loadOrderList();
-        } else {
-          alert('登記失敗：' + (result.message || '未知錯誤'));
-        }
+        // 關閉付款modal
+        closePaymentModal();
+        
+        // 隱藏loading並顯示完成view
+        hideGlobalLoading();
+        showCompletionView();
+        
       } catch (error) {
         console.error('Error:', error);
+        hideGlobalLoading();
         alert('連線錯誤，請稍後再試');
       }
     });
 
     document.getElementById('deliveryForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      
+      // 禁用按鈕並顯示 loading
+      submitBtn.disabled = true;
+      submitBtn.textContent = '處理中...';
+      submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
       
       const id = document.getElementById('deliveryOrderId').value;
       const method = document.getElementById('deliveryPaymentMethod').value;
@@ -863,65 +2124,319 @@
         status: 'completed' // 交貨後直接完成
       };
       
+      console.log('確認交貨資料:', deliveryData);
+      
       try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(deliveryData)
         });
         
-        const result = await response.json();
+        // 延遲一下讓 Apps Script 有時間處理
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        if (result.success) {
-          alert('已確認交貨！');
-          closeDeliveryModal();
-          loadOrderList();
-        } else {
-          alert('交貨確認失敗：' + (result.message || '未知錯誤'));
-        }
+        alert('已確認交貨！');
+        closeDeliveryModal();
+        loadOrderList();
       } catch (error) {
         console.error('Error:', error);
+        alert('連線錯誤，請稍後再試');
+      } finally {
+        // 恢復按鈕狀態
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+
+    // 確認付款表單提交
+    document.getElementById('confirmPaymentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      await submitConfirmPayment();
+    });
+
+    // 管理表單提交（更新資料）
+    document.getElementById('manageForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      closeManageModal();
+      showGlobalLoading();
+      
+      const id = document.getElementById('manageOrderId').value;
+      const product1 = document.getElementById('manageProduct1').value;
+      const product2 = document.getElementById('manageProduct2').value;
+      const paymentMethod = document.getElementById('managePaymentMethod').value;
+      const bankCode = document.getElementById('manageBankCode').value;
+      const pickup = document.getElementById('managePickup').value;
+      const paymentStatus = document.getElementById('managePaymentStatus').value;
+      const deliveryStatus = document.getElementById('manageDeliveryStatus').value;
+      
+      // 根據選擇決定狀態
+      let status;
+      if (deliveryStatus === 'delivered') {
+        status = 'completed';
+      } else if (paymentStatus === 'paid') {
+        status = 'checked';
+      } else if (paymentMethod) {
+        status = 'paid';
+      } else if (product1 || product2) {
+        status = 'confirmed';
+      } else {
+        status = 'unconfirmed';
+      }
+      
+      const updateData = {
+        action: 'update',
+        id: id,
+        product1: product1,
+        product2: product2,
+        paymentMethod: paymentMethod,
+        bankCode: bankCode,
+        pickup: pickup,
+        status: status
+      };
+      
+      console.log('更新訂單資料:', updateData, '狀態:', status);
+      
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        hideGlobalLoading();
+        showCompletionView();
+        
+      } catch (error) {
+        console.error('Error:', error);
+        hideGlobalLoading();
         alert('連線錯誤，請稍後再試');
       }
     });
 
+    // 管理modal的確認付款按鈕
+    // 驗證表單提交
 
-    function loadOrderList() {
-      Papa.parse(CSV_URL, {
+
+    function loadAnnouncements() {
+      const timestamp = new Date().getTime();
+      const announcementUrl = `${ANNOUNCEMENT_CSV_URL}&_=${timestamp}`;
+      
+      Papa.parse(announcementUrl, {
         download: true,
         header: true,
-        skipEmptyLines: false,
-        complete: function(results) {
-          hideElement('loading');
-          if (results.data && results.data.length > 0) {
-            showElement('orderList');
-            renderOrderList(results.data);
-          } else {
-            document.getElementById('orderList').innerHTML = '<div class="text-gray-500 text-center py-8">查無訂購資料</div>';
-            showElement('orderList');
+        skipEmptyLines: true,
+        complete: (results) => {
+          const announcements = results.data.filter(row => 
+            (row.topic || row.title || row.content) && // 至少有一個欄位有內容
+            (row.topic?.trim() || row.title?.trim() || row.content?.trim())
+          );
+          
+          const contentDiv = document.getElementById('announcementContent');
+          
+          if (announcements.length === 0) {
+            contentDiv.innerHTML = '<p class="text-gray-500">目前無公告</p>';
+            return;
           }
+          
+          let html = '';
+          
+          // 讀取分組資訊
+          const groups = [];
+          let currentGroup = null;
+          
+          announcements.forEach(row => {
+            const groupTitle = row.topic || row['Topic'] || ''; // 支援大小寫
+            const label = row.title || row['Title'] || '';
+            const value = row.content || row['Content'] || '';
+            
+            // 如果有分組標題，開始新分組
+            if (groupTitle && groupTitle.trim()) {
+              if (currentGroup) {
+                groups.push(currentGroup);
+              }
+              currentGroup = {
+                title: groupTitle.trim() === '-' ? '' : groupTitle.trim(), // '-' 表示只要分隔線，不顯示標題
+                items: []
+              };
+            }
+            
+            // 如果有內容，加入當前分組
+            if (label && value && currentGroup) {
+              currentGroup.items.push({
+                label: label.trim(),
+                value: value.trim()
+              });
+            }
+          });
+          
+          // 加入最後一個分組
+          if (currentGroup && currentGroup.items.length > 0) {
+            groups.push(currentGroup);
+          }
+          
+          // 渲染分組
+          groups.forEach((group, index) => {
+            // 分組標題（如果有的話）- 在區塊外
+            if (group.title) {
+              html += `<div class="text-base font-bold text-blue-800 mt-1.5 mb-0.5">${group.title}</div>`;
+            }
+            
+            // 分組容器
+            html += `<div class="space-y-0.5 bg-white/70 p-1.5 rounded-lg">`;
+            
+            // 分組項目
+            group.items.forEach(item => {
+              html += `
+                <div class="leading-tight" style="display: grid; grid-template-columns: auto auto 1fr; gap: 0.125rem; align-items: start;">
+                  <span class="text-blue-600 font-bold flex-shrink-0">•</span>
+                  <span class="font-semibold text-gray-800">${item.label}：</span>
+                  <span class="whitespace-pre-wrap break-words text-gray-700">${item.value}</span>
+                </div>
+              `;
+            });
+            
+            html += '</div>';
+            
+            // 在區塊之間加分隔線（除了最後一組）
+            if (index < groups.length - 1) {
+              html += `<div class="my-1.5 border-t border-blue-200"></div>`;
+            }
+          });
+          
+          contentDiv.innerHTML = html || '<p class="text-gray-500">目前無公告</p>';
         },
-        error: function() {
-          hideElement('loading');
-          document.getElementById('orderList').innerHTML = '<div class="text-red-500 text-center py-8">載入失敗，請稍後再試</div>';
-          showElement('orderList');
+        error: (error) => {
+          console.error('載入公告失敗:', error);
+          document.getElementById('announcementContent').innerHTML = '<p class="text-red-500">載入公告失敗</p>';
         }
+      });
+    }
+
+    function loadOrderList() {
+      console.log('重新載入訂單資料...', new Date().toLocaleTimeString());
+      
+      // 加上時間戳記避免瀏覽器快取
+      const timestamp = new Date().getTime();
+      const orderUrl = `${ORDER_CSV_URL}&_=${timestamp}`;
+      const statusUrl = `${STATUS_CSV_URL}&_=${timestamp}`;
+      
+      // 同時載入兩個 sheet 的資料，並返回 Promise
+      return Promise.all([
+        new Promise((resolve, reject) => {
+          Papa.parse(orderUrl, {
+            download: true,
+            header: true,
+            skipEmptyLines: false,
+            complete: (results) => resolve(results.data),
+            error: reject
+          });
+        }),
+        new Promise((resolve, reject) => {
+          Papa.parse(statusUrl, {
+            download: true,
+            header: true,
+            skipEmptyLines: false,
+            complete: (results) => resolve(results.data),
+            error: reject
+          });
+        })
+      ]).then(([orderData, statusData]) => {
+        console.log('Order sheet:', orderData.length, '筆');
+        console.log('Status sheet:', statusData.length, '筆');
+        console.log('Status sheet 範例資料:', statusData[0]);
+        
+        // 合併兩個 sheet 的資料（用 Id 作為 key）
+        const mergedData = orderData.map(order => {
+          const status = statusData.find(s => s.Id == order.Id) || {};
+          console.log(`訂單 ${order.Id} - 找到的 status:`, status);
+          return {
+            ...order,
+            Status: status.Status || 'unconfirmed',
+            Product1: status.Product1 || status.p1_Quantity || '',
+            Product2: status.Product2 || status.p2_Quantity || '',
+            Pickup: status.Pickup || status['取貨地點'] || '',
+            PaymentMethod: status.PaymentMethod || status['付款方式'] || '',
+            BankCode: status.BankCode || status['帳號末五碼'] || '',
+            UpdatedAt: status.UpdatedAt || ''
+          };
+        });
+        
+        console.log('合併後資料:', mergedData.length, '筆');
+        hideElement('loading');
+        
+        if (mergedData && mergedData.length > 0) {
+          showElement('orderList');
+          showElement('orderCardList');
+          renderOrderList(mergedData);
+        } else {
+          document.getElementById('orderList').innerHTML = '<div class="text-gray-500 text-center py-8">查無訂購資料</div>';
+          document.getElementById('orderCardList').innerHTML = '<div class="text-gray-500 text-center py-8">查無訂購資料</div>';
+          showElement('orderList');
+          showElement('orderCardList');
+        }
+      }).catch(error => {
+        console.error('載入失敗:', error);
+        hideElement('loading');
+        document.getElementById('orderList').innerHTML = '<div class="text-red-500 text-center py-8">載入失敗，請稍後再試</div>';
+        document.getElementById('orderCardList').innerHTML = '<div class="text-red-500 text-center py-8">載入失敗，請稍後再試</div>';
+        showElement('orderList');
+        showElement('orderCardList');
       });
     }
     
     // 初始化產品名稱
     function initProductNames() {
-      document.getElementById('product1Header').textContent = PRODUCT1_NAME;
-      document.getElementById('product2Header').textContent = PRODUCT2_NAME;
-      document.getElementById('editProduct1Label').textContent = PRODUCT1_NAME + ' - 數量';
-      document.getElementById('editProduct2Label').textContent = PRODUCT2_NAME + ' - 數量';
-      document.getElementById('deliveryProduct1Label').textContent = PRODUCT1_NAME + ' - 數量';
-      document.getElementById('deliveryProduct2Label').textContent = PRODUCT2_NAME + ' - 數量';
+      document.getElementById('product1Header').textContent = PRODUCT1.name;
+      document.getElementById('product2Header').textContent = PRODUCT2.name;
+      document.getElementById('editProduct1Label').textContent = PRODUCT1.name + ' - 數量';
+      document.getElementById('editProduct2Label').textContent = PRODUCT2.name + ' - 數量';
+      document.getElementById('deliveryProduct1Label').textContent = PRODUCT1.name + ' - 數量';
+      document.getElementById('deliveryProduct2Label').textContent = PRODUCT2.name + ' - 數量';
+    }
+
+    // 動態生成選項
+    function populateOptions() {
+      // 填充取貨地點選項（editPickup, deliveryPickup, paymentPickup）
+      const pickupSelects = ['editPickup', 'deliveryPickup', 'paymentPickup'];
+      pickupSelects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        // 保留第一個「請選擇」選項
+        select.innerHTML = '<option value="">請選擇</option>';
+        PICKUP_OPTIONS.forEach(option => {
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.text;
+          select.appendChild(opt);
+        });
+      });
+
+      // 填充付款方式選項（paymentMethod 和 deliveryPaymentMethod）
+      const paymentSelects = ['paymentMethod', 'deliveryPaymentMethod'];
+      paymentSelects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        // 保留第一個「請選擇」選項
+        select.innerHTML = '<option value="">請選擇</option>';
+        PAYMENT_OPTIONS.forEach(option => {
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.text;
+          select.appendChild(opt);
+        });
+      });
     }
     
     // 初始化
     initProductNames();
+    populateOptions();
     updateAuthStatus();
+    loadAnnouncements();
     loadOrderList();
   </script>
 </body>
