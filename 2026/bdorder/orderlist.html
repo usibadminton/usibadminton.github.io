@@ -50,9 +50,9 @@
         <div class="mb-2 flex items-center gap-3">
           <!-- 狀態篩選按鈕 -->
           <div class="flex gap-2">
-            <button onclick="filterByStatus('all')" id="filterAll" class="px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
-            <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
-            <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
+            <button onclick="filterByStatus('all')" id="filterAll" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
+            <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-2 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
+            <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
           </div>
           
           <!-- 搜尋框 -->
@@ -60,7 +60,7 @@
             <input 
               type="text" 
               id="searchInput" 
-              placeholder="搜尋姓名or電話" 
+              placeholder="姓名/電話" 
               oninput="handleSearch()" 
               class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-reflected-breeze focus:border-transparent"
             >
@@ -292,7 +292,7 @@
       
       <div class="p-6 pt-3 border-t border-gray-200 flex-shrink-0">
         <div class="flex gap-3">
-          <button type="button" id="paymentCancelBtn" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+          <button type="button" id="paymentCancelBtn" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition font-medium">取消</button>
           <button type="submit" form="paymentForm" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">確認</button>
         </div>
       </div>
@@ -644,15 +644,17 @@
     const ORDER_GID = '0';  // order sheet 的 GID
     const STATUS_GID = '1989846685';  // order_status sheet 的 GID（請確認正確的 GID）
     const ANNOUNCEMENT_GID = '257816351';  // announcement sheet 的 GID（請修改為實際的 GID）
+    const CONFIG_GID = '90248386';  // config sheet 的 GID（設定檔）
     const ORDER_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${ORDER_GID}`;
     const STATUS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${STATUS_GID}`;
     const ANNOUNCEMENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${ANNOUNCEMENT_GID}`;
+    const CONFIG_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${CONFIG_GID}`;
     
     // Apps Script Web App URL（部署後請在此填入）
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSEBkvPegmQWqqUdj8YECklyTRAHtNkPdVe_27UblIzJ8_A1RKrNuXEBJ0jnmkcB5g7g/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkugr14CMQNu5KAxojL3QpBd_CNrL1h3lIw7bX3OPpepCORnYNXcvIulhR4Xr-jGMK/exec';
 
-    // 配置：是否需要手機驗證（設為 false 可關閉驗證）
-    const REQUIRE_PHONE_VERIFICATION = false;
+    // 配置：是否需要手機驗證（從 config sheet 讀取）
+    let REQUIRE_PHONE_VERIFICATION = false;
 
     // 配置：產品資訊（可自訂名稱和價格）
     const PRODUCT1 = {
@@ -919,8 +921,8 @@
         const paymentOption = PAYMENT_OPTIONS.find(opt => opt.value === paymentMethodValue);
         const paymentMethod = paymentOption ? paymentOption.text : paymentMethodValue;
         
-        // 如果是09開頭的手機號碼，屏蔽後三碼
-        if (contact.startsWith('09') && contact.length >= 10) {
+        // 屏蔽電話號碼後三碼
+        if (contact.length >= 3) {
           contact = contact.slice(0, -3) + '***';
         }
         
@@ -1245,7 +1247,7 @@
         const name = row['Name'] || '';
         const phone = row['Phone'] || '';
         let maskedPhone = phone;
-        if (phone.startsWith('09') && phone.length >= 10) {
+        if (phone.length >= 3) {
           maskedPhone = phone.slice(0, -3) + '***';
         }
         
@@ -1262,7 +1264,7 @@
       // 檢查進度
       const status = row['Status'] || 'unconfirmed';
       if (status !== 'unconfirmed') {
-        alert('此訂單已確認，無法再編輯！');
+        showAlertModal('此訂單已確認，無法再編輯！', '無法編輯');
         return;
       }
       
@@ -1462,7 +1464,7 @@
         const name = row['Name'] || '';
         const phone = row['Phone'] || '';
         let maskedPhone = phone;
-        if (phone.startsWith('09') && phone.length >= 10) {
+        if (phone.length >= 3) {
           maskedPhone = phone.slice(0, -3) + '***';
         }
         
@@ -1491,9 +1493,9 @@
       // 設置取消按鈕文字
       const cancelBtn = document.getElementById('paymentCancelBtn');
       if (fromConfirmFlow) {
-        cancelBtn.textContent = '稍後填寫';
+        cancelBtn.textContent = '稍後付款/填寫';
       } else {
-        cancelBtn.textContent = '取消';
+        cancelBtn.textContent = '返回';
       }
       
       // 計算並顯示總金額
@@ -1566,7 +1568,7 @@
     function openManageModal(id) {
       // 管理功能需要登入
       if (!isAuthenticated()) {
-        alert('請先登入以使用管理功能');
+        showAlertModal('請先登入以使用管理功能', '需要登入');
         return;
       }
       
@@ -1704,7 +1706,7 @@
         
         // TODO: 連接 Apps Script API
         console.log('Mark as completed:', completeData);
-        alert('已確認交貨！\n注意：需要設定 Apps Script 連接後才能實際更新。');
+        showAlertModal('已確認交貨！\n注意：需要設定 Apps Script 連接後才能實際更新。', '操作完成');
         // 重新載入資料
         // loadOrderList();
       }
@@ -1721,7 +1723,7 @@
         
         // TODO: 連接 Apps Script API
         console.log('Confirm delivery:', deliveryData);
-        alert('已確認交貨！\n注意：需要設定 Apps Script 連接後才能實際更新。');
+        showAlertModal('已確認交貨！\n注意：需要設定 Apps Script 連接後才能實際更新。', '操作完成');
         // 重新載入資料
         // loadOrderList();
       }
@@ -1797,7 +1799,7 @@
       } catch (error) {
         console.error('Error:', error);
         hideGlobalLoading();
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       }
     }
 
@@ -1811,7 +1813,7 @@
       // 查找訂單
       const row = allOrderData.find(r => r['Id'] == id);
       if (!row) {
-        alert('訂單不存在！');
+        showAlertModal('訂單不存在！', '錯誤');
         return;
       }
       
@@ -1850,15 +1852,15 @@
             
             // 設定取貨地點
             const existingPickup = row['Pickup'] || row['取貨地點'] || '';
-            document.getElementById('paymentPickup').value = existingPickup || (PICKUP_OPTIONS.length > 0 ? PICKUP_OPTIONS[0].value : '');
+            document.getElementById('paymentPickup').value = existingPickup;
             
             showElement('paymentModal');
           }
         } else if (status === 'completed') {
-          alert('此訂單已完成，無法再修改！');
+          showAlertModal('此訂單已完成，無法再修改！', '無法修改');
         }
       } else {
-        alert('聯絡號碼末三碼不正確，請重新輸入！');
+        showAlertModal('聯絡號碼末三碼不正確，請重新輸入！', '驗證失敗');
         document.getElementById('verifyPhone').value = '';
         document.getElementById('verifyPhone').focus();
       }
@@ -1946,7 +1948,7 @@
       } catch (error) {
         console.error('Error:', error);
         hideGlobalLoading();
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       }
     });
 
@@ -2063,7 +2065,7 @@
       } catch (error) {
         console.error('Error:', error);
         hideGlobalLoading();
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       }
     });
 
@@ -2112,7 +2114,7 @@
       } catch (error) {
         console.error('Error:', error);
         hideGlobalLoading();
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       }
     });
 
@@ -2156,12 +2158,12 @@
         // 延遲一下讓 Apps Script 有時間處理
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        alert('已確認交貨！');
+        showAlertModal('已確認交貨！', '操作完成');
         closeDeliveryModal();
         loadOrderList();
       } catch (error) {
         console.error('Error:', error);
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       } finally {
         // 恢復按鈕狀態
         submitBtn.disabled = false;
@@ -2235,7 +2237,7 @@
       } catch (error) {
         console.error('Error:', error);
         hideGlobalLoading();
-        alert('連線錯誤，請稍後再試');
+        showAlertModal('連線錯誤，請稍後再試', '錯誤');
       }
     });
 
@@ -2335,6 +2337,41 @@
           console.error('載入公告失敗:', error);
           document.getElementById('announcementContent').innerHTML = '<p class="text-red-500">載入公告失敗</p>';
         }
+      });
+    }
+
+    function loadConfig() {
+      return new Promise((resolve) => {
+        const timestamp = new Date().getTime();
+        const configUrl = `${CONFIG_CSV_URL}&_=${timestamp}`;
+        
+        Papa.parse(configUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            if (results.data && results.data.length > 0) {
+              // 尋找 setting = 'verify' 的設定
+              const verifyConfig = results.data.find(row => {
+                const setting = row.setting || row.Setting || '';
+                return setting.toLowerCase().trim() === 'verify';
+              });
+              
+              if (verifyConfig) {
+                const value = verifyConfig.value || verifyConfig.Value || '';
+                const valueStr = value.toString().toLowerCase().trim();
+                REQUIRE_PHONE_VERIFICATION = (valueStr === 'true' || valueStr === '1' || valueStr === 'yes');
+              }
+              
+              console.log('載入設定 - 需要電話驗證:', REQUIRE_PHONE_VERIFICATION);
+            }
+            resolve();
+          },
+          error: (error) => {
+            console.error('載入設定失敗:', error);
+            resolve(); // 即使失敗也繼續
+          }
+        });
       });
     }
 
@@ -2457,8 +2494,12 @@
     populateOptions();
     updateAuthStatus();
     loadAnnouncements();
-    loadOrderList();
-    filterByStatus('all'); // 初始化filter按鈕樣式
+    
+    // 先載入設定，再載入訂單列表
+    loadConfig().then(() => {
+      loadOrderList();
+      filterByStatus('all'); // 初始化filter按鈕樣式
+    });
   </script>
 </body>
 </html>

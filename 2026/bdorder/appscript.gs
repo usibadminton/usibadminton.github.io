@@ -78,7 +78,7 @@ function addOrder(orderSheet, statusSheet, data) {
   const newRow = new Array(headers.length).fill('');
   newRow[idCol] = newId;
   newRow[headers.indexOf('Name')] = data.name || '';
-  newRow[headers.indexOf('Phone')] = data.phone || '';
+  newRow[headers.indexOf('Phone')] = "'" + (data.phone || ''); // 加上單引號強制為文字格式
   
   const quantityCol = findColumnIndex(headers, ['Quantity', 'No']);
   if (quantityCol >= 0) newRow[quantityCol] = data.quantity || 0;
