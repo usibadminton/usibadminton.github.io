@@ -111,7 +111,14 @@
   <!-- Edit Modal -->
   <div id="editModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-      <h3 class="text-2xl font-bold text-gray-800 mb-3">確認訂購資料</h3>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 flex-1">確認訂購資料</h3>
+      </div>
       <form id="editForm" class="space-y-2">
         <input type="hidden" id="editRowId">
         
@@ -659,14 +666,14 @@
 
     // 配置：取貨地點選項（可自訂）
     const PICKUP_OPTIONS = [
-      { value: 'tt-wd', text: '草屯球場 - 週二/週五晚上', color: 'orange' },
-      { value: 'tt-we', text: '草屯球場 - 週末', color: 'orange' },
-      { value: 'nk-wd', text: '南崗廠5F - 平日', color: 'orange' }
+      { value: 'tt-wd', text: '草屯羽球場 - 平日', color: 'pink' },
+      { value: 'tt-we', text: '草屯羽球場 - 週末', color: 'orange' },
+      { value: 'nk-wd', text: '南崗廠5F - 平日', color: 'yellow' }
     ];
 
     // 配置：付款方式選項（可自訂）
     const PAYMENT_OPTIONS = [
-      { value: 'cash', text: '現場付款' },
+      { value: 'cash', text: '現金' },
       { value: 'transfer', text: '轉帳' }
     ];
 
