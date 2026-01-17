@@ -11,11 +11,12 @@
 <body class="bg-white min-h-screen">
   <!-- Header -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-reflected-breeze to-cosmic-sky text-cloud-dancer shadow-lg">
-    <div class="max-w-6xl mx-auto px-2 md:px-4 h-14 md:h-16 flex items-center justify-between relative">
-      <div class="text-center flex-1">
-        <h1 class="text-lg md:text-2xl font-bold tracking-tight text-white">USI-羽球團購</h1>
-      </div>
-      <div id="authStatus" class="text-right text-xs">
+    <div class="max-w-6xl mx-auto px-2 md:px-4 h-14 md:h-16 flex items-center justify-center relative">
+      <h1 class="text-lg md:text-2xl font-bold tracking-tight text-white">USI - 羽球團購</h1>
+      <button id="addOrderBtnHeader" onclick="openAddModal()" class="absolute right-2 md:right-4 border border-white bg-white/80 hover:bg-white/30 text-gray-500 text-sm px-4 py-1.5 rounded-lg transition font-medium">
+        + 新增訂單
+      </button>
+      <div id="authStatus" class="text-right text-xs hidden">
         <!-- 登入狀態將動態顯示 -->
       </div>
     </div>
@@ -24,15 +25,10 @@
   <div class="max-w-7xl mx-auto px-2 md:px-4 py-3 md:py-8 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-8rem)] flex flex-col">
     <div class="bg-transparent md:bg-white/70 md:backdrop-blur-sm md:rounded-2xl md:shadow-lg md:border md:border-reflected-breeze/20 flex flex-col h-full">
       <!-- 固定的標題和按鈕區域 -->
-      <div class="px-2 py-2 flex-shrink-0">
-        <div class="flex justify-between items-center">
-          <button id="addOrderBtn" onclick="openAddModal()" class="mb-2 bg-reflected-breeze hover:bg-cosmic-sky text-white px-4 py-2 rounded-lg transition font-medium">
-            + 新增訂單
-          </button>
-        </div>
+      <div class="px-2 py-2 flex-shrink-0 mb-4 border-b border-gray-200">
 
         <!-- 公告/備註區 -->
-        <div id="announcementSection" class="mb-2 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+        <div id="announcementSection" class="mb-2 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center">
               <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +60,7 @@
             <input 
               type="text" 
               id="searchInput" 
-              placeholder="搜尋訂單（姓名、電話、編號）" 
+              placeholder="搜尋姓名or電話" 
               oninput="handleSearch()" 
               class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-reflected-breeze focus:border-transparent"
             >
@@ -149,9 +145,9 @@
         <input type="hidden" id="editPickup">
 
         <div class="flex gap-3 pt-3">
-          <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
-          <button type="button" onclick="handleCancelOrder()" class="flex-1 px-4 py-2.5 text-base bg-red-400 text-white rounded-lg hover:bg-red-500 transition font-medium">取消訂購</button>
-          <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">送出</button>
+          <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium whitespace-nowrap">取消</button>
+          <button type="button" onclick="handleCancelOrder()" class="flex-1 px-4 py-2.5 text-base bg-red-400 text-white rounded-lg hover:bg-red-500 transition font-medium whitespace-nowrap">取消訂購</button>
+          <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium whitespace-nowrap">送出</button>
         </div>
       </form>
     </div>
@@ -209,9 +205,16 @@
   <div id="paymentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
       <div class="p-6 pb-4 flex-shrink-0">
-        <h3 class="text-2xl font-bold text-gray-800">付款資訊</h3>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-800 flex-1">付款資訊</h3>
+        </div>
       </div>
-      <div class="px-6 pb-6 overflow-y-auto flex-1">
+      <div class="px-6 overflow-y-auto flex-1">
         <form id="paymentForm" class="space-y-3">
           <input type="hidden" id="paymentOrderId">
           
@@ -263,7 +266,7 @@
                 </div>
               </div>
             </div>
-            <p class="text-xs text-blue-700 mt-2">💡 匯款後請填寫帳號末五碼以便核對</p>
+            <p class="text-sm text-blue-700 mt-2">💡 匯款後請填寫帳號末五碼以便核對</p>
           </div>
 
           <div>
@@ -275,63 +278,72 @@
 
           <div>
             <label class="block text-base font-medium text-gray-700 mb-1">備註（選填）</label>
-            <textarea id="paymentNote" rows="3" maxlength="200" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze resize-none" placeholder="如有其他需求或說明可在此填寫"></textarea>
-          </div>
-
-          <div class="flex gap-3 pt-3">
-            <button type="button" id="paymentCancelBtn" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
-            <button type="submit" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">確認</button>
+            <textarea id="paymentNote" rows="2" maxlength="200" class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-reflected-breeze resize-none" placeholder="如有其他需求可在此填寫"></textarea>
           </div>
         </form>
+      </div>
+      
+      <div class="p-6 pt-3 border-t border-gray-200 flex-shrink-0">
+        <div class="flex gap-3">
+          <button type="button" id="paymentCancelBtn" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">取消</button>
+          <button type="submit" form="paymentForm" class="flex-1 px-4 py-2.5 text-base bg-reflected-breeze text-white rounded-lg hover:bg-cosmic-sky transition font-medium">確認</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Confirm Payment Modal -->
   <div id="confirmPaymentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">確認付款</h3>
-      <form id="confirmPaymentForm" class="space-y-4">
-        <input type="hidden" id="confirmPaymentOrderId">
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-          <input type="text" id="confirmPaymentName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">總金額</label>
-          <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-lg font-semibold text-gray-800">
-            $<span id="confirmPaymentTotalAmount">0</span>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+      <div class="p-6 pb-4 flex-shrink-0">
+        <h3 class="text-xl font-bold text-gray-800">確認付款</h3>
+      </div>
+      
+      <div class="px-6 overflow-y-auto flex-1">
+        <form id="confirmPaymentForm" class="space-y-4">
+          <input type="hidden" id="confirmPaymentOrderId">
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+            <input type="text" id="confirmPaymentName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
-          <input type="text" id="confirmPaymentMethod" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-        </div>
-
-        <div id="confirmPaymentBankCodeField" class="hidden">
-          <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼</label>
-          <input type="text" id="confirmPaymentBankCode" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-        </div>
-
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <div class="flex-1">
-              <p class="text-sm text-blue-900">確認已收到款項後，訂單狀態將更改為「付款完成」</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">總金額</label>
+            <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-lg font-semibold text-gray-800">
+              $<span id="confirmPaymentTotalAmount">0</span>
             </div>
           </div>
-        </div>
 
-        <div class="flex gap-3 pt-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
+            <input type="text" id="confirmPaymentMethod" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          </div>
+
+          <div id="confirmPaymentBankCodeField" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼</label>
+            <input type="text" id="confirmPaymentBankCode" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-sm text-blue-900">確認已收到款項後，訂單狀態將更改為「付款完成」</p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="p-6 pt-3 border-t border-gray-200 flex-shrink-0">
+        <div class="flex gap-3">
           <button type="button" onclick="closeConfirmPaymentModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">確認收款</button>
+          <button type="submit" form="confirmPaymentForm" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">確認收款</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -585,7 +597,7 @@
         </div>
       </div>
       
-      <p class="text-sm text-gray-600 mb-6 text-center">請確認以上資料無誤後送出</p>
+      <p class="text-sm text-gray-600 mb-6 text-center">請確認以上資料無誤後送出，送出後無法再修改。</p>
       
       <div class="flex gap-3">
         <button type="button" onclick="closeOrderConfirmPreview(false)" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">返回修改</button>
@@ -654,7 +666,7 @@
 
     // 配置：付款方式選項（可自訂）
     const PAYMENT_OPTIONS = [
-      { value: 'cash', text: '現金' },
+      { value: 'cash', text: '現場付款' },
       { value: 'transfer', text: '轉帳' }
     ];
 
@@ -726,7 +738,7 @@
 
     let orderData = [];
     let allOrderData = [];
-    let currentStatusFilter = 'unconfirmed';
+    let currentStatusFilter = 'all';
     let currentSearchTerm = ''; // 'all', 'unconfirmed', 'confirmed', 'paid', 'completed'
     let confirmModalResolve = null; // 用於 Promise
     let orderConfirmPreviewResolve = null; // 用於訂單確認預覽
@@ -1057,7 +1069,7 @@
             <!-- 未確認：左右分欄 -->
             <div class="p-2 flex gap-3">
               <!-- 左側：產品 + 金額 -->
-              <div class="flex flex-col gap-1.5 min-w-[120px]">
+              <div class="flex flex-col gap-1.5 min-w-[110px]">
                 <div class="bg-gray-100 border-gray-200 rounded-lg px-3 py-1.5 border">
                   <div class="text-sm text-gray-700 font-medium flex justify-between items-center">
                     <span>${PRODUCT1.name}</span>
@@ -1083,15 +1095,15 @@
               <!-- 右側：取貨 + 狀態 -->
               <div class="flex flex-col gap-1.5 flex-1">
                 <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
-                  <div class="text-sm flex justify-between items-center">
-                    <span class="text-gray-600">取貨地點</span>
-                    <span class="text-gray-800">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
+                  <div class="text-sm flex items-start gap-2">
+                    <span class="text-gray-600 whitespace-nowrap">取貨地點</span>
+                    <span class="text-gray-800 flex-1 text-right break-words">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
                   </div>
                 </div>
                 <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
-                  <div class="text-sm flex justify-between items-center">
-                    <span class="text-gray-600">訂單狀態</span>
-                    <span class="${paymentStatusClass} font-medium">${paymentStatusText}</span>
+                  <div class="text-sm flex items-start gap-2">
+                    <span class="text-gray-600 whitespace-nowrap">訂單狀態</span>
+                    <span class="${paymentStatusClass} font-medium flex-1 text-right">${paymentStatusText}</span>
                   </div>
                 </div>
                 ${(() => {
@@ -1113,7 +1125,7 @@
             <!-- 已確認：左右分欄 -->
             <div class="p-2 flex gap-3">
               <!-- 左側：產品 + 金額 -->
-              <div class="flex flex-col gap-1.5 min-w-[120px]">
+              <div class="flex flex-col gap-1.5 min-w-[110px]">
                 <!-- 產品卡片 -->
                 <div class="bg-blue-100 border-blue-100 rounded-lg px-3 py-1.5 border">
                   <div class="text-sm text-blue-700 font-medium flex justify-between items-center">
@@ -1140,15 +1152,15 @@
               <!-- 右側：取貨 + 狀態 -->
               <div class="flex flex-col gap-1.5 flex-1">
                 <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
-                  <div class="text-sm flex justify-between items-center">
-                    <span class="text-gray-600">取貨地點</span>
-                    <span class="text-gray-800">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
+                  <div class="text-sm flex items-start gap-2">
+                    <span class="text-gray-600 whitespace-nowrap">取貨地點</span>
+                    <span class="text-gray-800 flex-1 text-right break-words">${pickupValue ? pickupDisplay : '<span class="text-gray-400">-</span>'}</span>
                   </div>
                 </div>
                 <div class="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200">
-                  <div class="text-sm flex justify-between items-center">
-                    <span class="text-gray-600">訂單狀態</span>
-                    <span class="${paymentStatusClass} font-medium">${paymentStatusText}</span>
+                  <div class="text-sm flex items-start gap-2">
+                    <span class="text-gray-600 whitespace-nowrap">訂單狀態</span>
+                    <span class="${paymentStatusClass} font-medium flex-1 text-right">${paymentStatusText}</span>
                   </div>
                 </div>
                 ${(() => {
@@ -1182,7 +1194,7 @@
       const activeStyles = {
         'all': 'px-3 py-1.5 text-sm rounded-full bg-blue-600 text-white font-medium transition hover:bg-blue-700',
         'unconfirmed': 'px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700',
-        'confirmed': 'px-3 py-1.5 text-sm rounded-full bg-orange-600 text-white font-medium transition hover:bg-orange-700'
+        'confirmed': 'px-3 py-1.5 text-sm rounded-full bg-green-600 text-white font-medium transition hover:bg-green-700'
       };
       
       const inactiveStyle = 'px-3 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300';
@@ -2438,6 +2450,7 @@
     updateAuthStatus();
     loadAnnouncements();
     loadOrderList();
+    filterByStatus('all'); // 初始化filter按鈕樣式
   </script>
 </body>
 </html>
