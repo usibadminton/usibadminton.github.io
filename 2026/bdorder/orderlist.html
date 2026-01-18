@@ -74,9 +74,9 @@
           
           <!-- 取貨地點篩選按鈕 -->
           <div class="flex gap-2">
-            <button onclick="filterByPickup('tt-wd')" id="filterPickupTtWd" class="px-2 py-1.5 text-sm rounded-full bg-pink-100 text-pink-700 font-medium transition hover:bg-pink-200">草屯平日</button>
-            <button onclick="filterByPickup('tt-we')" id="filterPickupTtWe" class="px-2 py-1.5 text-sm rounded-full bg-orange-100 text-orange-700 font-medium transition hover:bg-orange-200">草屯週末</button>
-            <button onclick="filterByPickup('nk-wd')" id="filterPickupNkWd" class="px-2 py-1.5 text-sm rounded-full bg-yellow-100 text-yellow-700 font-medium transition hover:bg-yellow-200">南崗平日</button>
+            <button onclick="filterByPickup('tt-wd')" id="filterPickupTtWd" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">草屯平日</button>
+            <button onclick="filterByPickup('tt-we')" id="filterPickupTtWe" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">草屯週末</button>
+            <button onclick="filterByPickup('nk-wd')" id="filterPickupNkWd" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">南崗平日</button>
           </div>
         </div>
         
@@ -678,6 +678,9 @@
 
     // 配置：是否需要手機驗證（從 config sheet 讀取）
     let REQUIRE_PHONE_VERIFICATION = false;
+    
+    // 配置：是否允許新增訂單（從 config sheet 讀取）
+    let ALLOW_ADD_ORDER = true;
 
     // 配置：產品資訊（可自訂名稱和價格）
     const PRODUCT1 = {
@@ -1060,21 +1063,24 @@
         } else {
           // 非管理員：可以操作到已付款前
           if (status === 'unconfirmed') {
-            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-red-100 text-red-700 hover:bg-red-200 font-medium transition active:scale-95">確認</button>`;
+            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition active:scale-95">確認</button>`;
           } else if (status === 'confirmed') {
             // 檢查是否已有付款資料
             const hasPaymentInfo = paymentMethodValue || bankCode;
             const buttonText = hasPaymentInfo ? '更新' : '付款';
-            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 font-medium transition active:scale-95">${buttonText}</button>`;
+            const buttonStyle = hasPaymentInfo 
+              ? 'px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition active:scale-95'
+              : 'px-4 py-2 text-sm rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 font-medium transition active:scale-95';
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="${buttonStyle}">${buttonText}</button>`;
           } else if (status === 'paid') {
             // 已付款狀態也可以更新資料（修改取貨地點或付款資訊）
-            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium transition active:scale-95">更新</button>`;
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition active:scale-95">更新</button>`;
           } else if (status === 'checked') {
             // 付款完成狀態也可以更新資料
-            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-green-100 text-green-700 hover:bg-green-200 font-medium transition active:scale-95">更新</button>`;
+            actionButtons = `<button onclick="openPaymentModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition active:scale-95">更新</button>`;
           } else {
             // 已完成，不顯示操作
-            actionButtons = '<span class="text-gray-400 text-sm">-</span>';
+            actionButtons = '<span class="bg-green-700 rounded-3xl py-2 px-4 text-white text-sm">已交貨</span>';
           }
         }
         
@@ -1261,9 +1267,9 @@
       };
       
       // 重置所有按鈕樣式
-      if (pickupButtons['tt-wd']) pickupButtons['tt-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-pink-100 text-pink-700 font-medium transition hover:bg-pink-200';
-      if (pickupButtons['tt-we']) pickupButtons['tt-we'].className = 'px-2 py-1.5 text-sm rounded-full bg-orange-100 text-orange-700 font-medium transition hover:bg-orange-200';
-      if (pickupButtons['nk-wd']) pickupButtons['nk-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-yellow-100 text-yellow-700 font-medium transition hover:bg-yellow-200';
+      if (pickupButtons['tt-wd']) pickupButtons['tt-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200';
+      if (pickupButtons['tt-we']) pickupButtons['tt-we'].className = 'px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200';
+      if (pickupButtons['nk-wd']) pickupButtons['nk-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200';
       
       // 設定當前按鈕為活躍樣式
       if (pickup !== 'all' && pickupButtons[pickup]) {
@@ -2450,7 +2456,30 @@
                 REQUIRE_PHONE_VERIFICATION = (valueStr === 'true' || valueStr === '1' || valueStr === 'yes');
               }
               
+              // 尋找 setting = 'addorder' 的設定
+              const addOrderConfig = results.data.find(row => {
+                const setting = row.setting || row.Setting || '';
+                return setting.toLowerCase().trim() === 'addorder';
+              });
+              
+              if (addOrderConfig) {
+                const value = addOrderConfig.value || addOrderConfig.Value || '';
+                const valueStr = value.toString().toLowerCase().trim();
+                ALLOW_ADD_ORDER = (valueStr === 'true' || valueStr === '1' || valueStr === 'yes');
+              }
+              
+              // 根據 ALLOW_ADD_ORDER 設定控制按鈕顯示
+              const addOrderBtn = document.getElementById('addOrderBtnHeader');
+              if (addOrderBtn) {
+                if (ALLOW_ADD_ORDER) {
+                  addOrderBtn.style.display = '';
+                } else {
+                  addOrderBtn.style.display = 'none';
+                }
+              }
+              
               console.log('載入設定 - 需要電話驗證:', REQUIRE_PHONE_VERIFICATION);
+              console.log('載入設定 - 允許新增訂單:', ALLOW_ADD_ORDER);
             }
             resolve();
           },
