@@ -48,16 +48,17 @@
 
       <!-- 固定的Filter和搜尋區域 -->
       <div class="sticky top-0 z-20 bg-white md:bg-transparent px-2 py-2 flex-shrink-0 border-b border-gray-200 shadow-sm md:shadow-none">
-        <div class="mb-2 flex items-center gap-3">
+        <div class="mb-2 flex flex-col gap-2">
           <!-- 狀態篩選按鈕 -->
-          <div class="flex gap-2">
-            <button onclick="filterByStatus('all')" id="filterAll" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
-            <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-2 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
-            <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
-          </div>
-          
-          <!-- 搜尋框 -->
-          <div class="relative flex-1 max-w-xs ml-auto">
+          <div class="flex items-center gap-3">
+            <div class="flex gap-2">
+              <button onclick="filterByStatus('all')" id="filterAll" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
+              <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-2 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
+              <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
+            </div>
+            
+            <!-- 搜尋框 -->
+            <div class="relative flex-1 max-w-xs ml-auto">
             <input 
               type="text" 
               id="searchInput" 
@@ -68,6 +69,27 @@
             <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
+            </div>
+          </div>
+          
+          <!-- 取貨地點篩選按鈕 -->
+          <div class="flex gap-2">
+            <button onclick="filterByPickup('tt-wd')" id="filterPickupTtWd" class="px-2 py-1.5 text-sm rounded-full bg-pink-100 text-pink-700 font-medium transition hover:bg-pink-200">草屯平日</button>
+            <button onclick="filterByPickup('tt-we')" id="filterPickupTtWe" class="px-2 py-1.5 text-sm rounded-full bg-orange-100 text-orange-700 font-medium transition hover:bg-orange-200">草屯週末</button>
+            <button onclick="filterByPickup('nk-wd')" id="filterPickupNkWd" class="px-2 py-1.5 text-sm rounded-full bg-yellow-100 text-yellow-700 font-medium transition hover:bg-yellow-200">南崗平日</button>
+          </div>
+        </div>
+        
+        <!-- 統計資訊區域 -->
+        <div id="statsInfo" class="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-200">
+          <div class="flex flex-wrap items-center gap-2 text-sm">
+            <span class="font-medium text-gray-700"><span id="statsOrderCount" class="text-gray-600 font-bold">0</span></span>
+            <span class="text-gray-400">|</span>
+            <span class="text-gray-700"><span id="statsProduct1Name" class="font-medium"></span>: <span id="statsProduct1Count" class="text-blue-600 font-bold">0</span></span>
+            <span class="text-gray-400">|</span>
+            <span class="text-gray-700"><span id="statsProduct2Name" class="font-medium"></span>: <span id="statsProduct2Count" class="text-purple-600 font-bold">0</span></span>
+            <span class="text-gray-400">|</span>
+            <span class="text-gray-700"><span id="statsTotalAmount" class="text-orange-600 font-bold">$0</span></span>
           </div>
         </div>
       </div>
@@ -411,95 +433,95 @@
 
   <!-- Manage Modal (Admin Only) -->
   <div id="manageModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">管理訂單</h3>
-      <form id="manageForm" class="space-y-4">
-        <input type="hidden" id="manageOrderId">
-        
-        <!-- 基本資訊 -->
-        <div class="bg-gray-50 rounded-lg p-4">
-          <h4 class="font-semibold text-gray-700 mb-3">訂單資訊</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-              <input type="text" id="manageName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
-              <input type="tel" id="managePhone" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
-            </div>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div class="px-6 pt-6 pb-4 flex-shrink-0 border-b border-gray-200">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">管理訂單</h3>
+        <div class="flex items-center gap-4 text-base text-gray-700">
+          <div class="flex items-center gap-2">
+            <span id="manageName"></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="managePhone"></span>
           </div>
         </div>
+      </div>
+      
+      <!-- 可滾動內容區 -->
+      <div class="flex-1 overflow-y-auto px-6 pb-4">
+        <form id="manageForm" class="space-y-4">
+          <input type="hidden" id="manageOrderId">
 
-        <!-- 產品數量 -->
-        <div class="bg-orange-50 rounded-lg p-4">
-          <h4 class="font-semibold text-orange-700 mb-3">產品數量</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label id="manageProduct1Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
-              <input type="number" id="manageProduct1" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" min="0" oninput="updateManageTotalAmount()">
+          <!-- 產品數量 -->
+          <div class="bg-orange-50 rounded-lg p-2">
+            <h4 class="font-semibold text-orange-700 mb-1.5 text-base">產品數量</h4>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label id="manageProduct1Label" class="block text-base font-medium text-gray-700"></label>
+                <input type="number" id="manageProduct1" class="w-full px-2 py-1.5 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-base" min="0" oninput="updateManageTotalAmount()">
+              </div>
+              <div>
+                <label id="manageProduct2Label" class="block text-base font-medium text-gray-700"></label>
+                <input type="number" id="manageProduct2" class="w-full px-2 py-1.5 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-base" min="0" oninput="updateManageTotalAmount()">
+              </div>
             </div>
-            <div>
-              <label id="manageProduct2Label" class="block text-sm font-medium text-gray-700 mb-1"></label>
-              <input type="number" id="manageProduct2" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" min="0" oninput="updateManageTotalAmount()">
+            <div class="mt-1.5">
+              <label class="block text-base font-medium text-gray-700">總金額</label>
+              <div class="w-full px-2 py-1.5 border border-orange-300 rounded-lg bg-white text-lg font-semibold text-gray-800">
+                $<span id="manageTotalAmount">0</span>
+              </div>
             </div>
           </div>
-          <div class="mt-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">總金額</label>
-            <div class="w-full px-3 py-2 border border-orange-300 rounded-lg bg-white text-lg font-semibold text-gray-800">
-              $<span id="manageTotalAmount">0</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- 付款資訊 -->
-        <div class="bg-blue-50 rounded-lg p-4">
-          <h4 class="font-semibold text-blue-700 mb-3">付款資訊</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">付款方式</label>
-              <select id="managePaymentMethod" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="toggleManageBankCode()">
+          <!-- 付款資訊 -->
+          <div class="bg-blue-50 rounded-lg p-2">
+            <h4 class="font-semibold text-blue-700 mb-1.5 text-base">付款資訊</h4>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="block text-base font-medium text-gray-700">付款方式</label>
+                <select id="managePaymentMethod" class="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-base" onchange="toggleManageBankCode()">
+                  <option value="">請選擇</option>
+                </select>
+              </div>
+              <div id="manageBankCodeField" class="hidden">
+                <label class="block text-base font-medium text-gray-700">帳號末五碼</label>
+                <input type="text" id="manageBankCode" maxlength="5" pattern="[0-9]{5}" class="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-base" placeholder="5位數字">
+              </div>
+            </div>
+            <div class="mt-1.5">
+              <label class="block text-base font-medium text-gray-700">取貨地點時間</label>
+              <select id="managePickup" class="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-base">
                 <option value="">請選擇</option>
               </select>
             </div>
-            <div id="manageBankCodeField" class="hidden">
-              <label class="block text-sm font-medium text-gray-700 mb-1">帳號末五碼</label>
-              <input type="text" id="manageBankCode" maxlength="5" pattern="[0-9]{5}" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="5位數字">
+            <div class="mt-1.5">
+              <label class="block text-base font-medium text-gray-700">付款狀態</label>
+              <select id="managePaymentStatus" class="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-base">
+                <option value="">未付款</option>
+                <option value="paid">已付款</option>
+              </select>
             </div>
           </div>
-          <div class="mt-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">取貨地點時間</label>
-            <select id="managePickup" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-              <option value="">請選擇</option>
-            </select>
-          </div>
-          <div class="mt-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
-            <select id="managePaymentStatus" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-              <option value="">未付款</option>
-              <option value="paid">已付款</option>
-            </select>
-          </div>
-        </div>
 
-        <!-- 交貨狀態 -->
-        <div class="bg-green-50 rounded-lg p-4">
-          <h4 class="font-semibold text-green-700 mb-3">交貨狀態</h4>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">交貨狀態</label>
-            <select id="manageDeliveryStatus" class="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500">
-              <option value="">未交貨</option>
-              <option value="delivered">已交貨</option>
-            </select>
+          <!-- 交貨狀態 -->
+          <div class="bg-green-50 rounded-lg p-2 mb-2">
+            <h4 class="font-semibold text-green-700 mb-1.5 text-base">交貨狀態</h4>
+            <div>
+              <select id="manageDeliveryStatus" class="w-full px-2 py-1.5 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 text-base">
+                <option value="">未交貨</option>
+                <option value="delivered">已交貨</option>
+              </select>
+            </div>
           </div>
-        </div>
+        </form>
+      </div>
 
-        <!-- 操作按鈕 -->
-        <div class="grid grid-cols-2 gap-3 pt-4">
+      <!-- 固定在底部的操作按鈕 -->
+      <div class="flex-shrink-0 border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
+        <div class="grid grid-cols-2 gap-3">
           <button type="button" onclick="closeManageModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">取消</button>
-          <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">更新資料</button>
+          <button type="submit" form="manageForm" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">更新資料</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -749,6 +771,7 @@
     let orderData = [];
     let allOrderData = [];
     let currentStatusFilter = 'all';
+    let currentPickupFilter = 'all'; // 'all', 'tt-wd', 'tt-we', 'nk-wd'
     let currentSearchTerm = ''; // 'all', 'unconfirmed', 'confirmed', 'paid', 'completed'
     let confirmModalResolve = null; // 用於 Promise
     let orderConfirmPreviewResolve = null; // 用於訂單確認預覽
@@ -880,6 +903,14 @@
         return false;
       });
       
+      // 根據取貨地點篩選器過濾資料
+      if (currentPickupFilter !== 'all') {
+        displayData = displayData.filter(row => {
+          const pickup = row['Pickup'] || row['取貨地點'] || '';
+          return pickup === currentPickupFilter;
+        });
+      }
+      
       // 根據搜尋關鍵字過濾資料
       if (currentSearchTerm) {
         displayData = displayData.filter(row => {
@@ -892,6 +923,28 @@
                  phone.includes(currentSearchTerm);
         });
       }
+      
+      // 計算統計資訊
+      let totalProduct1 = 0;
+      let totalProduct2 = 0;
+      let totalAmount = 0;
+      
+      displayData.forEach(row => {
+        const product1 = parseInt(row['Product1'] || row['p1_Quantity'] || 0);
+        const product2 = parseInt(row['Product2'] || row['p2_Quantity'] || 0);
+        
+        totalProduct1 += product1;
+        totalProduct2 += product2;
+        totalAmount += (product1 * PRODUCT1.price) + (product2 * PRODUCT2.price);
+      });
+      
+      // 更新統計資訊顯示
+      document.getElementById('statsOrderCount').textContent = displayData.length;
+      document.getElementById('statsProduct1Name').textContent = PRODUCT1.name;
+      document.getElementById('statsProduct1Count').textContent = totalProduct1;
+      document.getElementById('statsProduct2Name').textContent = PRODUCT2.name;
+      document.getElementById('statsProduct2Count').textContent = totalProduct2;
+      document.getElementById('statsTotalAmount').textContent = '$' + totalAmount.toLocaleString();
       
       displayData.forEach((row, index) => {
         const id = row['Id'] || '';
@@ -1197,8 +1250,41 @@
       orderData = displayData;
     }
 
+    function filterByPickup(pickup) {
+      currentPickupFilter = pickup;
+      
+      // 更新按鈕樣式
+      const pickupButtons = {
+        'tt-wd': document.getElementById('filterPickupTtWd'),
+        'tt-we': document.getElementById('filterPickupTtWe'),
+        'nk-wd': document.getElementById('filterPickupNkWd')
+      };
+      
+      // 重置所有按鈕樣式
+      if (pickupButtons['tt-wd']) pickupButtons['tt-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-pink-100 text-pink-700 font-medium transition hover:bg-pink-200';
+      if (pickupButtons['tt-we']) pickupButtons['tt-we'].className = 'px-2 py-1.5 text-sm rounded-full bg-orange-100 text-orange-700 font-medium transition hover:bg-orange-200';
+      if (pickupButtons['nk-wd']) pickupButtons['nk-wd'].className = 'px-2 py-1.5 text-sm rounded-full bg-yellow-100 text-yellow-700 font-medium transition hover:bg-yellow-200';
+      
+      // 設定當前按鈕為活躍樣式
+      if (pickup !== 'all' && pickupButtons[pickup]) {
+        const activeBtn = pickupButtons[pickup];
+        if (pickup === 'tt-wd') {
+          activeBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-pink-600 text-white font-medium transition hover:bg-pink-700';
+        } else if (pickup === 'tt-we') {
+          activeBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-orange-600 text-white font-medium transition hover:bg-orange-700';
+        } else if (pickup === 'nk-wd') {
+          activeBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-yellow-600 text-white font-medium transition hover:bg-yellow-700';
+        }
+      }
+      
+      loadOrderList();
+    }
+    
     function filterByStatus(status) {
       currentStatusFilter = status;
+      // 重置取貨地點篩選
+      currentPickupFilter = 'all';
+      filterByPickup('all');
       
       // 更新按鈕樣式：選中的用對應顏色，未選中的統一灰色
       const activeStyles = {
@@ -1580,8 +1666,8 @@
       document.getElementById('manageOrderId').value = id;
       
       // 基本資訊
-      document.getElementById('manageName').value = row['Name'] || '';
-      document.getElementById('managePhone').value = row['Phone'] || '';
+      document.getElementById('manageName').textContent = row['Name'] || '';
+      document.getElementById('managePhone').textContent = row['Phone'] || '';
       
       // 產品數量
       document.getElementById('manageProduct1Label').textContent = PRODUCT1.name;
