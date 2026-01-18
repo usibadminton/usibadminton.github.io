@@ -1063,7 +1063,7 @@
         } else {
           // 非管理員：可以操作到已付款前
           if (status === 'unconfirmed') {
-            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition active:scale-95">確認</button>`;
+            actionButtons = `<button onclick="openEditModal('${id}')" class="px-4 py-2 text-sm rounded-full bg-red-100 text-red-700 hover:bg-red-200 font-medium transition active:scale-95">確認</button>`;
           } else if (status === 'confirmed') {
             // 檢查是否已有付款資料
             const hasPaymentInfo = paymentMethodValue || bankCode;
