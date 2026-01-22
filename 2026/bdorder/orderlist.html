@@ -49,12 +49,11 @@
       <!-- 固定的Filter和搜尋區域 -->
       <div class="sticky top-0 z-20 bg-white md:bg-transparent px-2 py-2 flex-shrink-0 border-b border-gray-200 shadow-sm md:shadow-none">
         <div class="mb-2 flex flex-col gap-2">
-          <!-- 狀態篩選按鈕 -->
+          <!-- 第一行：交貨狀態篩選 + 搜尋框 -->
           <div class="flex items-center gap-3">
             <div class="flex gap-2">
-              <button onclick="filterByStatus('all')" id="filterAll" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">全部</button>
-              <button onclick="filterByStatus('unconfirmed')" id="filterUnconfirmed" class="px-2 py-1.5 text-sm rounded-full bg-red-600 text-white font-medium transition hover:bg-red-700">待確認</button>
-              <button onclick="filterByStatus('confirmed')" id="filterConfirmed" class="px-2 py-1.5 text-sm rounded-full bg-gray-200 text-gray-500 font-medium transition hover:bg-gray-300">已確認</button>
+              <button onclick="filterByDelivery('undelivered')" id="filterUndelivered" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">未交貨</button>
+              <button onclick="filterByDelivery('delivered')" id="filterDelivered" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">已交貨</button>
             </div>
             
             <!-- 搜尋框 -->
@@ -72,7 +71,7 @@
             </div>
           </div>
           
-          <!-- 取貨地點篩選按鈕 -->
+          <!-- 第二行：取貨地點篩選 -->
           <div class="flex gap-2">
             <button onclick="filterByPickup('tt-wd')" id="filterPickupTtWd" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">草屯平日</button>
             <button onclick="filterByPickup('tt-we')" id="filterPickupTtWe" class="px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200">草屯週末</button>
@@ -775,6 +774,7 @@
     let allOrderData = [];
     let currentStatusFilter = 'all';
     let currentPickupFilter = 'all'; // 'all', 'tt-wd', 'tt-we', 'nk-wd'
+    let currentDeliveryFilter = 'all'; // 'all', 'undelivered'
     let currentSearchTerm = ''; // 'all', 'unconfirmed', 'confirmed', 'paid', 'completed'
     let confirmModalResolve = null; // 用於 Promise
     let orderConfirmPreviewResolve = null; // 用於訂單確認預覽
@@ -911,6 +911,19 @@
         displayData = displayData.filter(row => {
           const pickup = row['Pickup'] || row['取貨地點'] || '';
           return pickup === currentPickupFilter;
+        });
+      }
+      
+      // 根據交貨狀態篩選器過濾資料
+      if (currentDeliveryFilter === 'undelivered') {
+        displayData = displayData.filter(row => {
+          const status = row['Status'] || 'unconfirmed';
+          return status !== 'completed'; // 未交貨：除了completed的都是
+        });
+      } else if (currentDeliveryFilter === 'delivered') {
+        displayData = displayData.filter(row => {
+          const status = row['Status'] || 'unconfirmed';
+          return status === 'completed'; // 已交貨：只顯示completed
         });
       }
       
@@ -1256,6 +1269,27 @@
       orderData = displayData;
     }
 
+    function filterByDelivery(deliveryStatus) {
+      currentDeliveryFilter = deliveryStatus;
+      
+      // 更新按鈕樣式
+      const undeliveredBtn = document.getElementById('filterUndelivered');
+      const deliveredBtn = document.getElementById('filterDelivered');
+      
+      // 重置所有按鈕
+      undeliveredBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200';
+      deliveredBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 font-medium transition hover:bg-gray-200';
+      
+      // 設定當前按鈕為活躍樣式
+      if (deliveryStatus === 'undelivered') {
+        undeliveredBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-red-500 text-white font-medium transition hover:bg-red-600';
+      } else if (deliveryStatus === 'delivered') {
+        deliveredBtn.className = 'px-2 py-1.5 text-sm rounded-full bg-green-500 text-white font-medium transition hover:bg-green-600';
+      }
+      
+      loadOrderList();
+    }
+    
     function filterByPickup(pickup) {
       currentPickupFilter = pickup;
       
@@ -1290,7 +1324,10 @@
       currentStatusFilter = status;
       // 重置取貨地點篩選
       currentPickupFilter = 'all';
+      // 重置交貨狀態篩選
+      currentDeliveryFilter = 'all';
       filterByPickup('all');
+      filterByDelivery('all');
       
       // 更新按鈕樣式：選中的用對應顏色，未選中的統一灰色
       const activeStyles = {
